@@ -1,75 +1,122 @@
-# OSX
-#
+# =============================================================================
+# qbtLiveApp — .gitignore
+# React Native 0.85.1 / TypeScript / Android 전용
+# =============================================================================
+
+# ─────────────────────────────────────────────────────────────────────────────
+# OS 생성 파일
+# ─────────────────────────────────────────────────────────────────────────────
 .DS_Store
+Thumbs.db
+desktop.ini
 
-# Xcode
-#
-build/
-*.pbxuser
-!default.pbxuser
-*.mode1v3
-!default.mode1v3
-*.mode2v3
-!default.mode2v3
-*.perspectivev3
-!default.perspectivev3
-xcuserdata
-*.xccheckout
-*.moved-aside
-DerivedData
-*.hmap
-*.ipa
-*.xcuserstate
-**/.xcode.env.local
+# ─────────────────────────────────────────────────────────────────────────────
+# IDE / 에디터
+# ─────────────────────────────────────────────────────────────────────────────
+# VSCode — 워크스페이스 설정은 포함 (팀 공유), 개인 설정은 제외
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/launch.json
 
-# Android/IntelliJ
-#
-build/
-.idea
-.gradle
-local.properties
+# IntelliJ / Android Studio / WebStorm
+.idea/
 *.iml
-*.hprof
-.cxx/
-*.keystore
-!debug.keystore
-.kotlin/
+*.iws
+*.ipr
+.project
+.classpath
 
-# node.js
-#
+# ─────────────────────────────────────────────────────────────────────────────
+# Node.js / npm
+# ─────────────────────────────────────────────────────────────────────────────
 node_modules/
-npm-debug.log
-yarn-error.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm/
+.yarn/
 
-# fastlane
-#
-# It is recommended to not store the screenshots in the git repo. Instead, use fastlane to re-generate the
-# screenshots whenever they are needed.
-# For more information about the recommended setup visit:
-# https://docs.fastlane.tools/best-practices/source-control/
-
-**/fastlane/report.xml
-**/fastlane/Preview.html
-**/fastlane/screenshots
-**/fastlane/test_output
-
-# Bundle artifact
+# ─────────────────────────────────────────────────────────────────────────────
+# React Native / Metro
+# ─────────────────────────────────────────────────────────────────────────────
+.metro-health-check*
+metro-cache/
+.expo/
 *.jsbundle
 
-# Ruby / CocoaPods
-**/Pods/
-/vendor/bundle/
+# ─────────────────────────────────────────────────────────────────────────────
+# Android 빌드 산출물
+# ─────────────────────────────────────────────────────────────────────────────
+android/app/build/
+android/build/
+android/.gradle/
+android/.cxx/
+android/captures/
+android/local.properties
+android/app/release/
+android/gradle-app.setting
+android/hs_err_pid*
+*.hprof
+*.apk
+*.aab
 
-# Temporary files created by Metro to check the health of the file watcher
-.metro-health-check*
+# Android keystore — Play Store 업로드 키는 절대 커밋 금지
+*.keystore
+!android/app/debug.keystore
+*.jks
 
-# testing
-/coverage
+# ─────────────────────────────────────────────────────────────────────────────
+# iOS (MVP 에서 사용 안 하지만 템플릿 정리)
+# ─────────────────────────────────────────────────────────────────────────────
+ios/Pods/
+ios/build/
+ios/*.xcworkspace/xcuserdata/
+ios/*.xcodeproj/xcuserdata/
+ios/*.xcodeproj/project.xcworkspace/xcuserdata/
 
-# Yarn
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/sdks
-!.yarn/versions
+# ─────────────────────────────────────────────────────────────────────────────
+# 보안 / 민감 정보 (절대 커밋 금지)
+# ─────────────────────────────────────────────────────────────────────────────
+# Firebase 설정 — 공개 identifier 수준이지만 관례상 제외
+android/app/google-services.json
+ios/GoogleService-Info.plist
+
+# 환경변수
+.env
+.env.local
+.env.*.local
+
+# 서명 키 비밀번호
+android/keystore.properties
+android/app/keystore.properties
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TypeScript 빌드 캐시
+# ─────────────────────────────────────────────────────────────────────────────
+*.tsbuildinfo
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 테스트 커버리지
+# ─────────────────────────────────────────────────────────────────────────────
+coverage/
+.nyc_output/
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 로그
+# ─────────────────────────────────────────────────────────────────────────────
+*.log
+logs/
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Ruby/CocoaPods (iOS 쪽 — 무시해도 되지만 정리상)
+# ─────────────────────────────────────────────────────────────────────────────
+vendor/
+.bundle/
+
+# ─────────────────────────────────────────────────────────────────────────────
+# OS/Shell 임시 파일
+# ─────────────────────────────────────────────────────────────────────────────
+*.swp
+*.swo
+*~

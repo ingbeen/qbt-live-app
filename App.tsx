@@ -1,37 +1,16 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
+import React, { useEffect } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import database from '@react-native-firebase/database';
 
-import { NewAppScreen } from '@react-native/new-app-screen';
-import { StatusBar, StyleSheet, useColorScheme, View } from 'react-native';
-import {
-  SafeAreaProvider,
-  useSafeAreaInsets,
-} from 'react-native-safe-area-context';
-
-function App() {
-  const isDarkMode = useColorScheme() === 'dark';
-
-  return (
-    <SafeAreaProvider>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-      <AppContent />
-    </SafeAreaProvider>
-  );
-}
-
-function AppContent() {
-  const safeAreaInsets = useSafeAreaInsets();
+export default function App() {
+  useEffect(() => {
+    database().setPersistenceEnabled(false);
+    console.log('[Firebase] initialized, persistence OFF');
+  }, []);
 
   return (
     <View style={styles.container}>
-      <NewAppScreen
-        templateFileName="App.tsx"
-        safeAreaInsets={safeAreaInsets}
-      />
+      <Text style={styles.text}>Hello QBT Live</Text>
     </View>
   );
 }
@@ -39,7 +18,9 @@ function AppContent() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#0d1117',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
+  text: { color: '#e6edf3', fontSize: 20 },
 });
-
-export default App;

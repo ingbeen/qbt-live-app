@@ -27,6 +27,9 @@ desktop.ini
 .project
 .classpath
 
+# Claude Code 로컬 작업 디렉토리
+.claude/
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Node.js / npm
 # ─────────────────────────────────────────────────────────────────────────────
@@ -52,6 +55,7 @@ android/app/build/
 android/build/
 android/.gradle/
 android/.cxx/
+android/app/.cxx/
 android/captures/
 android/local.properties
 android/app/release/

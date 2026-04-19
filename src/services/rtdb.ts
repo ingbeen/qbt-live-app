@@ -13,6 +13,9 @@ import type {
   FillHistory,
   BalanceAdjustHistory,
   SignalHistory,
+  ChartMeta,
+  PriceChartSeries,
+  EquityChartSeries,
 } from '../types/rtdb';
 import { RTDB_PATHS } from '../utils/constants';
 import { kstNow } from '../utils/format';
@@ -128,6 +131,39 @@ export const submitFillDismiss = async (
     TIMEOUT_MS,
   );
 };
+
+// ─── /charts/* ───
+
+export const readPriceChartMeta = (
+  assetId: AssetId,
+): Promise<ChartMeta | null> =>
+  readOnce<ChartMeta>(`${RTDB_PATHS.CHARTS_PRICES}/${assetId}/meta`);
+
+export const readPriceChartRecent = (
+  assetId: AssetId,
+): Promise<PriceChartSeries | null> =>
+  readOnce<PriceChartSeries>(`${RTDB_PATHS.CHARTS_PRICES}/${assetId}/recent`);
+
+export const readPriceChartArchive = (
+  assetId: AssetId,
+  year: number,
+): Promise<PriceChartSeries | null> =>
+  readOnce<PriceChartSeries>(
+    `${RTDB_PATHS.CHARTS_PRICES}/${assetId}/archive/${year}`,
+  );
+
+export const readEquityChartMeta = (): Promise<ChartMeta | null> =>
+  readOnce<ChartMeta>(`${RTDB_PATHS.CHARTS_EQUITY}/meta`);
+
+export const readEquityChartRecent = (): Promise<EquityChartSeries | null> =>
+  readOnce<EquityChartSeries>(`${RTDB_PATHS.CHARTS_EQUITY}/recent`);
+
+export const readEquityChartArchive = (
+  year: number,
+): Promise<EquityChartSeries | null> =>
+  readOnce<EquityChartSeries>(
+    `${RTDB_PATHS.CHARTS_EQUITY}/archive/${year}`,
+  );
 
 // ─── 히스토리 읽기 (중첩 트리 → flat 최신순 배열) ───
 

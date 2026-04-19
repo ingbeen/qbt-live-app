@@ -1,0 +1,64 @@
+import React from 'react';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { COLORS } from '../utils/colors';
+import { ASSETS } from '../utils/constants';
+import type { AssetId } from '../types/rtdb';
+import { toUpperTicker } from '../utils/format';
+
+interface AssetSelectorProps {
+  value: AssetId;
+  onChange: (id: AssetId) => void;
+}
+
+export const AssetSelector: React.FC<AssetSelectorProps> = ({
+  value,
+  onChange,
+}) => (
+  <View style={styles.row}>
+    {ASSETS.map((id) => {
+      const isActive = value === id;
+      return (
+        <TouchableOpacity
+          key={id}
+          style={[styles.cell, isActive && styles.cellActive]}
+          onPress={() => onChange(id)}
+          activeOpacity={0.7}
+        >
+          <Text style={[styles.cellText, isActive && styles.cellTextActive]}>
+            {toUpperTicker(id)}
+          </Text>
+        </TouchableOpacity>
+      );
+    })}
+  </View>
+);
+
+const styles = StyleSheet.create({
+  row: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  cell: {
+    flex: 1,
+    paddingVertical: 8,
+    backgroundColor: 'transparent',
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cellActive: {
+    // COLORS.accent + '22' = 파랑 반투명 (FillForm 기존 패턴과 일관)
+    backgroundColor: COLORS.accent + '22',
+    borderColor: COLORS.accent,
+  },
+  cellText: {
+    color: COLORS.sub,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  cellTextActive: {
+    color: COLORS.accent,
+  },
+});

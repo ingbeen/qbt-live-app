@@ -8,6 +8,9 @@ import type {
   BalanceAdjustPayload,
   FillHistory,
   BalanceAdjustHistory,
+  ChartMeta,
+  PriceChartSeries,
+  EquityChartSeries,
 } from '../types/rtdb';
 import {
   readPortfolio,
@@ -20,6 +23,12 @@ import {
   readHistoryFills,
   readHistoryBalanceAdjusts,
   readHistorySignals,
+  readPriceChartMeta,
+  readPriceChartRecent,
+  readPriceChartArchive,
+  readEquityChartMeta,
+  readEquityChartRecent,
+  readEquityChartArchive,
   submitModelSync as submitModelSyncRtdb,
   submitFill as submitFillRtdb,
   submitBalanceAdjust as submitBalanceAdjustRtdb,
@@ -32,6 +41,27 @@ export type AuthUser = {
   uid: string;
   email: string | null;
 };
+
+// 차트 탭 로컬 캐시. meta/recent 는 첫 로드 전 null, archive 는 연도별 지연 로드.
+export interface PriceChartCache {
+  meta: ChartMeta | null;
+  recent: PriceChartSeries | null;
+  archive: Partial<Record<number, PriceChartSeries>>;
+}
+
+export interface EquityChartCache {
+  meta: ChartMeta | null;
+  recent: EquityChartSeries | null;
+  archive: Partial<Record<number, EquityChartSeries>>;
+}
+
+export type ChartTarget = AssetId | 'equity';
+
+const emptyEquityCache = (): EquityChartCache => ({
+  meta: null,
+  recent: null,
+  archive: {},
+});
 
 interface Store {
   // 인증 / 네트워크
@@ -55,6 +85,10 @@ interface Store {
   historyBalanceAdjusts: BalanceAdjustHistory[] | null;
   historySignals: SignalHistoryEntry[] | null;
 
+  // /charts/*
+  priceCharts: Partial<Record<AssetId, PriceChartCache>>;
+  equityChart: EquityChartCache;
+
   // UI
   loading: Partial<Record<string, boolean>>;
   lastToast: string | null;
@@ -72,6 +106,9 @@ interface Store {
   // 액션: 읽기
   refreshHome: () => Promise<void>;
   refreshTrade: () => Promise<void>;
+  refreshChart: (target: ChartTarget) => Promise<void>;
+  loadPriceArchive: (assetId: AssetId, year: number) => Promise<void>;
+  loadEquityArchive: (year: number) => Promise<void>;
 
   // 액션: 쓰기
   submitModelSync: () => Promise<void>;
@@ -109,6 +146,9 @@ export const useStore = create<Store>((set, get) => ({
   historyBalanceAdjusts: null,
   historySignals: null,
 
+  priceCharts: {},
+  equityChart: emptyEquityCache(),
+
   loading: {},
   lastToast: null,
 
@@ -129,6 +169,8 @@ export const useStore = create<Store>((set, get) => ({
       historyFills: null,
       historyBalanceAdjusts: null,
       historySignals: null,
+      priceCharts: {},
+      equityChart: emptyEquityCache(),
       loading: {},
       lastToast: null,
     }),
@@ -257,6 +299,117 @@ export const useStore = create<Store>((set, get) => ({
       console.error('[store] submitFillDismiss failed:', e);
       set({ lastError: toUserMessage(e) });
       throw e;
+    }
+  },
+
+  refreshChart: async (target) => {
+    const loadingKey = `chart_${target}`;
+    set({ loading: { ...get().loading, [loadingKey]: true } });
+    try {
+      if (target === 'equity') {
+        const [meta, recent] = await Promise.all([
+          readEquityChartMeta(),
+          readEquityChartRecent(),
+        ]);
+        set({
+          equityChart: {
+            meta,
+            recent,
+            archive: get().equityChart.archive,
+          },
+          lastError: null,
+          loading: { ...get().loading, [loadingKey]: false },
+        });
+      } else {
+        const assetId = target;
+        const [meta, recent] = await Promise.all([
+          readPriceChartMeta(assetId),
+          readPriceChartRecent(assetId),
+        ]);
+        const existing = get().priceCharts[assetId];
+        set({
+          priceCharts: {
+            ...get().priceCharts,
+            [assetId]: {
+              meta,
+              recent,
+              archive: existing?.archive ?? {},
+            },
+          },
+          lastError: null,
+          loading: { ...get().loading, [loadingKey]: false },
+        });
+      }
+    } catch (e) {
+      console.error('[store] refreshChart failed:', e);
+      set({
+        lastError: toUserMessage(e),
+        loading: { ...get().loading, [loadingKey]: false },
+      });
+    }
+  },
+
+  loadPriceArchive: async (assetId, year) => {
+    const existing = get().priceCharts[assetId];
+    if (existing?.archive[year]) return;
+    const loadingKey = `chart_archive_${assetId}_${year}`;
+    set({ loading: { ...get().loading, [loadingKey]: true } });
+    try {
+      const archive = await readPriceChartArchive(assetId, year);
+      if (!archive) {
+        set({ loading: { ...get().loading, [loadingKey]: false } });
+        return;
+      }
+      const current = get().priceCharts[assetId] ?? {
+        meta: null,
+        recent: null,
+        archive: {},
+      };
+      set({
+        priceCharts: {
+          ...get().priceCharts,
+          [assetId]: {
+            ...current,
+            archive: { ...current.archive, [year]: archive },
+          },
+        },
+        lastError: null,
+        loading: { ...get().loading, [loadingKey]: false },
+      });
+    } catch (e) {
+      console.error('[store] loadPriceArchive failed:', e);
+      set({
+        lastError: toUserMessage(e),
+        loading: { ...get().loading, [loadingKey]: false },
+      });
+    }
+  },
+
+  loadEquityArchive: async (year) => {
+    if (get().equityChart.archive[year]) return;
+    const loadingKey = `chart_archive_equity_${year}`;
+    set({ loading: { ...get().loading, [loadingKey]: true } });
+    try {
+      const archive = await readEquityChartArchive(year);
+      if (!archive) {
+        set({ loading: { ...get().loading, [loadingKey]: false } });
+        return;
+      }
+      const current = get().equityChart;
+      set({
+        equityChart: {
+          ...current,
+          archive: { ...current.archive, [year]: archive },
+        },
+        lastError: null,
+        loading: { ...get().loading, [loadingKey]: false },
+      });
+    } catch (e) {
+      console.error('[store] loadEquityArchive failed:', e);
+      set({
+        lastError: toUserMessage(e),
+        loading: { ...get().loading, [loadingKey]: false },
+      });
     }
   },
 }));

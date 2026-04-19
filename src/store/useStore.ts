@@ -13,6 +13,7 @@ import {
   readInboxBalanceAdjusts,
   readInboxFillDismiss,
   readInboxModelSync,
+  submitModelSync as submitModelSyncRtdb,
   type InboxItem,
 } from '../services/rtdb';
 
@@ -40,6 +41,7 @@ interface Store {
 
   // UI
   loading: Partial<Record<string, boolean>>;
+  lastToast: string | null;
 
   // 액션: 세션
   setUser: (user: AuthUser | null) => void;
@@ -47,8 +49,15 @@ interface Store {
   setLastError: (error: string | null) => void;
   clearAll: () => void;
 
+  // 액션: UI 알림
+  showToast: (message: string) => void;
+  hideToast: () => void;
+
   // 액션: 읽기
   refreshHome: () => Promise<void>;
+
+  // 액션: 쓰기
+  submitModelSync: () => Promise<void>;
 }
 
 const toUserMessage = (e: unknown): string => {
@@ -77,6 +86,7 @@ export const useStore = create<Store>((set, get) => ({
   inboxModelSync: null,
 
   loading: {},
+  lastToast: null,
 
   setUser: (user) => set({ user }),
   setOnline: (online) => set({ isOnline: online }),
@@ -93,7 +103,11 @@ export const useStore = create<Store>((set, get) => ({
       inboxFillDismiss: null,
       inboxModelSync: null,
       loading: {},
+      lastToast: null,
     }),
+
+  showToast: (message) => set({ lastToast: message }),
+  hideToast: () => set({ lastToast: null }),
 
   refreshHome: async () => {
     set({ loading: { ...get().loading, home: true } });
@@ -132,6 +146,20 @@ export const useStore = create<Store>((set, get) => ({
         lastError: toUserMessage(e),
         loading: { ...get().loading, home: false },
       });
+    }
+  },
+
+  submitModelSync: async () => {
+    try {
+      await submitModelSyncRtdb();
+      set({
+        lastToast:
+          '동기화 요청이 저장되었습니다.\n다음 실행에 반영됩니다.',
+        lastError: null,
+      });
+    } catch (e) {
+      console.error('[store] submitModelSync failed:', e);
+      set({ lastError: toUserMessage(e) });
     }
   },
 }));

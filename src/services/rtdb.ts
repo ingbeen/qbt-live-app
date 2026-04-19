@@ -1,12 +1,15 @@
 import { getApp } from '@react-native-firebase/app';
-import { getDatabase, ref, get } from '@react-native-firebase/database';
+import { getDatabase, ref, get, set } from '@react-native-firebase/database';
+import uuid from 'react-native-uuid';
 import type {
   Portfolio,
   Signal,
   PendingOrder,
   AssetId,
+  ModelSyncPayload,
 } from '../types/rtdb';
 import { RTDB_PATHS } from '../utils/constants';
+import { kstNow } from '../utils/format';
 
 const TIMEOUT_MS = 10_000;
 
@@ -65,3 +68,14 @@ export const readInboxFillDismiss = (): Promise<InboxItem[]> =>
 
 export const readInboxModelSync = (): Promise<InboxItem[]> =>
   readInbox(RTDB_PATHS.MODEL_SYNC_INBOX);
+
+// ─── 쓰기 헬퍼 (inbox push) ───
+
+export const submitModelSync = async (): Promise<void> => {
+  const key = uuid.v4() as string;
+  const payload: ModelSyncPayload = { input_time_kst: kstNow() };
+  await withTimeout(
+    set(dbRef(`${RTDB_PATHS.MODEL_SYNC_INBOX}/${key}`), payload),
+    TIMEOUT_MS,
+  );
+};

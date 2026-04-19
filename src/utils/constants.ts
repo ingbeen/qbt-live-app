@@ -26,3 +26,13 @@ export const RTDB_PATHS = {
 } as const;
 
 export const ASSETS: readonly AssetId[] = ['sso', 'qld', 'gld', 'tlt'];
+
+export const SYMBOLS = {
+  WARN: '⚠',
+  BOLT: '⚡',
+  ARROW_UP: '▲',
+  ARROW_DOWN: '▼',
+  CIRCLE: '●',
+  CLOSE: '✕',
+  ARROW_RIGHT: '→',
+} as const;

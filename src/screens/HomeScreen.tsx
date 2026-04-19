@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -7,40 +7,31 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { COLORS } from '../utils/colors';
-import { ASSETS } from '../utils/constants';
-import type { AssetSnapshot, PendingOrder } from '../types/rtdb';
-import {
-  formatUSDInt,
-  formatShares,
-  formatWeight,
-  toUpperTicker,
-} from '../utils/format';
 import { useStore } from '../store/useStore';
-import { Badge } from '../components/Badge';
 import { PullToRefreshScrollView } from '../components/PullToRefreshScrollView';
-
-type BadgeDef = { text: string; color: string };
-
-const getAssetBadge = (
-  snap: AssetSnapshot,
-  pending: PendingOrder | undefined,
-): BadgeDef => {
-  if (pending) {
-    return pending.delta_amount > 0
-      ? { text: '매수대기', color: COLORS.accent }
-      : { text: '매도대기', color: COLORS.red };
-  }
-  if (snap.actual_shares > 0) return { text: '보유', color: COLORS.green };
-  return { text: '현금', color: COLORS.sub };
-};
+import { UpdateStatusBadge } from '../components/UpdateStatusBadge';
+import { ReminderBlock } from '../components/ReminderBlock';
+import { SignalNextFillBlock } from '../components/SignalNextFillBlock';
+import { AssetSummaryCard } from '../components/AssetSummaryCard';
+import { MAProximityCard } from '../components/MAProximityCard';
+import { ModelCompareCard } from '../components/ModelCompareCard';
+import { SyncDialog } from '../components/SyncDialog';
+import { Toast } from '../components/Toast';
 
 export const HomeScreen: React.FC = () => {
   const portfolio = useStore((s) => s.portfolio);
   const signals = useStore((s) => s.signals);
   const pendingOrders = useStore((s) => s.pendingOrders);
+  const inboxFills = useStore((s) => s.inboxFills);
+  const inboxFillDismiss = useStore((s) => s.inboxFillDismiss);
   const loading = useStore((s) => s.loading);
   const lastError = useStore((s) => s.lastError);
+  const lastToast = useStore((s) => s.lastToast);
   const refreshHome = useStore((s) => s.refreshHome);
+  const submitModelSync = useStore((s) => s.submitModelSync);
+  const hideToast = useStore((s) => s.hideToast);
+
+  const [dialogVisible, setDialogVisible] = useState(false);
 
   const isLoadingHome = loading.home === true;
 
@@ -51,6 +42,19 @@ export const HomeScreen: React.FC = () => {
   const onRefresh = useCallback(() => {
     refreshHome();
   }, [refreshHome]);
+
+  const onSyncPress = useCallback(() => {
+    setDialogVisible(true);
+  }, []);
+
+  const onSyncCancel = useCallback(() => {
+    setDialogVisible(false);
+  }, []);
+
+  const onSyncConfirm = useCallback(async () => {
+    setDialogVisible(false);
+    await submitModelSync();
+  }, [submitModelSync]);
 
   if (portfolio === null && isLoadingHome) {
     return (
@@ -79,69 +83,60 @@ export const HomeScreen: React.FC = () => {
     );
   }
 
-  const totalEquity = portfolio.actual_equity;
-  const cashWeight =
-    totalEquity > 0 ? portfolio.shared_cash_actual / totalEquity : 0;
-
   return (
-    <PullToRefreshScrollView
-      refreshing={isLoadingHome}
-      onRefresh={onRefresh}
-      contentContainerStyle={styles.content}
-    >
-      {lastError ? <Text style={styles.errorBanner}>{lastError}</Text> : null}
+    <View style={styles.root}>
+      <PullToRefreshScrollView
+        refreshing={isLoadingHome}
+        onRefresh={onRefresh}
+        contentContainerStyle={styles.content}
+      >
+        {lastError ? (
+          <Text style={styles.errorBanner}>{lastError}</Text>
+        ) : null}
 
-      <View style={styles.card}>
-        <View style={styles.cardHeader}>
-          <Text style={styles.cardTitle}>자산 현황</Text>
-          <Text style={styles.cardAmount}>{formatUSDInt(totalEquity)}</Text>
-        </View>
+        <UpdateStatusBadge executionDate={portfolio.execution_date} />
 
-        <View style={styles.divider} />
+        <ReminderBlock
+          pendingOrders={pendingOrders}
+          inboxFills={inboxFills}
+          inboxFillDismiss={inboxFillDismiss}
+          signals={signals}
+        />
 
-        {ASSETS.map((id) => {
-          const snap = portfolio.assets[id];
-          const pending = pendingOrders?.[id];
-          const badge = getAssetBadge(snap, pending);
-          const close = signals?.[id]?.close ?? 0;
-          const valueUSD = snap.actual_shares * close;
-          const weight = totalEquity > 0 ? valueUSD / totalEquity : 0;
+        <SignalNextFillBlock
+          pendingOrders={pendingOrders}
+          signals={signals}
+        />
 
-          return (
-            <View key={id} style={styles.row}>
-              <View style={styles.rowLeft}>
-                <Text style={styles.ticker}>{toUpperTicker(id)}</Text>
-                <Badge text={badge.text} color={badge.color} />
-              </View>
-              <View style={styles.rowRight}>
-                <Text style={styles.rowShares}>
-                  {formatShares(snap.actual_shares)}
-                </Text>
-                <Text style={styles.rowWeight}>{formatWeight(weight)}</Text>
-              </View>
-            </View>
-          );
-        })}
+        <AssetSummaryCard
+          portfolio={portfolio}
+          signals={signals}
+          pendingOrders={pendingOrders}
+        />
 
-        <View style={styles.divider} />
+        <MAProximityCard signals={signals} />
 
-        <View style={styles.row}>
-          <View style={styles.rowLeft}>
-            <Text style={styles.ticker}>현금</Text>
-          </View>
-          <View style={styles.rowRight}>
-            <Text style={styles.rowShares}>
-              {formatUSDInt(portfolio.shared_cash_actual)}
-            </Text>
-            <Text style={styles.rowWeight}>{formatWeight(cashWeight)}</Text>
-          </View>
-        </View>
-      </View>
-    </PullToRefreshScrollView>
+        <ModelCompareCard portfolio={portfolio} onSyncPress={onSyncPress} />
+      </PullToRefreshScrollView>
+
+      <SyncDialog
+        visible={dialogVisible}
+        onCancel={onSyncCancel}
+        onConfirm={onSyncConfirm}
+        pendingOrders={pendingOrders}
+        signals={signals}
+      />
+
+      <Toast message={lastToast} onClose={hideToast} />
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: COLORS.bg,
+  },
   centerContainer: {
     flex: 1,
     backgroundColor: COLORS.bg,
@@ -181,60 +176,5 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     fontSize: 14,
     fontWeight: '600',
-  },
-  card: {
-    backgroundColor: COLORS.card,
-    borderColor: COLORS.border,
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 14,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  cardTitle: {
-    color: COLORS.text,
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  cardAmount: {
-    color: COLORS.text,
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  divider: {
-    height: 1,
-    backgroundColor: COLORS.border,
-    marginVertical: 10,
-  },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 6,
-  },
-  rowLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  rowRight: {
-    alignItems: 'flex-end',
-  },
-  ticker: {
-    color: COLORS.text,
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  rowShares: {
-    color: COLORS.text,
-    fontSize: 12,
-  },
-  rowWeight: {
-    color: COLORS.sub,
-    fontSize: 10,
-    marginTop: 2,
   },
 });

@@ -1,26 +1,36 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import database from '@react-native-firebase/database';
+import { StatusBar } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { NavigationContainer } from '@react-navigation/native';
+import { initFirebase } from './src/services/firebase';
+import { subscribeAuthState } from './src/services/auth';
+import { useStore } from './src/store/useStore';
+import { LoginScreen } from './src/screens/LoginScreen';
+import { AppNavigator } from './src/navigation/AppNavigator';
+import { COLORS } from './src/utils/colors';
 
 export default function App() {
+  const user = useStore((s) => s.user);
+
   useEffect(() => {
-    database().setPersistenceEnabled(false);
-    console.log('[Firebase] initialized, persistence OFF');
+    initFirebase();
+    const unsubAuth = subscribeAuthState((u) =>
+      useStore.getState().setUser(u),
+    );
+    return () => {
+      unsubAuth();
+    };
   }, []);
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.text}>Hello QBT Live</Text>
-    </View>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <StatusBar barStyle="light-content" backgroundColor={COLORS.bg} />
+        <NavigationContainer>
+          {user ? <AppNavigator /> : <LoginScreen />}
+        </NavigationContainer>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#0d1117',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  text: { color: '#e6edf3', fontSize: 20 },
-});

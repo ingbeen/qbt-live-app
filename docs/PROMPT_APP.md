@@ -290,7 +290,7 @@ Phase 1 계획 단계에서 사용자 결정에 따라 **`compileSdk` / `targetS
 
 ---
 
-## Phase 2: 인증 + 네비게이션 골격
+## Phase 2: 인증 + 네비게이션 골격 ✅ **완료 상태 (2026-04-19)**
 
 ### [목적]
 Firebase Auth 이메일/비밀번호 로그인을 구현하고, 4탭(홈/차트/거래/설정) 빈 화면 구조를 만들어 탭 전환이 가능하게 한다. **로그인 후 자동 재로그인**도 작동해야 한다.
@@ -324,21 +324,65 @@ Firebase Auth 이메일/비밀번호 로그인을 구현하고, 4탭(홈/차트/
 
 ### [DoD 검증 체크리스트]
 
-- [ ] 앱 첫 실행 시 LoginScreen 표시
-- [ ] 잘못된 이메일/비밀번호 입력 → 빨간 에러 텍스트 "이메일 또는 비밀번호가 올바르지 않습니다"
-- [ ] 올바른 자격증명 → 로그인 성공 → 4탭 화면으로 이동
-- [ ] "QBT Live" 헤더가 모든 탭에서 고정 표시
-- [ ] 탭 4개 전환 가능 (홈/차트/거래/설정)
-- [ ] 앱 재시작 시 자동 재로그인 (로그인 화면 스킵)
-- [ ] 설정 탭에 "로그아웃" 버튼 없음 (Phase 7 에서 추가)
-- [ ] 색상이 모두 `COLORS` 상수 사용 (하드코딩 hex 없음, `CLAUDE.md §3.3`)
-- [ ] `tsc --noEmit` 타입 에러 0개
+- [x] 앱 첫 실행 시 LoginScreen 표시 (로그인 세션 없을 때)
+- [x] 잘못된 이메일/비밀번호 입력 → 빨간 에러 텍스트 "이메일 또는 비밀번호가 올바르지 않습니다"
+- [x] 올바른 자격증명 → 로그인 성공 → 4탭 화면으로 이동
+- [x] "QBT Live" 헤더가 모든 탭에서 고정 표시
+- [x] 탭 4개 전환 가능 (홈/차트/거래/설정)
+- [x] 앱 재시작 시 자동 재로그인 (로그인 화면 스킵)
+- [x] 설정 탭에 "로그아웃" 버튼 없음 (Phase 7 에서 추가)
+- [x] 색상이 모두 `COLORS` 상수 사용 (하드코딩 hex 없음, `CLAUDE.md §3.3`)
+- [x] `tsc --noEmit` 타입 에러 0개
 
 ### [주의사항]
 
 - `setPersistenceEnabled` 는 Auth 가 아닌 **Database** 에서 호출 (React Native Firebase 관례). 헷갈리면 Context7 확인.
 - `AppState` 리스너 / `NetInfo` 는 Phase 8 에서 추가. 이 Phase 에서는 `isOnline` 을 `true` 로 고정.
 - RTDB 읽기 / 쓰기는 이 Phase 에서 **금지**. 다음 Phase.
+
+### [수행 결과 / 특이사항]
+
+Phase 2 구현 중 발생한 이슈와 해결 내역. Phase 3 이후에도 동일 환경/구조를 공유하므로 참고.
+
+#### 설계 문서 갱신 연동
+
+Phase 1 종료 시점에 이월된 부채 — **Firebase namespaced API deprecation 경고 해소** — 를 Phase 2 에서 처리. `src/services/firebase.ts`, `src/services/auth.ts` 를 모두 **modular API** 로 작성:
+
+- `firebase.ts`: `getApp()` + `getDatabase(app)` + `setPersistenceEnabled(db, false)`
+- `auth.ts`: `getAuth()` + `signInWithEmailAndPassword(auth, email, password)` + `signOut(auth)` + `onAuthStateChanged(auth, cb)`
+
+Phase 1 빌드 logcat 에서 출력되던 deprecation 경고 2건이 Phase 2 빌드에서 더 이상 나오지 않음을 육안 검증 완료.
+
+설계 문서 측 갱신 대상 (사용자 별도 커밋으로 진행):
+- `CLAUDE.md §6.1` — `initFirebase()` 예제 코드가 `database().setPersistenceEnabled(false)` (namespaced) 로 작성되어 있음. `getDatabase` / `setPersistenceEnabled(db, false)` modular 스타일로 교체 대상.
+- `docs/DESIGN_APP.md §7.2` — `services/auth.ts` 예제가 `auth().signInWithEmailAndPassword(...)` (namespaced). `getAuth` / `signInWithEmailAndPassword(getAuth(), ...)` modular 스타일로 교체 대상.
+
+#### 계획 대비 추가된 수정
+
+설계서 §8.1 의 `App.tsx` 예시에는 없지만, React Navigation v7 + `react-native-gesture-handler` v2 + `react-native-safe-area-context` v5 조합의 **기술적 필수** 래핑이라 추가:
+
+1. **`GestureHandlerRootView`** (`react-native-gesture-handler`): 앱 루트에 래핑. 제스처 핸들러가 올바르게 동작하려면 필수. New Architecture ON 환경에서도 자동 처리 안 됨 — 명시적 래핑 필요.
+2. **`SafeAreaProvider`** (`react-native-safe-area-context`): `useSafeAreaInsets` / `SafeAreaView` 컴포넌트가 동작하려면 루트에 Provider 필요. `HomeHeader`, `LoginScreen` 양쪽 모두에서 safe area 를 사용하므로 Provider 도입.
+3. **`StatusBar`** 명시 설정: `barStyle="light-content"` + `backgroundColor={COLORS.bg}` — 다크 모드 앱이므로 상단 시스템 바 글자가 밝아야 가독성 확보.
+4. **`HomeHeader`** 에 `useSafeAreaInsets().top` 적용: Bottom Tab Navigator 의 커스텀 헤더는 기본적으로 safe area 를 건너뛰지 않음. 상단 status bar 높이(노치 포함)를 직접 패딩으로 반영.
+5. **`LoginScreen`** 에 `SafeAreaView` 래핑: 다크 배경이 status bar 영역까지 이어지도록 + 상단 노치 영역 안전 처리.
+
+#### 실행 중 확인된 팁
+
+- **로그인 상태 초기화**: Phase 7 에서 설정 탭에 "로그아웃" 버튼 추가 전까지는, LoginScreen 을 수동으로 재현하려면 `adb shell pm clear com.ingbeen.qbtlive` 로 앱 데이터 삭제 후 재실행 필요.
+- **`onAuthStateChanged` 초기 호출 동작**: 앱 시작 직후 `fbUser === null` 로 한 번 호출된 뒤, Firebase Auth 가 디스크에서 세션 복원에 성공하면 실제 사용자 객체로 한 번 더 호출됨 (총 2회). `subscribeAuthState` 가 여러 번 `setUser` 를 호출해도 Zustand 의 얕은 비교로 리렌더 최소화 — 동작에 문제 없음.
+- **Auth persistence 는 Firebase 내부 구현**: v24 에서 토큰을 디스크(AsyncStorage/Keychain 계열)에 자동 저장하여 재시작 시 복원. 이는 Firebase 라이브러리 내부 구현이며 `CLAUDE.md §12` 의 "앱 코드 레벨 AsyncStorage 금지" 규칙과 무관.
+- **탭 이름 한글**: `Tab.Screen name="홈"` 은 라우트 키이자 탭 레이블 기본값. 한글 라우트 키가 문제되는 부분은 현재까지 없음 (Phase 3 이후 `navigation.navigate('홈')` 같은 호출이 필요해지면 재평가).
+
+#### Phase 3 로 이관된 후속 작업
+
+- **`src/types/rtdb.ts` 신규**: RTDB payload 타입 (Portfolio, Signals, PendingOrder, FillPayload 등) 전체 정의 (`DESIGN_APP.md §5.3`)
+- **`src/services/rtdb.ts` 신규**: `once('value')` 기반 읽기 헬퍼 (`readPortfolio`, `readAllSignals`, `readAllPendingOrders`, 4개 inbox readers) — `CLAUDE.md §6.2` 준수
+- **`src/utils/format.ts` 신규**: `formatKRW`, `formatShares`, `formatUSD`, `formatSignedPct`, `formatWeight`, `today`, `kstNow`, `formatShortDate`, `toUpperTicker`, `toSignalTicker` (`DESIGN_APP.md §16.1`)
+- **`src/utils/constants.ts` 확장**: `RTDB_PATHS`, `ASSETS` 추가 (Phase 2 에서는 YAGNI 로 생략했음)
+- **`src/store/useStore.ts` 확장**: `portfolio`, `signals`, `pendingOrders`, `inboxFills`, `inboxBalanceAdjusts`, `inboxFillDismiss`, `inboxModelSync`, `loading` 필드 + `refreshHome()` 액션 추가
+- **`src/components/Badge.tsx` 신규** + **`src/components/PullToRefreshScrollView.tsx` 신규**
+- **`src/screens/HomeScreen.tsx` 확장**: 자산 현황 카드 구현 (4자산 + 현금, 합계, 비중)
 
 ---
 

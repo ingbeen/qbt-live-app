@@ -1791,7 +1791,7 @@ const line = `${toUpperTicker(pending.asset_id)} ${estimatedShares}주 ${directi
 
 **헤더**: 좌측 "자산 현황" (13px 볼드) + 우측 합계 금액 (18px 볼드)
 - 합계 = `model_equity` 또는 `actual_equity` (MVP: `actual_equity` 사용)
-- 형식: `1억 424만원` (한국어 단위 포맷, §16.1)
+- 형식: `$10,424.50` (USD 포맷, §16.1)
 
 **자산별 행** (4개, SSO/QLD/GLD/TLT 순):
 ```
@@ -1801,8 +1801,14 @@ const line = `${toUpperTicker(pending.asset_id)} ${estimatedShares}주 ${directi
 
 - 왼쪽: 13px 볼드 티커 + 배지 (`[보유]` / `[현금]` / `[매수대기]` / `[매도대기]`)
 - 오른쪽:
-  - 상단: 12px 텍스트 `298주 $82.05` (수량은 `actual_shares`, 평균가는 계산 — 실제로는 `actual_avg_entry_price` 가 RTDB 에 없으므로 표시 불가. **MVP: 평균가 표시 생략** 또는 history 에서 계산. 결정 필요 — §15.1.7 참고)
-  - 하단: 10px 회색 `비중%` (자산 평가액 / 총 equity × 100, `.1` 소수점)
+  - 상단: 12px 텍스트 `298주` (수량은 `actual_shares`. 평균가는 §15.1.1 참고)
+  - 하단: 10px 회색 `비중%` (자산 평가액 / 총 equity × 100, 소수점 1자리)
+
+**자산별 비중 계산** (USD 통화 통일로 가능):
+```typescript
+const assetValueUSD = portfolio.assets[asset_id].actual_shares * signals[asset_id].close;
+const weight = assetValueUSD / portfolio.actual_equity;  // 0~1 비율
+```
 
 **마지막 행 — 현금**:
 ```
@@ -1810,7 +1816,7 @@ const line = `${toUpperTicker(pending.asset_id)} ${estimatedShares}주 ${directi
                                     {비중%}
 ```
 
-- `shared_cash_actual` → `1,234만원` 형식
+- `shared_cash_actual` → `$1,234.50` 형식
 - 비중 = `shared_cash_actual / actual_equity × 100`
 
 #### 15.1.1 평균가 / 진입일 표시 처리 (중요)
@@ -1855,14 +1861,14 @@ Model 비교                         ▼
 Model 비교                         ▲
 ─────────────────────────────────────
 Model           Actual
-1억 345만       1억 301만
+$10,345.00      $10,301.00
 
 SSO     M:300 / A:298  (-2)        ← 차이 있으면 노랑
 QLD     M:400 / A:395  (-5)
 GLD     M:55  / A:55
 TLT     M:170 / A:170
 ─────────────────────────
-현금    M:50만 / A:48.5만           ← 노랑
+현금    M:$500 / A:$498.50          ← 노랑
 
 [Model을 실제로 동기화]            ← 파랑 버튼
 ```
@@ -2133,11 +2139,11 @@ TradeScreen
 **현금 선택 시**:
 1. **현재 현금 표시**
    ```
-   현재 현금: 1,234만원
+   현재 현금: $1,234.50
    ```
-2. **새 현금 (원)**
-   - placeholder: "예: 1500000"
-   - 한국 원 단위
+2. **새 현금 (USD)**
+   - placeholder: "예: 1500.00"
+   - 달러 단위 (소수점 2자리)
 
 **공통**:
 - **사유** (자유 텍스트)
@@ -2238,42 +2244,42 @@ const buildHistoryTimeline = (
 
 ---
 
-## 16. 한국어 숫자 / 날짜 / 타임스탬프 포맷
+## 16. 숫자 / 날짜 / 타임스탬프 포맷
 
 ### 16.1 `src/utils/format.ts`
 
 ```typescript
-// ─── 금액 (원) — 한국어 단위 + 콤마 ───
+// ─── 금액 (USD, 달러) — 천 단위 콤마 + 소수점 2자리 ───
 
-export const formatKRW = (amount: number): string => {
-  if (amount < 10000) return `${amount.toLocaleString('ko-KR')}원`;
-
-  const 억 = Math.floor(amount / 100_000_000);
-  const 만 = Math.floor((amount % 100_000_000) / 10_000);
-
-  if (억 > 0 && 만 > 0) {
-    return `${억}억 ${만.toLocaleString('ko-KR')}만원`;
-  }
-  if (억 > 0) {
-    return `${억}억원`;
-  }
-  return `${만.toLocaleString('ko-KR')}만원`;
+export const formatUSD = (amount: number): string => {
+  const sign = amount < 0 ? '-' : '';
+  const abs = Math.abs(amount);
+  return `${sign}$${abs.toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
 };
 
 // 예시:
-// formatKRW(103_012_345) → "1억 301만원"
-// formatKRW(12_340_000)  → "1,234만원"
-// formatKRW(5_000)       → "5,000원"
+// formatUSD(10424.5)  → "$10,424.50"
+// formatUSD(1234.5)   → "$1,234.50"
+// formatUSD(82.05)    → "$82.05"
+// formatUSD(5)        → "$5.00"
+// formatUSD(-250.3)   → "-$250.30"
+
+// ─── 정수 달러 (비율 / 간단 표시용, 소수점 없음) ───
+
+export const formatUSDInt = (amount: number): string =>
+  `$${Math.round(amount).toLocaleString('en-US')}`;
+
+// 예시:
+// formatUSDInt(10424.5) → "$10,425"
+// formatUSDInt(82.05)   → "$82"
 
 // ─── 수량 ───
 
 export const formatShares = (shares: number): string =>
-  `${shares.toLocaleString('ko-KR')}주`;
-
-// ─── 달러 ───
-
-export const formatUSD = (price: number): string =>
-  `$${price.toFixed(2)}`;
+  `${shares.toLocaleString('en-US')}주`;
 
 // ─── 퍼센트 (부호 포함, 비율 ×100) ───
 
@@ -2319,13 +2325,15 @@ export const kstNow = (): string => {
 
 | 유형 | 예시 | 포맷 |
 |------|------|------|
-| 금액 (원) | `103,012,345` → `1억 301만원` | 큰 단위 한글 + 천 단위 콤마 |
-| 금액 (원) | `12,340,000` → `1,234만원` | - |
-| 금액 (원) | `5,000` → `5,000원` | - |
+| 금액 (USD, 기본) | `10424.5` → `$10,424.50` | `$` + 천 단위 콤마 + 소수점 2자리 |
+| 금액 (USD, 소액) | `82.05` → `$82.05` | - |
+| 금액 (USD, 정수) | `10425` → `$10,425` | `formatUSDInt` (차트 툴팁 등 좁은 공간용) |
 | 수량 | `1,234주` (대량) / `298주` (소량) | 천 단위 콤마 + "주" |
-| 달러 | `$82.05`, `$583.45` | `$` + 소수점 2자리 |
+| 가격 (주가) | `$82.05`, `$583.45` | `formatUSD` 동일 사용 |
 | 퍼센트 (부호) | `+3.23%`, `-0.84%` | 부호 + 소수점 2자리 |
 | 비중 | `33.8%` | 소수점 1자리 |
+
+**통화 기준**: 모든 금액은 USD (미국 달러). 서버가 `actual_equity`, `shared_cash_*`, `close`, `actual_price` 등 모든 금액 필드를 USD 로 저장하므로 앱은 변환 없이 그대로 표시한다. 상세는 `DESIGN_QBT_LIVE_FINAL.md §1.3` 참고.
 
 ### 16.3 시간대 / 거래일
 
@@ -2566,7 +2574,7 @@ export const SYMBOLS = {
 1. `src/types/rtdb.ts` — §5.3 타입 전체 정의
 2. `src/services/rtdb.ts` — `readPortfolio`, `readAllSignals`, `readAllPendingOrders`, `readInboxFills`, `readInboxFillDismiss`, `readInboxModelSync`
 3. `src/store/useStore.ts` — portfolio/signals/pendingOrders/inbox* 필드 + `refreshHome()` 액션
-4. `src/utils/format.ts` — `formatKRW`, `formatShares`, `formatWeight`, `formatSignedPct`, `today`
+4. `src/utils/format.ts` — `formatUSD`, `formatUSDInt`, `formatShares`, `formatWeight`, `formatSignedPct`, `today`
 5. `src/utils/colors.ts` — 색상 상수
 6. `src/components/Badge.tsx` — 공통 Badge 컴포넌트
 7. `src/components/PullToRefreshScrollView.tsx` — Pull-to-refresh 래퍼
@@ -2575,7 +2583,8 @@ export const SYMBOLS = {
 **검증**:
 - [ ] 홈 탭 진입 시 RTDB 데이터 로드 (loading 인디케이터)
 - [ ] 자산 현황 카드에 SSO/QLD/GLD/TLT + 현금 표시
-- [ ] 합계 금액 (`1억 424만원` 형식) 표시
+- [ ] 합계 금액 (`$10,424.50` 형식) 표시
+- [ ] 자산별 비중 (소수점 1자리 %, 예: `33.8%`) 표시
 - [ ] 배지 (`[보유]`/`[현금]`/`[매수대기]`/`[매도대기]`) 정상 표시
 - [ ] Pull-to-refresh 동작
 

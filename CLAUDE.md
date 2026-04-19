@@ -290,7 +290,7 @@ export const useStore = create<Store>((set, get) => ({
 | 대상 | 규칙 | 예시 |
 |------|------|------|
 | 컴포넌트 | PascalCase | `HomeScreen`, `AssetBadge`, `FillForm` |
-| 함수 / 변수 | camelCase | `formatKRW`, `refreshHome`, `assetId` |
+| 함수 / 변수 | camelCase | `formatUSD`, `refreshHome`, `assetId` |
 | 상수 | UPPER_SNAKE_CASE | `OWNER_UID`, `RTDB_URL`, `COLORS` |
 | 타입 / 인터페이스 | PascalCase | `Portfolio`, `AssetId`, `FillPayload` |
 | 파일명 (컴포넌트) | PascalCase.tsx | `HomeScreen.tsx`, `Badge.tsx` |
@@ -320,13 +320,15 @@ const AssetRow: React.FC<{ id: AssetId }> = ({ id }) => (
 
 ### 5.4 숫자 / 날짜 포맷
 
-- **금액 (원)**: 한국어 단위 (`formatKRW`, §`docs/DESIGN_APP.md §16.1`)
+- **금액 (USD)**: `$` + 천 단위 콤마 + 소수점 2자리 (`formatUSD`, §`docs/DESIGN_APP.md §16.1`)
+- **금액 (USD, 정수)**: 소수점 생략 — 차트 툴팁 등 좁은 공간용 (`formatUSDInt`)
 - **수량**: 천 단위 콤마 + "주" (`formatShares`)
-- **달러**: `$` + 소수점 2자리 (`formatUSD`)
 - **퍼센트 (부호)**: `+3.23%`, `-0.84%` (`formatSignedPct`, 비율 × 100)
 - **비중**: `33.8%` (`formatWeight`, 소수점 1자리)
 - **날짜 (표시)**: ISO 8601 `YYYY-MM-DD` 또는 짧은 표시 `4/15` (`formatShortDate`)
 - **타임스탬프 (RTDB 쓰기)**: ISO 8601 KST `YYYY-MM-DDTHH:MM:SS+09:00` (`kstNow`)
+
+**통화 기준**: 앱의 모든 금액 필드는 **USD (미국 달러)** 이다. 서버가 `actual_equity`, `shared_cash_*`, `close`, `actual_price` 등을 USD 로 저장한다 (`docs/DESIGN_QBT_LIVE_FINAL.md §1.3`). 앱은 환율 변환 없이 그대로 표시.
 
 **표시 시 변환 원칙**: 서버 데이터는 **그대로 저장**, 표시 시점에만 포맷 함수 적용.
 
@@ -336,8 +338,8 @@ const portfolio = await readPortfolio();
 portfolio.model_equity = portfolio.model_equity * 100;  // 절대 금지
 
 // ✓ 권장 (표시 시 변환)
-<Text>{formatKRW(portfolio.model_equity)}</Text>
-<Text>{formatSignedPct(portfolio.drift_pct)}</Text>  // 0.0037 → "+0.37%"
+<Text>{formatUSD(portfolio.model_equity)}</Text>         // 10424.5 → "$10,424.50"
+<Text>{formatSignedPct(portfolio.drift_pct)}</Text>       // 0.0037 → "+0.37%"
 ```
 
 ### 5.5 주석 작성 원칙

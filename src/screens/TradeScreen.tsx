@@ -1,22 +1,162 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ActivityIndicator,
+  TouchableOpacity,
+} from 'react-native';
 import { COLORS } from '../utils/colors';
+import { useStore } from '../store/useStore';
+import { PullToRefreshScrollView } from '../components/PullToRefreshScrollView';
+import { FillForm } from '../components/FillForm';
+import { AdjustForm } from '../components/AdjustForm';
+import { HistoryList } from '../components/HistoryList';
+import { Toast } from '../components/Toast';
 
-export const TradeScreen: React.FC = () => (
-  <View style={styles.container}>
-    <Text style={styles.text}>거래</Text>
-  </View>
-);
+type Mode = 'fill' | 'adjust';
+
+export const TradeScreen: React.FC = () => {
+  const portfolio = useStore((s) => s.portfolio);
+  const signals = useStore((s) => s.signals);
+  const pendingOrders = useStore((s) => s.pendingOrders);
+  const historyFills = useStore((s) => s.historyFills);
+  const historyBalanceAdjusts = useStore((s) => s.historyBalanceAdjusts);
+  const historySignals = useStore((s) => s.historySignals);
+  const loading = useStore((s) => s.loading);
+  const lastToast = useStore((s) => s.lastToast);
+  const refreshHome = useStore((s) => s.refreshHome);
+  const refreshTrade = useStore((s) => s.refreshTrade);
+  const hideToast = useStore((s) => s.hideToast);
+
+  const [mode, setMode] = useState<Mode>('fill');
+
+  const isLoadingTrade = loading.trade === true;
+  const needsHomeData = portfolio === null;
+
+  useEffect(() => {
+    if (needsHomeData) refreshHome();
+    refreshTrade();
+  }, [needsHomeData, refreshHome, refreshTrade]);
+
+  const onRefresh = useCallback(() => {
+    refreshHome();
+    refreshTrade();
+  }, [refreshHome, refreshTrade]);
+
+  if (portfolio === null) {
+    return (
+      <View style={styles.centerContainer}>
+        <ActivityIndicator color={COLORS.accent} size="large" />
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.root}>
+      <PullToRefreshScrollView
+        refreshing={isLoadingTrade}
+        onRefresh={onRefresh}
+        contentContainerStyle={styles.content}
+      >
+        <View style={styles.segment}>
+          <TouchableOpacity
+            style={[
+              styles.segmentItem,
+              mode === 'fill' && styles.segmentItemActive,
+            ]}
+            onPress={() => setMode('fill')}
+            activeOpacity={0.7}
+          >
+            <Text
+              style={[
+                styles.segmentText,
+                mode === 'fill' && styles.segmentTextActive,
+              ]}
+            >
+              체결
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.segmentItem,
+              mode === 'adjust' && styles.segmentItemActive,
+            ]}
+            onPress={() => setMode('adjust')}
+            activeOpacity={0.7}
+          >
+            <Text
+              style={[
+                styles.segmentText,
+                mode === 'adjust' && styles.segmentTextActive,
+              ]}
+            >
+              보정
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {mode === 'fill' ? (
+          <FillForm
+            portfolio={portfolio}
+            signals={signals}
+            pendingOrders={pendingOrders}
+          />
+        ) : (
+          <AdjustForm portfolio={portfolio} />
+        )}
+
+        <HistoryList
+          fills={historyFills}
+          balanceAdjusts={historyBalanceAdjusts}
+          signals={historySignals}
+        />
+      </PullToRefreshScrollView>
+
+      <Toast message={lastToast} onClose={hideToast} />
+    </View>
+  );
+};
 
 const styles = StyleSheet.create({
-  container: {
+  root: {
+    flex: 1,
+    backgroundColor: COLORS.bg,
+  },
+  centerContainer: {
     flex: 1,
     backgroundColor: COLORS.bg,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  text: {
-    color: COLORS.text,
-    fontSize: 20,
+  content: {
+    padding: 16,
+    paddingBottom: 32,
+  },
+  segment: {
+    flexDirection: 'row',
+    backgroundColor: COLORS.card,
+    borderColor: COLORS.border,
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 4,
+    marginBottom: 12,
+  },
+  segmentItem: {
+    flex: 1,
+    paddingVertical: 8,
+    borderRadius: 6,
+    alignItems: 'center',
+  },
+  segmentItemActive: {
+    backgroundColor: COLORS.accent + '22',
+  },
+  segmentText: {
+    color: COLORS.sub,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  segmentTextActive: {
+    color: COLORS.accent,
   },
 });

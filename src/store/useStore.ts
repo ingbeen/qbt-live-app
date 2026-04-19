@@ -4,6 +4,10 @@ import type {
   Signal,
   PendingOrder,
   AssetId,
+  FillPayload,
+  BalanceAdjustPayload,
+  FillHistory,
+  BalanceAdjustHistory,
 } from '../types/rtdb';
 import {
   readPortfolio,
@@ -13,8 +17,15 @@ import {
   readInboxBalanceAdjusts,
   readInboxFillDismiss,
   readInboxModelSync,
+  readHistoryFills,
+  readHistoryBalanceAdjusts,
+  readHistorySignals,
   submitModelSync as submitModelSyncRtdb,
+  submitFill as submitFillRtdb,
+  submitBalanceAdjust as submitBalanceAdjustRtdb,
+  submitFillDismiss as submitFillDismissRtdb,
   type InboxItem,
+  type SignalHistoryEntry,
 } from '../services/rtdb';
 
 export type AuthUser = {
@@ -39,6 +50,11 @@ interface Store {
   inboxFillDismiss: InboxItem[] | null;
   inboxModelSync: InboxItem[] | null;
 
+  // /history/*
+  historyFills: FillHistory[] | null;
+  historyBalanceAdjusts: BalanceAdjustHistory[] | null;
+  historySignals: SignalHistoryEntry[] | null;
+
   // UI
   loading: Partial<Record<string, boolean>>;
   lastToast: string | null;
@@ -55,9 +71,13 @@ interface Store {
 
   // 액션: 읽기
   refreshHome: () => Promise<void>;
+  refreshTrade: () => Promise<void>;
 
   // 액션: 쓰기
   submitModelSync: () => Promise<void>;
+  submitFill: (p: FillPayload) => Promise<void>;
+  submitBalanceAdjust: (p: BalanceAdjustPayload) => Promise<void>;
+  submitFillDismiss: (assetId: AssetId, reason?: string) => Promise<void>;
 }
 
 const toUserMessage = (e: unknown): string => {
@@ -85,6 +105,10 @@ export const useStore = create<Store>((set, get) => ({
   inboxFillDismiss: null,
   inboxModelSync: null,
 
+  historyFills: null,
+  historyBalanceAdjusts: null,
+  historySignals: null,
+
   loading: {},
   lastToast: null,
 
@@ -102,6 +126,9 @@ export const useStore = create<Store>((set, get) => ({
       inboxBalanceAdjusts: null,
       inboxFillDismiss: null,
       inboxModelSync: null,
+      historyFills: null,
+      historyBalanceAdjusts: null,
+      historySignals: null,
       loading: {},
       lastToast: null,
     }),
@@ -160,6 +187,76 @@ export const useStore = create<Store>((set, get) => ({
     } catch (e) {
       console.error('[store] submitModelSync failed:', e);
       set({ lastError: toUserMessage(e) });
+    }
+  },
+
+  refreshTrade: async () => {
+    set({ loading: { ...get().loading, trade: true } });
+    try {
+      const [historyFills, historyBalanceAdjusts, historySignals] =
+        await Promise.all([
+          readHistoryFills(),
+          readHistoryBalanceAdjusts(),
+          readHistorySignals(),
+        ]);
+      set({
+        historyFills,
+        historyBalanceAdjusts,
+        historySignals,
+        lastError: null,
+        loading: { ...get().loading, trade: false },
+      });
+    } catch (e) {
+      console.error('[store] refreshTrade failed:', e);
+      set({
+        lastError: toUserMessage(e),
+        loading: { ...get().loading, trade: false },
+      });
+    }
+  },
+
+  submitFill: async (p) => {
+    try {
+      await submitFillRtdb(p);
+      set({
+        lastToast:
+          '체결이 저장되었습니다.\n다음 실행에 반영됩니다.',
+        lastError: null,
+      });
+    } catch (e) {
+      console.error('[store] submitFill failed:', e);
+      set({ lastError: toUserMessage(e) });
+      throw e;
+    }
+  },
+
+  submitBalanceAdjust: async (p) => {
+    try {
+      await submitBalanceAdjustRtdb(p);
+      set({
+        lastToast:
+          '보정이 저장되었습니다.\n다음 실행에 반영됩니다.',
+        lastError: null,
+      });
+    } catch (e) {
+      console.error('[store] submitBalanceAdjust failed:', e);
+      set({ lastError: toUserMessage(e) });
+      throw e;
+    }
+  },
+
+  submitFillDismiss: async (assetId, reason) => {
+    try {
+      await submitFillDismissRtdb(assetId, reason);
+      set({
+        lastToast:
+          '스킵이 저장되었습니다.\n다음 실행에 반영됩니다.',
+        lastError: null,
+      });
+    } catch (e) {
+      console.error('[store] submitFillDismiss failed:', e);
+      set({ lastError: toUserMessage(e) });
+      throw e;
     }
   },
 }));

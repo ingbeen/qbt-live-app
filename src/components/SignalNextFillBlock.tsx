@@ -3,15 +3,12 @@ import { View, Text, StyleSheet } from 'react-native';
 import { COLORS } from '../utils/colors';
 import { ASSETS, SYMBOLS } from '../utils/constants';
 import type { AssetId, PendingOrder, Signal } from '../types/rtdb';
-import { toUpperTicker } from '../utils/format';
+import { directionLabel, toUpperTicker } from '../utils/format';
 
 interface Props {
   pendingOrders: Partial<Record<AssetId, PendingOrder>> | null;
   signals: Record<AssetId, Signal> | null;
 }
-
-const directionLabel = (delta: number): string =>
-  delta > 0 ? '매수' : '매도';
 
 export const SignalNextFillBlock: React.FC<Props> = ({
   pendingOrders,

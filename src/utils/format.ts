@@ -1,4 +1,4 @@
-import type { AssetId } from '../types/rtdb';
+import type { AssetId, Direction } from '../types/rtdb';
 
 // ─── 금액 (USD) — 천 단위 콤마 + 소수점 2자리 ───
 
@@ -73,4 +73,11 @@ export const toSignalTicker = (id: AssetId): string => {
     tlt: 'TLT',
   };
   return map[id];
+};
+
+// ─── 방향 라벨 (delta 부호 또는 Direction enum → 한글) ───
+
+export const directionLabel = (d: number | Direction): '매수' | '매도' => {
+  if (typeof d === 'number') return d > 0 ? '매수' : '매도';
+  return d === 'buy' ? '매수' : '매도';
 };

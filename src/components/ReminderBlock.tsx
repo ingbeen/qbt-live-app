@@ -4,7 +4,7 @@ import { COLORS } from '../utils/colors';
 import { ASSETS, SYMBOLS } from '../utils/constants';
 import type { AssetId, PendingOrder, Signal } from '../types/rtdb';
 import type { InboxItem } from '../services/rtdb';
-import { toUpperTicker } from '../utils/format';
+import { directionLabel, toUpperTicker } from '../utils/format';
 
 interface Props {
   pendingOrders: Partial<Record<AssetId, PendingOrder>> | null;
@@ -20,9 +20,6 @@ const hasInboxForAsset = (
   !!items?.some(
     (it) => (it.data as { asset_id?: string }).asset_id === assetId,
   );
-
-const directionLabel = (delta: number): string =>
-  delta > 0 ? '매수' : '매도';
 
 export const ReminderBlock: React.FC<Props> = ({
   pendingOrders,

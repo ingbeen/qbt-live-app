@@ -7,6 +7,12 @@ import type {
   PendingOrder,
   AssetId,
   ModelSyncPayload,
+  FillPayload,
+  BalanceAdjustPayload,
+  FillDismissPayload,
+  FillHistory,
+  BalanceAdjustHistory,
+  SignalHistory,
 } from '../types/rtdb';
 import { RTDB_PATHS } from '../utils/constants';
 import { kstNow } from '../utils/format';
@@ -78,4 +84,111 @@ export const submitModelSync = async (): Promise<void> => {
     set(dbRef(`${RTDB_PATHS.MODEL_SYNC_INBOX}/${key}`), payload),
     TIMEOUT_MS,
   );
+};
+
+export const submitFill = async (p: FillPayload): Promise<void> => {
+  const key = uuid.v4() as string;
+  const payload: FillPayload = {
+    ...p,
+    input_time_kst: p.input_time_kst || kstNow(),
+    reason: p.reason ?? '',
+  };
+  await withTimeout(
+    set(dbRef(`${RTDB_PATHS.FILLS_INBOX}/${key}`), payload),
+    TIMEOUT_MS,
+  );
+};
+
+export const submitBalanceAdjust = async (
+  p: BalanceAdjustPayload,
+): Promise<void> => {
+  const key = uuid.v4() as string;
+  const payload: BalanceAdjustPayload = {
+    ...p,
+    input_time_kst: p.input_time_kst || kstNow(),
+  };
+  await withTimeout(
+    set(dbRef(`${RTDB_PATHS.BALANCE_ADJUST_INBOX}/${key}`), payload),
+    TIMEOUT_MS,
+  );
+};
+
+export const submitFillDismiss = async (
+  assetId: AssetId,
+  reason?: string,
+): Promise<void> => {
+  const key = uuid.v4() as string;
+  const payload: FillDismissPayload = {
+    asset_id: assetId,
+    reason: reason ?? '수동 스킵',
+    input_time_kst: kstNow(),
+  };
+  await withTimeout(
+    set(dbRef(`${RTDB_PATHS.FILL_DISMISS_INBOX}/${key}`), payload),
+    TIMEOUT_MS,
+  );
+};
+
+// ─── 히스토리 읽기 (중첩 트리 → flat 최신순 배열) ───
+
+export const readHistoryFills = async (): Promise<FillHistory[]> => {
+  const tree = await readOnce<Record<string, Record<string, FillHistory>>>(
+    RTDB_PATHS.HISTORY_FILLS,
+  );
+  if (!tree) return [];
+  const flat: FillHistory[] = [];
+  for (const date of Object.keys(tree)) {
+    const byUuid = tree[date];
+    if (!byUuid) continue;
+    for (const uuidKey of Object.keys(byUuid)) {
+      const v = byUuid[uuidKey];
+      if (v) flat.push(v);
+    }
+  }
+  flat.sort((a, b) => b.input_time_kst.localeCompare(a.input_time_kst));
+  return flat;
+};
+
+export const readHistoryBalanceAdjusts = async (): Promise<
+  BalanceAdjustHistory[]
+> => {
+  const tree = await readOnce<
+    Record<string, Record<string, BalanceAdjustHistory>>
+  >(RTDB_PATHS.HISTORY_BALANCE_ADJUSTS);
+  if (!tree) return [];
+  const flat: BalanceAdjustHistory[] = [];
+  for (const date of Object.keys(tree)) {
+    const byUuid = tree[date];
+    if (!byUuid) continue;
+    for (const uuidKey of Object.keys(byUuid)) {
+      const v = byUuid[uuidKey];
+      if (v) flat.push(v);
+    }
+  }
+  flat.sort((a, b) => b.applied_at.localeCompare(a.applied_at));
+  return flat;
+};
+
+export type SignalHistoryEntry = {
+  date: string;
+  asset_id: AssetId;
+  signal: SignalHistory;
+};
+
+export const readHistorySignals = async (): Promise<SignalHistoryEntry[]> => {
+  const tree = await readOnce<
+    Record<string, Partial<Record<AssetId, SignalHistory>>>
+  >(RTDB_PATHS.HISTORY_SIGNALS);
+  if (!tree) return [];
+  const flat: SignalHistoryEntry[] = [];
+  for (const date of Object.keys(tree)) {
+    const byAsset = tree[date];
+    if (!byAsset) continue;
+    for (const assetKey of Object.keys(byAsset) as AssetId[]) {
+      const signal = byAsset[assetKey];
+      if (signal) flat.push({ date, asset_id: assetKey, signal });
+    }
+  }
+  flat.sort((a, b) => b.date.localeCompare(a.date));
+  return flat;
 };

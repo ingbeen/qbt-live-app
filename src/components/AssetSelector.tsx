@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { COLORS } from '../utils/colors';
 import { ASSETS } from '../utils/constants';
 import type { AssetId } from '../types/rtdb';
@@ -18,16 +18,19 @@ export const AssetSelector: React.FC<AssetSelectorProps> = ({
     {ASSETS.map((id) => {
       const isActive = value === id;
       return (
-        <TouchableOpacity
+        <Pressable
           key={id}
-          style={[styles.cell, isActive && styles.cellActive]}
+          style={({ pressed }) => [
+            styles.cell,
+            isActive && styles.cellActive,
+            pressed && { opacity: 0.7 },
+          ]}
           onPress={() => onChange(id)}
-          activeOpacity={0.7}
         >
           <Text style={[styles.cellText, isActive && styles.cellTextActive]}>
             {toUpperTicker(id)}
           </Text>
-        </TouchableOpacity>
+        </Pressable>
       );
     })}
   </View>

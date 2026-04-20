@@ -4,7 +4,7 @@ import {
   Text,
   TextInput,
   StyleSheet,
-  TouchableOpacity,
+  Pressable,
   Platform,
 } from 'react-native';
 import DateTimePicker, {
@@ -156,12 +156,15 @@ export const FillForm: React.FC<Props> = ({
           const isActive = assetId === id;
           const hasPending = !!pendingOrders?.[id];
           return (
-            <TouchableOpacity
+            <Pressable
               key={id}
-              style={[styles.cell, isActive && styles.cellActive]}
+              style={({ pressed }) => [
+                styles.cell,
+                isActive && styles.cellActive,
+                pressed && !submitting && { opacity: 0.7 },
+              ]}
               onPress={() => setAssetId(id)}
               disabled={submitting}
-              activeOpacity={0.7}
             >
               <Text
                 style={[styles.cellText, isActive && styles.cellTextActive]}
@@ -171,7 +174,7 @@ export const FillForm: React.FC<Props> = ({
               {hasPending ? (
                 <Text style={styles.boltOverlay}>{SYMBOLS.BOLT}</Text>
               ) : null}
-            </TouchableOpacity>
+            </Pressable>
           );
         })}
       </View>
@@ -181,17 +184,17 @@ export const FillForm: React.FC<Props> = ({
 
       <Text style={styles.label}>방향</Text>
       <View style={styles.row2}>
-        <TouchableOpacity
-          style={[
+        <Pressable
+          style={({ pressed }) => [
             styles.cell,
             direction === 'buy' && {
               backgroundColor: COLORS.green + '22',
               borderColor: COLORS.green,
             },
+            pressed && !submitting && { opacity: 0.7 },
           ]}
           onPress={() => setDirection('buy')}
           disabled={submitting}
-          activeOpacity={0.7}
         >
           <Text
             style={[
@@ -201,18 +204,18 @@ export const FillForm: React.FC<Props> = ({
           >
             매수
           </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[
+        </Pressable>
+        <Pressable
+          style={({ pressed }) => [
             styles.cell,
             direction === 'sell' && {
               backgroundColor: COLORS.red + '22',
               borderColor: COLORS.red,
             },
+            pressed && !submitting && { opacity: 0.7 },
           ]}
           onPress={() => setDirection('sell')}
           disabled={submitting}
-          activeOpacity={0.7}
         >
           <Text
             style={[
@@ -222,7 +225,7 @@ export const FillForm: React.FC<Props> = ({
           >
             매도
           </Text>
-        </TouchableOpacity>
+        </Pressable>
       </View>
       {attempted && result.fieldErrors.direction ? (
         <Text style={styles.fieldError}>{result.fieldErrors.direction}</Text>
@@ -266,14 +269,16 @@ export const FillForm: React.FC<Props> = ({
       </View>
 
       <Text style={styles.label}>체결일</Text>
-      <TouchableOpacity
-        style={styles.dateButton}
+      <Pressable
+        style={({ pressed }) => [
+          styles.dateButton,
+          pressed && !submitting && { opacity: 0.7 },
+        ]}
         onPress={onOpenPicker}
         disabled={submitting}
-        activeOpacity={0.7}
       >
         <Text style={styles.dateText}>{tradeDate}</Text>
-      </TouchableOpacity>
+      </Pressable>
       {attempted && result.fieldErrors.trade_date ? (
         <Text style={styles.fieldError}>{result.fieldErrors.trade_date}</Text>
       ) : null}
@@ -298,27 +303,30 @@ export const FillForm: React.FC<Props> = ({
         editable={!submitting}
       />
 
-      <TouchableOpacity
-        style={[
+      <Pressable
+        style={({ pressed }) => [
           styles.primaryButton,
           (!result.valid || submitting) && styles.buttonDisabled,
+          pressed && result.valid && !submitting && { opacity: 0.7 },
         ]}
         onPress={onSubmit}
         disabled={!result.valid || submitting}
-        activeOpacity={0.7}
       >
         <Text style={styles.primaryButtonText}>체결 저장</Text>
-      </TouchableOpacity>
+      </Pressable>
 
       {showSkipButton ? (
-        <TouchableOpacity
-          style={[styles.secondaryButton, submitting && styles.buttonDisabled]}
+        <Pressable
+          style={({ pressed }) => [
+            styles.secondaryButton,
+            submitting && styles.buttonDisabled,
+            pressed && !submitting && { opacity: 0.7 },
+          ]}
           onPress={onSkip}
           disabled={submitting}
-          activeOpacity={0.7}
         >
           <Text style={styles.secondaryButtonText}>이 시그널 스킵</Text>
-        </TouchableOpacity>
+        </Pressable>
       ) : null}
 
       {portfolio.assets[assetId ?? 'sso'] && assetId ? (

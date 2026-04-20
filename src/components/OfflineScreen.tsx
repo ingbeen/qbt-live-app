@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react';
 import {
   View,
   Text,
-  TouchableOpacity,
+  Pressable,
   ActivityIndicator,
   StyleSheet,
 } from 'react-native';
@@ -32,10 +32,13 @@ export const OfflineScreen: React.FC = () => {
       <Text style={styles.icon}>{SYMBOLS.WARN}</Text>
       <Text style={styles.title}>네트워크 없음</Text>
       <Text style={styles.sub}>연결 후 다시 시도</Text>
-      <TouchableOpacity
-        style={[styles.btn, retrying && styles.btnDisabled]}
+      <Pressable
+        style={({ pressed }) => [
+          styles.btn,
+          retrying && styles.btnDisabled,
+          pressed && !retrying && { opacity: 0.7 },
+        ]}
         onPress={onRetry}
-        activeOpacity={0.7}
         disabled={retrying}
       >
         {retrying ? (
@@ -43,7 +46,7 @@ export const OfflineScreen: React.FC = () => {
         ) : (
           <Text style={styles.btnText}>다시 시도</Text>
         )}
-      </TouchableOpacity>
+      </Pressable>
     </View>
   );
 };

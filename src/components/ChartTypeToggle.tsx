@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { COLORS } from '../utils/colors';
 
 export type ChartType = 'price' | 'equity';
@@ -17,24 +17,30 @@ export const ChartTypeToggle: React.FC<ChartTypeToggleProps> = ({
   const isEquity = value === 'equity';
   return (
     <View style={styles.row}>
-      <TouchableOpacity
-        style={[styles.cell, isPrice && styles.cellActive]}
+      <Pressable
+        style={({ pressed }) => [
+          styles.cell,
+          isPrice && styles.cellActive,
+          pressed && { opacity: 0.7 },
+        ]}
         onPress={() => onChange('price')}
-        activeOpacity={0.7}
       >
         <Text style={[styles.cellText, isPrice && styles.cellTextActive]}>
           주가
         </Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={[styles.cell, isEquity && styles.cellActive]}
+      </Pressable>
+      <Pressable
+        style={({ pressed }) => [
+          styles.cell,
+          isEquity && styles.cellActive,
+          pressed && { opacity: 0.7 },
+        ]}
         onPress={() => onChange('equity')}
-        activeOpacity={0.7}
       >
         <Text style={[styles.cellText, isEquity && styles.cellTextActive]}>
           Equity
         </Text>
-      </TouchableOpacity>
+      </Pressable>
     </View>
   );
 };

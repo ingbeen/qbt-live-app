@@ -4,7 +4,7 @@ import {
   Text,
   StyleSheet,
   ActivityIndicator,
-  TouchableOpacity,
+  Pressable,
 } from 'react-native';
 import { COLORS } from '../utils/colors';
 import { useStore } from '../store/useStore';
@@ -60,13 +60,13 @@ export const TradeScreen: React.FC = () => {
         contentContainerStyle={styles.content}
       >
         <View style={styles.segment}>
-          <TouchableOpacity
-            style={[
+          <Pressable
+            style={({ pressed }) => [
               styles.segmentItem,
               mode === 'fill' && styles.segmentItemActive,
+              pressed && { opacity: 0.7 },
             ]}
             onPress={() => setMode('fill')}
-            activeOpacity={0.7}
           >
             <Text
               style={[
@@ -76,14 +76,14 @@ export const TradeScreen: React.FC = () => {
             >
               체결
             </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
+          </Pressable>
+          <Pressable
+            style={({ pressed }) => [
               styles.segmentItem,
               mode === 'adjust' && styles.segmentItemActive,
+              pressed && { opacity: 0.7 },
             ]}
             onPress={() => setMode('adjust')}
-            activeOpacity={0.7}
           >
             <Text
               style={[
@@ -93,7 +93,7 @@ export const TradeScreen: React.FC = () => {
             >
               보정
             </Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
 
         {mode === 'fill' ? (

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { COLORS } from '../utils/colors';
 
 interface ErrorStateProps {
@@ -12,9 +12,12 @@ interface ErrorStateProps {
 export const ErrorState: React.FC<ErrorStateProps> = ({ message, onRetry }) => (
   <View style={styles.container}>
     <Text style={styles.message}>{message}</Text>
-    <TouchableOpacity style={styles.btn} onPress={onRetry} activeOpacity={0.7}>
+    <Pressable
+      style={({ pressed }) => [styles.btn, pressed && { opacity: 0.7 }]}
+      onPress={onRetry}
+    >
       <Text style={styles.btnText}>다시 시도</Text>
-    </TouchableOpacity>
+    </Pressable>
   </View>
 );
 

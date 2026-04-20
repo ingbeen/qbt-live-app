@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { COLORS } from '../utils/colors';
 import { SYMBOLS } from '../utils/constants';
 
@@ -25,13 +25,12 @@ export const Toast: React.FC<Props> = ({
   return (
     <View style={styles.wrap}>
       <Text style={styles.text}>{message}</Text>
-      <TouchableOpacity
+      <Pressable
         onPress={onClose}
-        style={styles.close}
-        activeOpacity={0.7}
+        style={({ pressed }) => [styles.close, pressed && { opacity: 0.7 }]}
       >
         <Text style={styles.closeText}>{SYMBOLS.CLOSE}</Text>
-      </TouchableOpacity>
+      </Pressable>
     </View>
   );
 };

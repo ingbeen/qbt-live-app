@@ -4,7 +4,7 @@ import {
   Text,
   TextInput,
   StyleSheet,
-  TouchableOpacity,
+  Pressable,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
@@ -70,18 +70,21 @@ export const LoginScreen: React.FC = () => {
 
           {error ? <Text style={styles.error}>{error}</Text> : null}
 
-          <TouchableOpacity
-            style={[styles.button, disabled ? styles.buttonDisabled : null]}
+          <Pressable
+            style={({ pressed }) => [
+              styles.button,
+              disabled ? styles.buttonDisabled : null,
+              pressed && !disabled && { opacity: 0.7 },
+            ]}
             onPress={onSubmit}
             disabled={disabled}
-            activeOpacity={0.7}
           >
             {loading ? (
               <ActivityIndicator color={COLORS.text} />
             ) : (
               <Text style={styles.buttonText}>로그인</Text>
             )}
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>

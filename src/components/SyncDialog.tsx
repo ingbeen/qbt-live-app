@@ -1,5 +1,5 @@
 import React from 'react';
-import { Modal, View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Modal, View, Text, StyleSheet, Pressable } from 'react-native';
 import { COLORS } from '../utils/colors';
 import { ASSETS, SYMBOLS } from '../utils/constants';
 import type { AssetId, PendingOrder, Signal } from '../types/rtdb';
@@ -65,20 +65,26 @@ export const SyncDialog: React.FC<Props> = ({
           )}
 
           <View style={styles.buttons}>
-            <TouchableOpacity
-              style={[styles.button, styles.cancelButton]}
+            <Pressable
+              style={({ pressed }) => [
+                styles.button,
+                styles.cancelButton,
+                pressed && { opacity: 0.7 },
+              ]}
               onPress={onCancel}
-              activeOpacity={0.7}
             >
               <Text style={styles.cancelText}>취소</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.button, styles.confirmButton]}
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [
+                styles.button,
+                styles.confirmButton,
+                pressed && { opacity: 0.7 },
+              ]}
               onPress={onConfirm}
-              activeOpacity={0.7}
             >
               <Text style={styles.confirmText}>동기화</Text>
-            </TouchableOpacity>
+            </Pressable>
           </View>
         </View>
       </View>

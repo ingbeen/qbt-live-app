@@ -4,7 +4,7 @@ import {
   Text,
   TextInput,
   StyleSheet,
-  TouchableOpacity,
+  Pressable,
   Platform,
 } from 'react-native';
 import DateTimePicker, {
@@ -153,19 +153,22 @@ export const AdjustForm: React.FC<Props> = ({ portfolio }) => {
         {TARGETS.map((t) => {
           const isActive = target === t;
           return (
-            <TouchableOpacity
+            <Pressable
               key={t}
-              style={[styles.cell, isActive && styles.cellActive]}
+              style={({ pressed }) => [
+                styles.cell,
+                isActive && styles.cellActive,
+                pressed && !submitting && { opacity: 0.7 },
+              ]}
               onPress={() => setTarget(t)}
               disabled={submitting}
-              activeOpacity={0.7}
             >
               <Text
                 style={[styles.cellText, isActive && styles.cellTextActive]}
               >
                 {targetLabel(t)}
               </Text>
-            </TouchableOpacity>
+            </Pressable>
           );
         })}
       </View>
@@ -215,14 +218,16 @@ export const AdjustForm: React.FC<Props> = ({ portfolio }) => {
             </View>
             <View style={styles.col}>
               <Text style={styles.label}>새 진입일</Text>
-              <TouchableOpacity
-                style={styles.dateButton}
+              <Pressable
+                style={({ pressed }) => [
+                  styles.dateButton,
+                  pressed && !submitting && { opacity: 0.7 },
+                ]}
                 onPress={onOpenPicker}
                 disabled={submitting}
-                activeOpacity={0.7}
               >
                 <Text style={styles.dateText}>{entryDate || '미변경'}</Text>
-              </TouchableOpacity>
+              </Pressable>
               {attempted && result.fieldErrors.new_entry_date ? (
                 <Text style={styles.fieldError}>
                   {result.fieldErrors.new_entry_date}
@@ -275,17 +280,17 @@ export const AdjustForm: React.FC<Props> = ({ portfolio }) => {
         editable={!submitting}
       />
 
-      <TouchableOpacity
-        style={[
+      <Pressable
+        style={({ pressed }) => [
           styles.primaryButton,
           (!result.valid || submitting) && styles.buttonDisabled,
+          pressed && result.valid && !submitting && { opacity: 0.7 },
         ]}
         onPress={onSubmit}
         disabled={!result.valid || submitting}
-        activeOpacity={0.7}
       >
         <Text style={styles.primaryButtonText}>보정 저장</Text>
-      </TouchableOpacity>
+      </Pressable>
     </View>
   );
 };

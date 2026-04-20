@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { COLORS } from '../utils/colors';
 import type {
   AssetId,
@@ -140,18 +140,21 @@ export const HistoryList: React.FC<Props> = ({
         {FILTERS.map((f) => {
           const isActive = filter === f;
           return (
-            <TouchableOpacity
+            <Pressable
               key={f}
-              style={[styles.chip, isActive && styles.chipActive]}
+              style={({ pressed }) => [
+                styles.chip,
+                isActive && styles.chipActive,
+                pressed && { opacity: 0.7 },
+              ]}
               onPress={() => setFilter(f)}
-              activeOpacity={0.7}
             >
               <Text
                 style={[styles.chipText, isActive && styles.chipTextActive]}
               >
                 {f}
               </Text>
-            </TouchableOpacity>
+            </Pressable>
           );
         })}
       </View>

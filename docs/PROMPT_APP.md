@@ -1199,7 +1199,7 @@ Phase 9 중 **정적 부분만** 본 세션에서 처리. 실기기/에뮬레이
 
 #### 후속 세션 이관 작업 체크리스트
 
-1. Pretendard 폰트 `.ttf` 배치 + `npx react-native-asset` + 전역 Text 스타일 적용
+1. ~~Pretendard 폰트 `.ttf` 배치 + `npx react-native-asset` + 전역 Text 스타일 적용~~ → **취소**: RN 0.85 + Android 측정-렌더 불일치로 영문 잘림 발생 → 시스템 폰트 복귀 결정 (`docs/DESIGN_APP.md §11.2` 갱신, 2026-04-20)
 2. 앱 아이콘 SVG/PNG 준비 + Android Studio Image Asset Studio → mipmap 교체
 3. Release 키스토어 생성 + 서명 설정
 4. Release APK 빌드 + SHA-1 Firebase 등록

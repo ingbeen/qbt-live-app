@@ -49,14 +49,10 @@ export const ChartLegend: React.FC<ChartLegendProps> = ({ type }) => {
         </Text>
         <Text style={styles.text}>매도시그널</Text>
         <View style={styles.spacer} />
-        <Text style={[styles.marker, { color: COLORS.green }]}>
-          {SYMBOLS.CIRCLE}
-        </Text>
+        <View style={[styles.dot, { backgroundColor: COLORS.green }]} />
         <Text style={styles.text}>내 매수</Text>
         <View style={styles.spacer} />
-        <Text style={[styles.marker, { color: COLORS.red }]}>
-          {SYMBOLS.CIRCLE}
-        </Text>
+        <View style={[styles.dot, { backgroundColor: COLORS.red }]} />
         <Text style={styles.text}>내 매도</Text>
       </View>
     </View>
@@ -102,6 +98,12 @@ const styles = StyleSheet.create({
   marker: {
     fontSize: 13,
     fontWeight: '700',
+  },
+  // 내 매수/매도 마커 — 글리프 폰트 의존 없이 View 로 그려 일관된 원형 표시.
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
   spacer: {
     width: 10,

@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { StatusBar } from 'react-native';
+import { AppState, StatusBar } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import {
@@ -13,9 +13,11 @@ import {
   setupForegroundHandler,
   setupNotificationTapHandler,
 } from './src/services/fcm';
+import { setupNetworkListener } from './src/services/network';
 import { useStore } from './src/store/useStore';
 import { LoginScreen } from './src/screens/LoginScreen';
 import { AppNavigator } from './src/navigation/AppNavigator';
+import { OfflineScreen } from './src/components/OfflineScreen';
 import { COLORS } from './src/utils/colors';
 
 // Bottom Tab root param list. 4탭 이름은 AppNavigator 와 일치(§15).
@@ -37,14 +39,31 @@ const navigateHome = (): void => {
 
 export default function App() {
   const user = useStore((s) => s.user);
+  const isOnline = useStore((s) => s.isOnline);
 
   useEffect(() => {
     initFirebase();
     const unsubAuth = subscribeAuthState((u) =>
       useStore.getState().setUser(u),
     );
+    const unsubNet = setupNetworkListener();
+
+    // 포그라운드 복귀 시 캐시 무효화 + 홈 재로드(§12.4).
+    // user 가 없으면 LoginScreen 표시 중이므로 스킵. clearAll 은 user/isOnline/deviceId 유지.
+    const appStateSub = AppState.addEventListener('change', (state) => {
+      if (state !== 'active') return;
+      const st = useStore.getState();
+      if (!st.user) return;
+      st.clearAll();
+      st.refreshHome().catch((e) =>
+        console.error('[store] refreshHome on resume failed:', e),
+      );
+    });
+
     return () => {
       unsubAuth();
+      unsubNet();
+      appStateSub.remove();
     };
   }, []);
 
@@ -61,6 +80,18 @@ export default function App() {
       unsubTap();
     };
   }, [user]);
+
+  // 오프라인 상태면 전체 차단(§12.2). 로그인/앱 화면 모두 숨김.
+  if (!isOnline) {
+    return (
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <SafeAreaProvider>
+          <StatusBar barStyle="light-content" backgroundColor={COLORS.bg} />
+          <OfflineScreen />
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
+    );
+  }
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

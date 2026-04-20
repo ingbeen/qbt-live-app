@@ -1,11 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ActivityIndicator,
-  TouchableOpacity,
-} from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { COLORS } from '../utils/colors';
 import { useStore } from '../store/useStore';
 import { PullToRefreshScrollView } from '../components/PullToRefreshScrollView';
@@ -17,6 +11,7 @@ import { MAProximityCard } from '../components/MAProximityCard';
 import { ModelCompareCard } from '../components/ModelCompareCard';
 import { SyncDialog } from '../components/SyncDialog';
 import { Toast } from '../components/Toast';
+import { ErrorState } from '../components/ErrorState';
 
 export const HomeScreen: React.FC = () => {
   const portfolio = useStore((s) => s.portfolio);
@@ -66,20 +61,10 @@ export const HomeScreen: React.FC = () => {
 
   if (portfolio === null) {
     return (
-      <View style={styles.centerContainer}>
-        {lastError ? (
-          <Text style={styles.errorText}>{lastError}</Text>
-        ) : (
-          <Text style={styles.emptyText}>데이터가 없습니다.</Text>
-        )}
-        <TouchableOpacity
-          style={styles.retryButton}
-          onPress={onRefresh}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.retryText}>다시 시도</Text>
-        </TouchableOpacity>
-      </View>
+      <ErrorState
+        message={lastError ?? '데이터가 없습니다.'}
+        onRetry={onRefresh}
+      />
     );
   }
 
@@ -153,28 +138,5 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginBottom: 12,
     textAlign: 'center',
-  },
-  errorText: {
-    color: COLORS.red,
-    fontSize: 14,
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  emptyText: {
-    color: COLORS.sub,
-    fontSize: 14,
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  retryButton: {
-    backgroundColor: COLORS.accent,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
-  },
-  retryText: {
-    color: COLORS.text,
-    fontSize: 14,
-    fontWeight: '600',
   },
 });

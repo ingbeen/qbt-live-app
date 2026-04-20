@@ -64,10 +64,12 @@ const emptyEquityCache = (): EquityChartCache => ({
 });
 
 interface Store {
-  // 인증 / 네트워크
+  // 인증 / 네트워크 / FCM
   user: AuthUser | null;
   isOnline: boolean;
   lastError: string | null;
+  deviceId: string | null;
+  fcmRegistered: boolean;
 
   // /latest/*
   portfolio: Portfolio | null;
@@ -97,6 +99,8 @@ interface Store {
   setUser: (user: AuthUser | null) => void;
   setOnline: (online: boolean) => void;
   setLastError: (error: string | null) => void;
+  setDeviceId: (deviceId: string | null) => void;
+  setFcmRegistered: (registered: boolean) => void;
   clearAll: () => void;
 
   // 액션: UI 알림
@@ -132,6 +136,8 @@ export const useStore = create<Store>((set, get) => ({
   user: null,
   isOnline: true,
   lastError: null,
+  deviceId: null,
+  fcmRegistered: false,
 
   portfolio: null,
   signals: null,
@@ -155,9 +161,12 @@ export const useStore = create<Store>((set, get) => ({
   setUser: (user) => set({ user }),
   setOnline: (online) => set({ isOnline: online }),
   setLastError: (lastError) => set({ lastError }),
+  setDeviceId: (deviceId) => set({ deviceId }),
+  setFcmRegistered: (fcmRegistered) => set({ fcmRegistered }),
+  // user / isOnline / deviceId / fcmRegistered 는 유지. 캐시 데이터만 초기화.
+  // AppState.active 복귀 시 캐시 무효화(§12.4) + 로그아웃 시 signOut 이 별도로 setUser(null) 호출.
   clearAll: () =>
     set({
-      user: null,
       lastError: null,
       portfolio: null,
       signals: null,

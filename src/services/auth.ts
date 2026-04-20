@@ -19,8 +19,11 @@ export const signIn = async (
 
 export const signOut = async (): Promise<void> => {
   await fbSignOut(getAuth());
-  useStore.getState().clearAll();
-  useStore.getState().setUser(null);
+  const store = useStore.getState();
+  store.clearAll();
+  store.setUser(null);
+  store.setDeviceId(null);
+  store.setFcmRegistered(false);
 };
 
 export const subscribeAuthState = (

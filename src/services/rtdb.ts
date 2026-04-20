@@ -132,6 +132,22 @@ export const submitFillDismiss = async (
   );
 };
 
+// ─── /device_tokens/* (FCM registration) ───
+
+// 설계서 §8.2.10 형식 1 (문자열). device_id 는 앱이 선택하는 메모리 UUID.
+export const submitDeviceToken = async (
+  deviceId: string,
+  token: string,
+): Promise<void> => {
+  await withTimeout(
+    set(dbRef(`${RTDB_PATHS.DEVICE_TOKENS}/${deviceId}`), token),
+    TIMEOUT_MS,
+  );
+};
+
+export const readDeviceToken = (deviceId: string): Promise<string | null> =>
+  readOnce<string>(`${RTDB_PATHS.DEVICE_TOKENS}/${deviceId}`);
+
 // ─── /charts/* ───
 
 export const readPriceChartMeta = (

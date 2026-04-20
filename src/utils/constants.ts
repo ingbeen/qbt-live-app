@@ -7,6 +7,8 @@ export const RTDB_URL =
 
 export const ANDROID_PACKAGE = 'com.ingbeen.qbtlive';
 
+export const APP_VERSION = '1.0.0';
+
 export const RTDB_PATHS = {
   // read
   LATEST_PORTFOLIO: '/latest/portfolio',

@@ -1,97 +1,67 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# qbt-live-app
 
-# Getting Started
+QBT Live 시스템의 **Android 앱 클라이언트**. Firebase Realtime Database 를 읽어 포트폴리오/차트/시그널을 표시하고, 체결/잔고 보정을 RTDB inbox 로 기록한다.
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+- **플랫폼**: Android 전용 (iOS 미지원)
+- **프레임워크**: React Native 0.85.1 CLI (Expo 아님)
+- **언어**: TypeScript 5.8.x
+- **New Architecture**: 기본 ON (RN 0.82+ 강제, 비활성 불가)
 
-## Step 1: Start Metro
+코딩 규칙 / 스타일 / 금지 사항은 [CLAUDE.md](CLAUDE.md) 를 단일 정본(SoT) 으로 참조한다. 서버↔앱 데이터 계약은 [docs/DESIGN_QBT_LIVE_FINAL.md](docs/DESIGN_QBT_LIVE_FINAL.md).
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+---
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+## 전제 조건
 
-```sh
-# Using npm
-npm start
+- **Node**: ≥ 22.11 (동작 확인: 22.22.2)
+- **JDK**: Temurin 17
+- **Android SDK**: compileSdk 36 / targetSdk 36 / minSdk 24
+- **Android 기기 또는 에뮬레이터** (Android 7.0+, API 24+)
+- **Firebase 설정 파일**: `android/app/google-services.json` 배치 필요 (커밋 금지, `.gitignore` 에 포함)
 
-# OR using Yarn
-yarn start
+환경 셋업은 React Native 공식 가이드 [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) 의 Android 섹션 참조.
+
+---
+
+## 실행 / 명령어
+
+프로젝트 관련 **모든 명령어**(Metro 실행, 빌드, 로그, 앱 초기화, 새 머신 셋업 등)는 [docs/COMMANDS.md](docs/COMMANDS.md) 에 단일 관리한다.
+
+빠른 시작:
+
+- Terminal A — `npm start`
+- Terminal B — `npm run android -- --no-packager`
+
+상세/워크플로우/초기 셋업: [docs/COMMANDS.md](docs/COMMANDS.md) 참조.
+
+---
+
+## 폴더 구조
+
+```
+qbt-live-app/
+├── App.tsx                 # 최상위 컴포넌트 (Firebase 초기화, Auth/Net 구독, 라우팅)
+├── index.js                # RN 엔트리포인트
+├── src/
+│   ├── screens/            # 탭별 최상위 컴포넌트 (Home, Chart, Trade, Settings, Login)
+│   ├── components/         # 재사용 UI 컴포넌트 (Badge, FillForm, ChartWebView, OfflineScreen 등)
+│   ├── services/           # 외부 I/O (firebase, auth, rtdb, fcm, network, chart)
+│   ├── store/              # Zustand 단일 store (useStore.ts)
+│   ├── utils/              # 순수 유틸 (format, validation, colors, constants, chartHtml)
+│   ├── types/              # RTDB 스키마 타입 정의 (rtdb.ts)
+│   └── navigation/         # React Navigation 설정 (AppNavigator.tsx)
+├── android/                # Android 네이티브 프로젝트
+├── docs/
+│   └── DESIGN_QBT_LIVE_FINAL.md   # 서버↔앱 RTDB 데이터 계약 (서버 SoT)
+├── CLAUDE.md               # 코딩 규칙 / 스타일 가이드 (단일 정본)
+└── README.md
 ```
 
-## Step 2: Build and run your app
+---
 
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
+## 참고
 
-### Android
-
-```sh
-# Using npm
-npm run android
-
-# OR using Yarn
-yarn android
-```
-
-### iOS
-
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
-
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
-
-```sh
-bundle install
-```
-
-Then, and every time you update your native dependencies, run:
-
-```sh
-bundle exec pod install
-```
-
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
-
-```sh
-# Using npm
-npm run ios
-
-# OR using Yarn
-yarn ios
-```
-
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
-
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
-
-## Step 3: Modify your app
-
-Now that you have successfully run the app, let's make changes!
-
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
-
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
-
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
-
-## Congratulations! :tada:
-
-You've successfully run and modified your React Native App. :partying_face:
-
-### Now what?
-
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+- 코딩 규칙 / 스타일 / 금지 사항: [CLAUDE.md](CLAUDE.md)
+- 명령어 모음: [docs/COMMANDS.md](docs/COMMANDS.md)
+- 데이터 계약(서버 SoT): [docs/DESIGN_QBT_LIVE_FINAL.md](docs/DESIGN_QBT_LIVE_FINAL.md)
+- React Native 공식: [reactnative.dev](https://reactnative.dev)

@@ -1142,14 +1142,26 @@ export const submitModelSync = async (): Promise<void> => {
 // src/services/fcm.ts
 import messaging from '@react-native-firebase/messaging';
 import { db } from './firebase';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import uuid from 'react-native-uuid';
 
-const DEVICE_ID_KEY = 'qbt_device_id';  // 메모리만. 세션 간 유지 안 함.
-let cachedDeviceId: string | null = null;
+// device_id 는 설치 UUID (DESIGN_QBT_LIVE_FINAL.md §8.2.10).
+// AsyncStorage 로 영구 저장하여 앱 재시작 후에도 동일 값 유지
+// (/device_tokens/{device_id} 중복 누적 방지). CLAUDE.md §4.4 예외 항목.
+// Promise 캐싱으로 동시 호출 시 AsyncStorage race 를 방지한다.
+const DEVICE_ID_KEY = 'qbt_device_id';
+let deviceIdPromise: Promise<string> | null = null;
 
-const getDeviceId = (): string => {
-  if (!cachedDeviceId) cachedDeviceId = uuid.v4() as string;
-  return cachedDeviceId;
+const getDeviceId = (): Promise<string> => {
+  if (deviceIdPromise) return deviceIdPromise;
+  deviceIdPromise = (async () => {
+    const stored = await AsyncStorage.getItem(DEVICE_ID_KEY);
+    if (stored) return stored;
+    const fresh = uuid.v4() as string;
+    await AsyncStorage.setItem(DEVICE_ID_KEY, fresh);
+    return fresh;
+  })();
+  return deviceIdPromise;
 };
 
 export const ensureFcmToken = async (): Promise<void> => {
@@ -1162,7 +1174,7 @@ export const ensureFcmToken = async (): Promise<void> => {
 
   // 2. 토큰 가져오기
   const token = await messaging().getToken();
-  const deviceId = getDeviceId();
+  const deviceId = await getDeviceId();
   await db().ref(`/device_tokens/${deviceId}`).set(token);
 
   // 3. 토큰 갱신 감지

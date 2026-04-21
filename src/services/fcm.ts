@@ -9,17 +9,37 @@ import {
   getInitialNotification,
   AuthorizationStatus,
 } from '@react-native-firebase/messaging';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import uuid from 'react-native-uuid';
 import { submitDeviceToken } from './rtdb';
 import { useStore } from '../store/useStore';
 
-// device_id 는 메모리 전용. 앱 재시작 시 새 UUID 로 재등록되며
-// 서버가 invalid 토큰을 자동 정리한다(§8.2.10).
-let cachedDeviceId: string | null = null;
+// device_id 는 /device_tokens/{device_id} 의 키. 설치 UUID 원칙
+// (DESIGN_QBT_LIVE_FINAL.md §8.2.10). CLAUDE.md §12 의 AsyncStorage
+// 금지는 RTDB 데이터 캐시 방지가 목적이며, 식별자 1개 저장은 예외 허용.
+const DEVICE_ID_KEY = 'qbt_device_id';
+// Promise 자체를 캐싱하여 동시 호출 시 AsyncStorage race 를 방지한다.
+// 두 번째 호출은 첫 번째가 진행 중인 Promise 를 재사용 → 같은 uuid 보장.
+let deviceIdPromise: Promise<string> | null = null;
 
-const getDeviceId = (): string => {
-  if (!cachedDeviceId) cachedDeviceId = uuid.v4() as string;
-  return cachedDeviceId;
+const getDeviceId = (): Promise<string> => {
+  if (deviceIdPromise) return deviceIdPromise;
+  deviceIdPromise = (async () => {
+    try {
+      const stored = await AsyncStorage.getItem(DEVICE_ID_KEY);
+      if (stored) return stored;
+    } catch (error) {
+      console.warn('[fcm] AsyncStorage read failed, falling back to new UUID', error);
+    }
+    const fresh = uuid.v4() as string;
+    try {
+      await AsyncStorage.setItem(DEVICE_ID_KEY, fresh);
+    } catch (error) {
+      console.warn('[fcm] AsyncStorage write failed, device_id will not persist', error);
+    }
+    return fresh;
+  })();
+  return deviceIdPromise;
 };
 
 export const ensureFcmToken = async (): Promise<void> => {
@@ -33,7 +53,7 @@ export const ensureFcmToken = async (): Promise<void> => {
     useStore.getState().setFcmRegistered(false);
     return;
   }
-  const deviceId = getDeviceId();
+  const deviceId = await getDeviceId();
   try {
     const token = await getToken(messaging);
     await submitDeviceToken(deviceId, token);

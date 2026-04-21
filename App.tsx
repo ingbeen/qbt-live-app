@@ -10,6 +10,7 @@ import { initFirebase } from './src/services/firebase';
 import { subscribeAuthState } from './src/services/auth';
 import {
   ensureFcmToken,
+  requestNotificationPermission,
   setupForegroundHandler,
   setupNotificationTapHandler,
 } from './src/services/fcm';
@@ -43,6 +44,12 @@ export default function App() {
 
   useEffect(() => {
     initFirebase();
+    // 앱 시작 시점에 알림 권한 다이얼로그 표시 (Android 13+).
+    // 첫 설치 후 최초 실행에서만 시스템 다이얼로그 노출. FCM 토큰 등록은
+    // 로그인 후 ensureFcmToken 이 담당 (관심사 분리).
+    requestNotificationPermission().catch((e) =>
+      console.error('[fcm] permission request failed:', e),
+    );
     const unsubAuth = subscribeAuthState((u) =>
       useStore.getState().setUser(u),
     );

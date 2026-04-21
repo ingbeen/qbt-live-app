@@ -1,15 +1,14 @@
 import { getApp } from '@react-native-firebase/app';
 import {
   getMessaging,
-  requestPermission,
   getToken,
   onTokenRefresh,
   onMessage,
   onNotificationOpenedApp,
   getInitialNotification,
-  AuthorizationStatus,
 } from '@react-native-firebase/messaging';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { PermissionsAndroid, Platform } from 'react-native';
 import uuid from 'react-native-uuid';
 import { submitDeviceToken } from './rtdb';
 import { useStore } from '../store/useStore';
@@ -42,17 +41,37 @@ const getDeviceId = (): Promise<string> => {
   return deviceIdPromise;
 };
 
-export const ensureFcmToken = async (): Promise<void> => {
-  const messaging = getMessaging(getApp());
-  const status = await requestPermission(messaging);
-  const enabled =
-    status === AuthorizationStatus.AUTHORIZED ||
-    status === AuthorizationStatus.PROVISIONAL;
-  if (!enabled) {
-    console.warn('[fcm] notification permission denied');
-    useStore.getState().setFcmRegistered(false);
-    return;
+// 앱 시작 시점 (로그인 전) 에 알림 권한을 사용자에게 요청한다.
+// Android 13+ (API 33+) 의 POST_NOTIFICATIONS 는 runtime 권한이라 PermissionsAndroid
+// 로 직접 요청해야 시스템 다이얼로그가 뜬다 (Firebase messaging.requestPermission 은
+// iOS 전용이라 Android 에서는 다이얼로그 없이 즉시 AUTHORIZED 를 반환).
+// 첫 호출 시 다이얼로그 1회, 이후 호출은 이전 선택(허용/거부)을 그대로 반환.
+// 토큰 등록과 분리하여 ensureFcmToken 은 로그인 이후 user 가 확정된 뒤에만 호출.
+export const requestNotificationPermission = async (): Promise<boolean> => {
+  if (Platform.OS === 'android' && Platform.Version >= 33) {
+    const result = await PermissionsAndroid.request(
+      PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
+    );
+    return result === PermissionsAndroid.RESULTS.GRANTED;
   }
+  // Android 12 이하는 설치 시 자동 부여되므로 별도 요청 불필요
+  return true;
+};
+
+export const ensureFcmToken = async (): Promise<void> => {
+  // Android 13+ 는 PermissionsAndroid.check 로 실제 권한 상태를 확인한다.
+  // 권한이 없으면 토큰을 발급받아도 사용자에게 알림이 표시되지 않으므로 등록을 skip.
+  if (Platform.OS === 'android' && Platform.Version >= 33) {
+    const granted = await PermissionsAndroid.check(
+      PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
+    );
+    if (!granted) {
+      console.warn('[fcm] notification permission denied');
+      useStore.getState().setFcmRegistered(false);
+      return;
+    }
+  }
+  const messaging = getMessaging(getApp());
   const deviceId = await getDeviceId();
   try {
     const token = await getToken(messaging);

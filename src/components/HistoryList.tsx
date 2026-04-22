@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
-import { COLORS } from '../utils/colors';
+import { COLORS, COLOR_PRESETS } from '../utils/colors';
 import type {
   AssetId,
   BalanceAdjustHistory,
@@ -228,7 +228,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   chipActive: {
-    backgroundColor: COLORS.accent + '22',
+    backgroundColor: COLOR_PRESETS.accentMuted,
     borderColor: COLORS.accent,
   },
   chipText: {

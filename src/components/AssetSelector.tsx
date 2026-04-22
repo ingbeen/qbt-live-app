@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { COLORS } from '../utils/colors';
+import { COLORS, COLOR_PRESETS } from '../utils/colors';
 import { ASSETS } from '../utils/constants';
 import type { AssetId } from '../types/rtdb';
 import { toUpperTicker } from '../utils/format';
@@ -52,8 +52,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   cellActive: {
-    // COLORS.accent + '22' = 파랑 반투명 (FillForm 기존 패턴과 일관)
-    backgroundColor: COLORS.accent + '22',
+    backgroundColor: COLOR_PRESETS.accentMuted,
     borderColor: COLORS.accent,
   },
   cellText: {

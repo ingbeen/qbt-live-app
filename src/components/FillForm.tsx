@@ -9,7 +9,7 @@ import {
 import DateTimePicker, {
   type DateTimePickerEvent,
 } from '@react-native-community/datetimepicker';
-import { COLORS } from '../utils/colors';
+import { COLORS, COLOR_PRESETS } from '../utils/colors';
 import { ASSETS, SYMBOLS } from '../utils/constants';
 import type {
   AssetId,
@@ -180,7 +180,7 @@ export const FillForm: React.FC<Props> = ({
           style={({ pressed }) => [
             styles.cell,
             direction === 'buy' && {
-              backgroundColor: COLORS.green + '22',
+              backgroundColor: COLOR_PRESETS.greenMuted,
               borderColor: COLORS.green,
             },
             pressed && !submitting && { opacity: 0.7 },
@@ -201,7 +201,7 @@ export const FillForm: React.FC<Props> = ({
           style={({ pressed }) => [
             styles.cell,
             direction === 'sell' && {
-              backgroundColor: COLORS.red + '22',
+              backgroundColor: COLOR_PRESETS.redMuted,
               borderColor: COLORS.red,
             },
             pressed && !submitting && { opacity: 0.7 },
@@ -346,8 +346,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   pendingHint: {
-    backgroundColor: COLORS.accent + '1e',
-    borderColor: COLORS.accent + '55',
+    backgroundColor: COLOR_PRESETS.accentBg,
+    borderColor: COLOR_PRESETS.accentBorder,
     borderWidth: 1,
     borderRadius: 6,
     paddingVertical: 8,
@@ -387,7 +387,7 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   cellActive: {
-    backgroundColor: COLORS.accent + '22',
+    backgroundColor: COLOR_PRESETS.accentMuted,
     borderColor: COLORS.accent,
   },
   cellText: {

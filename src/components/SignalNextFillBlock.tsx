@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { COLORS } from '../utils/colors';
+import { COLORS, COLOR_PRESETS } from '../utils/colors';
 import { ASSETS, SYMBOLS } from '../utils/constants';
 import type { AssetId, PendingOrder, Signal } from '../types/rtdb';
 import { directionLabel, toUpperTicker } from '../utils/format';
@@ -45,8 +45,8 @@ export const SignalNextFillBlock: React.FC<Props> = ({
 
 const styles = StyleSheet.create({
   wrap: {
-    backgroundColor: COLORS.accent + '1e',
-    borderColor: COLORS.accent + '55',
+    backgroundColor: COLOR_PRESETS.accentBg,
+    borderColor: COLOR_PRESETS.accentBorder,
     borderWidth: 1,
     borderRadius: 8,
     padding: 12,

@@ -10,7 +10,7 @@ import {
 import { useStore } from '../store/useStore';
 import { signOut } from '../services/auth';
 import { Badge } from '../components/Badge';
-import { COLORS } from '../utils/colors';
+import { COLORS, COLOR_PRESETS } from '../utils/colors';
 import { APP_VERSION } from '../utils/constants';
 
 interface RowProps {
@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   signOutBtnPressed: {
-    backgroundColor: COLORS.red + '11',
+    backgroundColor: COLOR_PRESETS.redPressed,
   },
   signOutBtnDisabled: {
     opacity: 0.5,

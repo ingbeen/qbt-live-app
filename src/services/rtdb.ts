@@ -32,6 +32,11 @@ const withTimeout = <T>(p: Promise<T>, ms: number): Promise<T> =>
 
 const dbRef = (path: string) => ref(getDatabase(getApp()), path);
 
+/**
+ * RTDB 경로에서 단발성 읽기. 경로가 존재하지 않거나 값이 null 인 경우 모두 null 을 리턴한다.
+ * RTDB 는 빈 배열 / 빈 객체를 저장하지 않으므로, 빈 컬렉션 폴백이 필요한 호출부는
+ * 결과에 `?? []` / `?? {}` 를 적용해 사용한다.
+ */
 export const readOnce = async <T>(path: string): Promise<T | null> => {
   const snap = await withTimeout(get(dbRef(path)), RTDB_TIMEOUT_MS);
   return snap.exists() ? (snap.val() as T) : null;

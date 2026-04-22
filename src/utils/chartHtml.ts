@@ -1,14 +1,16 @@
 // Lightweight Charts 는 브라우저 전용 라이브러리. WebView 내부에서만 동작하므로
-// RN JS 모듈에서 import 할 수 없고 CDN 으로 로드. 버전은 재현성을 위해 @4.2.0 고정.
+// RN JS 모듈에서 import 할 수 없고 CDN 으로 로드. 버전은 재현성을 위해 CHART_LIB_VERSION 에 고정.
 // HTML 내부 색상은 Lightweight Charts 옵션에 직접 전달되므로 COLORS 상수를 주입할 수 없음
 // (CLAUDE.md §7 WebView 범주 — §3.3 RN 컴포넌트 하드코딩 금지 규칙의 예외).
+
+import { CHART_LIB_VERSION } from './constants';
 
 export const generateChartHtml = (): string => `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+  <script src="https://unpkg.com/lightweight-charts@${CHART_LIB_VERSION}/dist/lightweight-charts.standalone.production.js"></script>
   <style>
     html, body, #chart { margin: 0; padding: 0; width: 100%; height: 100%; background: #161b22; }
     body { overflow: hidden; }

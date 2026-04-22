@@ -1,6 +1,6 @@
 import React from 'react';
 import { Modal, View, Text, StyleSheet, Pressable } from 'react-native';
-import { COLORS } from '../utils/colors';
+import { COLORS, COLOR_PRESETS } from '../utils/colors';
 import { ASSETS, SYMBOLS } from '../utils/constants';
 import type { AssetId, PendingOrder, Signal } from '../types/rtdb';
 import { directionLabel, toUpperTicker } from '../utils/format';
@@ -121,8 +121,8 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   pendingBox: {
-    backgroundColor: COLORS.orange + '22',
-    borderColor: COLORS.orange + '70',
+    backgroundColor: COLOR_PRESETS.orangeBg,
+    borderColor: COLOR_PRESETS.orangeBorder,
     borderWidth: 1,
     borderRadius: 8,
     padding: 12,

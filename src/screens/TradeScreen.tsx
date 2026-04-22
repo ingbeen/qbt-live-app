@@ -6,7 +6,7 @@ import {
   ActivityIndicator,
   Pressable,
 } from 'react-native';
-import { COLORS } from '../utils/colors';
+import { COLORS, COLOR_PRESETS } from '../utils/colors';
 import { useStore } from '../store/useStore';
 import { PullToRefreshScrollView } from '../components/PullToRefreshScrollView';
 import { FillForm } from '../components/FillForm';
@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   segmentItemActive: {
-    backgroundColor: COLORS.accent + '22',
+    backgroundColor: COLOR_PRESETS.accentMuted,
   },
   segmentText: {
     color: COLORS.sub,

@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { withAlpha } from '../utils/colors';
 
 interface BadgeProps {
   text: string;
@@ -7,7 +8,7 @@ interface BadgeProps {
 }
 
 export const Badge: React.FC<BadgeProps> = ({ text, color }) => (
-  <View style={[styles.wrap, { backgroundColor: color + '22' }]}>
+  <View style={[styles.wrap, { backgroundColor: withAlpha(color, '22') }]}>
     <Text style={[styles.text, { color }]}>{text}</Text>
   </View>
 );

@@ -9,7 +9,7 @@ import {
 import DateTimePicker, {
   type DateTimePickerEvent,
 } from '@react-native-community/datetimepicker';
-import { COLORS } from '../utils/colors';
+import { COLORS, COLOR_PRESETS } from '../utils/colors';
 import { ASSET_TARGETS } from '../utils/constants';
 import type {
   AssetId,
@@ -321,7 +321,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.bg,
   },
   cellActive: {
-    backgroundColor: COLORS.accent + '22',
+    backgroundColor: COLOR_PRESETS.accentMuted,
     borderColor: COLORS.accent,
   },
   cellText: {

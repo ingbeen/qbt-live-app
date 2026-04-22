@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { COLORS } from '../utils/colors';
+import { COLORS, COLOR_PRESETS } from '../utils/colors';
 import { ASSETS, SYMBOLS } from '../utils/constants';
 import type { AssetId, PendingOrder, Signal } from '../types/rtdb';
 import type { InboxItem } from '../services/rtdb';
@@ -61,8 +61,8 @@ export const ReminderBlock: React.FC<Props> = ({
 
 const styles = StyleSheet.create({
   wrap: {
-    backgroundColor: COLORS.orange + '22',
-    borderColor: COLORS.orange + '70',
+    backgroundColor: COLOR_PRESETS.orangeBg,
+    borderColor: COLOR_PRESETS.orangeBorder,
     borderWidth: 1,
     borderRadius: 8,
     padding: 12,

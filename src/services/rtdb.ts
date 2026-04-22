@@ -13,7 +13,8 @@ import type {
   FillHistory,
   BalanceAdjustHistory,
   SignalHistory,
-  ChartMeta,
+  PriceChartMeta,
+  EquityChartMeta,
   PriceChartSeries,
   EquityChartSeries,
 } from '../types/rtdb';
@@ -92,16 +93,11 @@ export const submitModelSync = async (): Promise<void> => {
   );
 };
 
-// 호출부(FillForm) 가 input_time_kst 를 채워 전달하므로 서비스 단 폴백은 두지 않는다.
-// reason 은 설계서 기본값 "" 이므로 undefined 대비 폴백만 유지.
+// 호출부(FillForm) 가 input_time_kst / reason 을 채워 전달하므로 서비스 단 폴백을 두지 않는다.
 export const submitFill = async (p: FillPayload): Promise<void> => {
   const key = uuid.v4() as string;
-  const payload: FillPayload = {
-    ...p,
-    reason: p.reason ?? '',
-  };
   await withTimeout(
-    set(dbRef(`${RTDB_PATHS.FILLS_INBOX}/${key}`), payload),
+    set(dbRef(`${RTDB_PATHS.FILLS_INBOX}/${key}`), p),
     RTDB_TIMEOUT_MS,
   );
 };
@@ -150,8 +146,8 @@ export const submitDeviceToken = async (
 
 export const readPriceChartMeta = (
   assetId: AssetId,
-): Promise<ChartMeta | null> =>
-  readOnce<ChartMeta>(`${RTDB_PATHS.CHARTS_PRICES}/${assetId}/meta`);
+): Promise<PriceChartMeta | null> =>
+  readOnce<PriceChartMeta>(`${RTDB_PATHS.CHARTS_PRICES}/${assetId}/meta`);
 
 export const readPriceChartRecent = (
   assetId: AssetId,
@@ -166,8 +162,8 @@ export const readPriceChartArchive = (
     `${RTDB_PATHS.CHARTS_PRICES}/${assetId}/archive/${year}`,
   );
 
-export const readEquityChartMeta = (): Promise<ChartMeta | null> =>
-  readOnce<ChartMeta>(`${RTDB_PATHS.CHARTS_EQUITY}/meta`);
+export const readEquityChartMeta = (): Promise<EquityChartMeta | null> =>
+  readOnce<EquityChartMeta>(`${RTDB_PATHS.CHARTS_EQUITY}/meta`);
 
 export const readEquityChartRecent = (): Promise<EquityChartSeries | null> =>
   readOnce<EquityChartSeries>(`${RTDB_PATHS.CHARTS_EQUITY}/recent`);

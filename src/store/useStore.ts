@@ -8,7 +8,8 @@ import type {
   BalanceAdjustPayload,
   FillHistory,
   BalanceAdjustHistory,
-  ChartMeta,
+  PriceChartMeta,
+  EquityChartMeta,
   PriceChartSeries,
   EquityChartSeries,
 } from '../types/rtdb';
@@ -44,13 +45,13 @@ export type AuthUser = {
 
 // 차트 탭 로컬 캐시. meta/recent 는 첫 로드 전 null, archive 는 연도별 지연 로드.
 export interface PriceChartCache {
-  meta: ChartMeta | null;
+  meta: PriceChartMeta | null;
   recent: PriceChartSeries | null;
   archive: Partial<Record<number, PriceChartSeries>>;
 }
 
 export interface EquityChartCache {
-  meta: ChartMeta | null;
+  meta: EquityChartMeta | null;
   recent: EquityChartSeries | null;
   archive: Partial<Record<number, EquityChartSeries>>;
 }

@@ -110,12 +110,6 @@ const renderSignalContent = (e: HistoryEvent & { kind: 'signal' }): string =>
 const fillBarColor = (f: FillHistory): string =>
   f.direction === 'buy' ? COLORS.green : COLORS.red;
 
-const fillTagBadge = (f: FillHistory): { text: string; color: string } | null => {
-  if (f.reason === 'system_fill') return { text: '시스템', color: COLORS.green };
-  if (f.reason === 'personal_trade') return { text: '개인', color: COLORS.red };
-  return null;
-};
-
 export const HistoryList: React.FC<Props> = ({
   fills,
   balanceAdjusts,
@@ -161,13 +155,11 @@ export const HistoryList: React.FC<Props> = ({
         events.map((e, idx) => {
           let barColor: string;
           let typeBadge: { text: string; color: string };
-          let tagBadge: { text: string; color: string } | null = null;
           let content: string;
 
           if (e.kind === 'fill') {
             barColor = fillBarColor(e.fill);
             typeBadge = { text: '체결', color: COLORS.text };
-            tagBadge = fillTagBadge(e.fill);
             content = renderFillContent(e.fill);
           } else if (e.kind === 'balance_adjust') {
             barColor = COLORS.yellow;
@@ -187,9 +179,6 @@ export const HistoryList: React.FC<Props> = ({
                 <Text style={styles.content}>{content}</Text>
                 <View style={styles.badges}>
                   <Badge text={typeBadge.text} color={typeBadge.color} />
-                  {tagBadge ? (
-                    <Badge text={tagBadge.text} color={tagBadge.color} />
-                  ) : null}
                 </View>
               </View>
             </View>

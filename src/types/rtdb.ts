@@ -63,13 +63,26 @@ export interface PendingOrder {
 }
 
 // ============================================================
-// /charts/prices/{asset_id}/meta, /charts/equity/meta
+// /charts/prices/{asset_id}/meta
 // ============================================================
 
-export interface ChartMeta {
+// 주가 차트 메타 — ma_window 필수 (이동평균 기간)
+export interface PriceChartMeta {
   first_date: string;
   last_date: string;
-  ma_window?: number;
+  ma_window: number;
+  recent_months: number;
+  archive_years: number[];
+}
+
+// ============================================================
+// /charts/equity/meta
+// ============================================================
+
+// equity 차트 메타 — ma_window 개념 없음 (포트폴리오 전체에는 이동평균 미적용)
+export interface EquityChartMeta {
+  first_date: string;
+  last_date: string;
   recent_months: number;
   archive_years: number[];
 }
@@ -113,7 +126,11 @@ export interface FillPayload {
   trade_date: string;
   input_time_kst: string;
   memo?: string | null;
-  reason?: string;
+  // 사용자가 입력한 체결 사유 (자유 텍스트). 서버는 변환하지 않고
+  // 그대로 /history/fills/.../reason 에 저장. 체결 탭(FillForm) 에는
+  // 사유 입력 UI 가 없어 항상 빈 문자열을 전송. 보정 탭의
+  // BalanceAdjustPayload.reason 은 별도이며 사용자 입력을 받는다.
+  reason: string;
 }
 
 // ============================================================

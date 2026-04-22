@@ -1,10 +1,11 @@
 # AUDIT_APP.md — 앱 코드/문서 감사 리포트
 
 > **작성일**: 2026-04-22
-> **최종 업데이트**: 2026-04-22 — 재검증 결과 3건 철회, 서버 확인 대기 3건 표시, PLAN_AUDIT_01 / 02 / 03 반영
+> **최종 업데이트**: 2026-04-22 — PLAN_AUDIT_04 반영 (서버 회신 기반, ⏸ 3건 전부 해제)
 > **범위**: `qbt-live-app` 프로젝트의 앱 측 (`src/`, `CLAUDE.md`, `README.md`, `docs/COMMANDS.md`)
 > **관련 리포**: 서버 측 확인·조치 필요 항목은 [AUDIT_SERVER.md](AUDIT_SERVER.md) 참조
-> **계획서**: [PLAN_AUDIT_01_CONSTANTS.md](PLAN_AUDIT_01_CONSTANTS.md) / [PLAN_AUDIT_02_HELPERS.md](PLAN_AUDIT_02_HELPERS.md) / [PLAN_AUDIT_03_DOCS_CLEANUP.md](PLAN_AUDIT_03_DOCS_CLEANUP.md) 모두 완료
+> **계획서**: [PLAN_AUDIT_01](PLAN_AUDIT_01_CONSTANTS.md) / [PLAN_AUDIT_02](PLAN_AUDIT_02_HELPERS.md) / [PLAN_AUDIT_03](PLAN_AUDIT_03_DOCS_CLEANUP.md) / [PLAN_AUDIT_04](PLAN_AUDIT_04_SERVER_REPLY.md) 모두 완료
+> **서버 회신**: [AUDIT_APP_ACTIONS.md](AUDIT_APP_ACTIONS.md) — 2026-04-22 서버 답변 반영 완료
 > **우선순위 표기**: High / Mid / Low
 > **상태 표기**: ✅ 완료 / ⏳ 예정 / ⏸ 서버 대기 / ✗ 철회
 
@@ -14,8 +15,7 @@
 
 | 상태 | 의미 | 건수 |
 |---|---|---|
-| ✅ | PLAN_AUDIT_01 / 02 / 03 로 처리 완료 | 11 (원본 7 + 재검증 추가 3 + CLAUDE.md:648) |
-| ⏸ | 서버 확인 결과 나온 뒤 별도 처리 | 3 |
+| ✅ | PLAN_AUDIT_01 / 02 / 03 / 04 로 처리 완료 | 14 (원본 7 + 재검증 추가 3 + CLAUDE.md:648 + 서버 회신 해제 3) |
 | ✗ | 재검증 결과 유효하지 않아 철회 | 3 |
 | — | 유지 판정 (리팩토링 불필요) / 당분간 Low 보류 | 2 |
 
@@ -60,12 +60,10 @@
 
 ## 2. 버그
 
-### 2.1 [Mid] ⏸ `portfolio.assets[id]` 런타임 undefined 가능성
-- **파일**: [src/components/AssetSummaryCard.tsx:60](../src/components/AssetSummaryCard.tsx#L60), [src/components/ModelCompareCard.tsx:68](../src/components/ModelCompareCard.tsx#L68)
-- **현재**: `const snap = portfolio.assets[id];` — 이후 `snap.model_shares` 등 무방비 접근
-- **문제**: 타입상 `Record<AssetId, AssetSnapshot>` 이지만, RTDB 에서 특정 자산 키가 누락되면 `undefined`.
-- **권장**: 서버 확인 결과에 따라 앱 타입을 `Partial<Record<...>>` 로 변경 + 가드 추가, 또는 현상 유지.
-- **서버 확인**: [AUDIT_SERVER.md §3.2](AUDIT_SERVER.md) — 서버가 4자산 모두 항상 채우는지 계약 확인 필요.
+### 2.1 [Mid] ✅ `portfolio.assets[id]` 런타임 undefined 가능성 — 서버 회신 기반 결정
+- **서버 답변 (2026-04-22)**: `/latest/portfolio.assets` 는 항상 4자산 (sso/qld/gld/tlt) 전체 포함. 전량 매도 시에도 `model_shares=0, actual_shares=0, signal_state="sell"` 로 키 유지.
+- **결정**: 현 타입 `Record<AssetId, AssetSnapshot>` 유지. 방어용 런타임 가드 추가 불필요.
+- **근거**: [AUDIT_APP_ACTIONS.md §4.1](AUDIT_APP_ACTIONS.md)
 
 ---
 
@@ -133,15 +131,13 @@
 
 ## 7. 문서/주석/코드 3자 불일치
 
-### 7.1 [Mid] ⏸ `ChartMeta.ma_window` 필수성 불일치
-- **위치**: [docs/DESIGN_QBT_LIVE_FINAL.md §8.2.5.1](DESIGN_QBT_LIVE_FINAL.md), [src/types/rtdb.ts:72](../src/types/rtdb.ts#L72)
-- **불일치**: price chart meta 필수 vs equity chart meta 부재 vs 앱 타입 optional.
-- **서버 확인**: [AUDIT_SERVER.md §3.1](AUDIT_SERVER.md) — 결과에 따라 타입 분리 방향 결정.
+### 7.1 [Mid] ✅ `ChartMeta.ma_window` 필수성 불일치 — PLAN_AUDIT_04
+- **서버 답변 (2026-04-22)**: 서버 dataclass 이미 `ChartMeta` / `EquityChartMeta` 로 분리. 앱도 1:1 대응.
+- **처리**: `ChartMeta` → `PriceChartMeta` (ma_window 필수) + `EquityChartMeta` (ma_window 없음) 분리. services/rtdb.ts 및 store/useStore.ts 의 사용처 모두 업데이트.
 
-### 7.2 [Low] ⏸ `FillPayload.reason` 선택성 불일치
-- **위치**: [docs/DESIGN_QBT_LIVE_FINAL.md §8.2.7](DESIGN_QBT_LIVE_FINAL.md), [src/types/rtdb.ts:116](../src/types/rtdb.ts#L116), [src/services/rtdb.ts:101](../src/services/rtdb.ts#L101)
-- **불일치**: 설계상 필수(기본값 있음) vs 타입상 optional.
-- **서버 확인**: [AUDIT_SERVER.md §3.4](AUDIT_SERVER.md) — 결과에 따라 타입 엄격화 또는 설계서 변경.
+### 7.2 [Low] ✅ `FillPayload.reason` 선택성 불일치 — PLAN_AUDIT_04
+- **서버 답변 (2026-04-22)**: 설계서대로 필수 (기본값 `""`). 서버가 `str(data.get("reason", ""))` 로 안전 파싱.
+- **처리**: `reason?: string` → `reason: string` 필수화. FillForm 이 `reason: ''` 명시 전송, submitFill 의 폴백 제거. "자유 텍스트" JSDoc 주석 추가. 동시에 §1.3 dead code (`fillTagBadge`) 제거.
 
 ---
 
@@ -183,10 +179,12 @@
 
 ## 10. 다음 단계
 
-- **서버 답변 후 별도 작업** (예정): §2.1, §7.1, §7.2 — [AUDIT_SERVER.md](AUDIT_SERVER.md) 결과 반영
+- **서버 답변 반영 완료**: §2.1, §7.1, §7.2 모두 PLAN_AUDIT_04 로 처리됨
 - **미분류 잔여** (Low, 선택): §3.4 HistoryList.FILTERS, §3.5 WebView 메시지 타입 — 필요성 재판단 후 결정
 
-PLAN_AUDIT 시리즈는 모두 완료. 앱 측에서 즉시 조치 가능한 항목은 전부 반영되었고, 잔여는 서버 답변과 Low 우선순위 선택 항목뿐.
+PLAN_AUDIT 시리즈 01 ~ 04 전부 완료. 앱 측 감사 액션이 전부 소진됨. 이후 작업은:
+1. 서버 측에서 [AUDIT_SERVER.md](AUDIT_SERVER.md) 에 기록된 앱 측 답변을 수신 → 서버 설계서 수정 계획 수립
+2. Low 보류 2건 (§3.4, §3.5) 는 실제 필요성이 발생할 때 별도 처리
 
 ---
 

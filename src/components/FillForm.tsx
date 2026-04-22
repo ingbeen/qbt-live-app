@@ -67,6 +67,8 @@ export const FillForm: React.FC<Props> = ({
       actual_price: parseFloatOrUndefined(priceText),
       trade_date: tradeDate,
       memo: memo || null,
+      // 체결 탭은 사유 입력 UI 가 없어 항상 빈 문자열 전송 (설계서 §8.2.7 기본값).
+      reason: '',
     }),
     [assetId, direction, sharesText, priceText, tradeDate, memo],
   );

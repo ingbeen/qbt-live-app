@@ -1,10 +1,10 @@
 # AUDIT_APP.md — 앱 코드/문서 감사 리포트
 
 > **작성일**: 2026-04-22
-> **최종 업데이트**: 2026-04-22 — 재검증 결과 3건 철회, 서버 확인 대기 3건 표시, PLAN_AUDIT_01 반영
+> **최종 업데이트**: 2026-04-22 — 재검증 결과 3건 철회, 서버 확인 대기 3건 표시, PLAN_AUDIT_01 / 02 반영
 > **범위**: `qbt-live-app` 프로젝트의 앱 측 (`src/`, `CLAUDE.md`, `README.md`, `docs/COMMANDS.md`)
 > **관련 리포**: 서버 측 확인·조치 필요 항목은 [AUDIT_SERVER.md](AUDIT_SERVER.md) 참조
-> **계획서**: [PLAN_AUDIT_01_CONSTANTS.md](PLAN_AUDIT_01_CONSTANTS.md) (진행 중), 02 / 03 예정
+> **계획서**: [PLAN_AUDIT_01_CONSTANTS.md](PLAN_AUDIT_01_CONSTANTS.md) (완료), [PLAN_AUDIT_02_HELPERS.md](PLAN_AUDIT_02_HELPERS.md) (완료), 03 예정
 > **우선순위 표기**: High / Mid / Low
 > **상태 표기**: ✅ 완료 / ⏳ 예정 / ⏸ 서버 대기 / ✗ 철회
 
@@ -14,11 +14,11 @@
 
 | 상태 | 의미 | 건수 |
 |---|---|---|
-| ✅ | PLAN_AUDIT_01 로 처리 완료 | 3 |
-| ⏳ | PLAN_AUDIT_02 / 03 에서 처리 예정 | 8 |
+| ✅ | PLAN_AUDIT_01 / 02 로 처리 완료 | 7 |
+| ⏳ | PLAN_AUDIT_03 에서 처리 예정 | 4 |
 | ⏸ | 서버 확인 결과 나온 뒤 별도 처리 | 3 |
 | ✗ | 재검증 결과 유효하지 않아 철회 | 3 |
-| — | 해당 없음 (이슈 자체 없음) | — |
+| — | 유지 판정 (리팩토링 불필요) / 당분간 Low 보류 | 2 |
 
 **원본 감사 당시 21건** → 재검증·수용으로 **철회 3건 제외 실질 18건**. 이 중 3건은 서버 답 대기.
 
@@ -98,17 +98,14 @@
 
 ## 4. 리팩토링
 
-### 4.1 [Mid] ⏳ pending 주식수 계산 3중 중복 — PLAN_AUDIT_02
-- **파일**: [src/components/ReminderBlock.tsx:46-50](../src/components/ReminderBlock.tsx#L46-L50), [src/components/SignalNextFillBlock.tsx:30-34](../src/components/SignalNextFillBlock.tsx#L30-L34), [src/components/SyncDialog.tsx:48-52](../src/components/SyncDialog.tsx#L48-L52)
-- **권장**: `formatPendingShares(deltaAmount, close)` 를 `src/utils/format.ts` 에 추출.
+### 4.1 [Mid] ✅ pending 주식수 계산 3중 중복 — PLAN_AUDIT_02
+- **처리**: `formatPendingShares(deltaAmount, close)` 를 `src/utils/format.ts` 에 추출. ReminderBlock / SignalNextFillBlock / SyncDialog 에서 공용 사용.
 
-### 4.2 [Mid] ⏳ `ASSETS.flatMap` pending 수집 패턴 중복 — PLAN_AUDIT_02
-- **파일**: [src/components/ReminderBlock.tsx:30-36](../src/components/ReminderBlock.tsx#L30-L36), [src/components/SignalNextFillBlock.tsx:17-20](../src/components/SignalNextFillBlock.tsx#L17-L20), [src/components/SyncDialog.tsx:23-26](../src/components/SyncDialog.tsx#L23-L26)
-- **권장**: `listPendingOrders(pendingOrders)` 를 `src/utils/format.ts` 에 추출.
+### 4.2 [Mid] ✅ `ASSETS.flatMap` pending 수집 패턴 중복 — PLAN_AUDIT_02
+- **처리**: `listPendingOrders(pendingOrders)` 를 `src/utils/format.ts` 에 추출. SignalNextFillBlock / SyncDialog 는 직접 사용, ReminderBlock 은 `.filter()` 체인으로 변형 적용.
 
-### 4.3 [Low] ⏳ `ModelCompareCard.formatDiff` → `formatSignedUSD` + `formatSignedInt` 통합 — PLAN_AUDIT_02
-- **파일**: [src/components/ModelCompareCard.tsx:13-17, 90-94](../src/components/ModelCompareCard.tsx)
-- **권장**: `formatSignedInt` (달러 없는 정수 부호 포맷) 을 `format.ts` 에 신설 후, 주식수 diff / 현금 diff 양쪽을 공용 포맷으로 교체. 로컬 `formatDiff` 제거.
+### 4.3 [Low] ✅ `ModelCompareCard.formatDiff` → `formatSignedInt` 통합 — PLAN_AUDIT_02
+- **처리**: `formatSignedInt` 을 `format.ts` 에 신설. 주식수 diff / 현금 diff 양쪽에서 공용 사용 (현금 diff 는 `Math.round` 선행). 로컬 `formatDiff` 제거.
 
 ### 4.4 [Low] 유지 `HistoryList` 의 3종 `toEvents` 변환 유사 구조
 - **파일**: [src/components/HistoryList.tsx:46-71](../src/components/HistoryList.tsx#L46-L71)
@@ -130,9 +127,8 @@
 
 ## 6. 불필요한 fallback
 
-### 6.1 [Low] ⏳ `close && close > 0` 표현 정비 — PLAN_AUDIT_02 (§4.1 과 병합)
-- **파일**: [src/components/ReminderBlock.tsx:48](../src/components/ReminderBlock.tsx#L48), [src/components/SignalNextFillBlock.tsx:32](../src/components/SignalNextFillBlock.tsx#L32), [src/components/SyncDialog.tsx:50](../src/components/SyncDialog.tsx#L50)
-- **처리**: §4.1 의 `formatPendingShares` 추출 시 `close != null && close > 0` 로 명시화.
+### 6.1 [Low] ✅ `close && close > 0` 표현 정비 — PLAN_AUDIT_02 (§4.1 과 병합)
+- **처리**: `formatPendingShares` 내부에서 `close == null || close <= 0` 로 명시. 기존 3곳 표현은 헬퍼 호출로 대체되어 삭제됨.
 
 ---
 
@@ -178,7 +174,6 @@
 
 ## 10. 다음 단계
 
-- **PLAN_AUDIT_02** (예정): §4.1, §4.2, §4.3 + §6.1 — 헬퍼 추출 및 포맷 통합
 - **PLAN_AUDIT_03** (예정): §8.1, §8.2, §8.3, §8.4 — 문서 버전 하드코딩 정리
 - **서버 답변 후 별도 작업** (예정): §2.1, §7.1, §7.2 — [AUDIT_SERVER.md](AUDIT_SERVER.md) 결과 반영
 - **미분류 잔여** (Low, 선택): §3.4 HistoryList.FILTERS, §3.5 WebView 메시지 타입 — 필요성 재판단 후 결정

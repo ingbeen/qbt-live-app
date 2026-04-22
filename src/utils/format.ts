@@ -1,4 +1,5 @@
-import type { AssetId, Direction } from '../types/rtdb';
+import type { AssetId, Direction, PendingOrder } from '../types/rtdb';
+import { ASSETS } from './constants';
 
 // ─── 금액 (USD) — 천 단위 콤마 + 소수점 2자리 ───
 
@@ -111,4 +112,35 @@ export const toSignalTicker = (id: AssetId): string => {
 export const directionLabel = (d: number | Direction): '매수' | '매도' => {
   if (typeof d === 'number') return d > 0 ? '매수' : '매도';
   return d === 'buy' ? '매수' : '매도';
+};
+
+// ─── pending 주문 헬퍼 ───
+
+// pendingOrders 객체에서 ASSETS 순서대로 실제 주문만 배열로 수집.
+export const listPendingOrders = (
+  pendingOrders: Partial<Record<AssetId, PendingOrder>> | null,
+): PendingOrder[] =>
+  ASSETS.flatMap((id) => {
+    const p = pendingOrders?.[id];
+    return p ? [p] : [];
+  });
+
+// pending 주문의 delta_amount 를 주가로 나눠 정수 주식수 문자열로 포맷.
+// 주가가 없거나 0 이하면 빈 문자열. 반환 끝에 공백 1 칸 포함 (호출부의 뒤따르는 라벨과 간격).
+export const formatPendingShares = (
+  deltaAmount: number,
+  close: number | undefined,
+): string => {
+  if (close == null || close <= 0) return '';
+  return `${Math.round(Math.abs(deltaAmount) / close)}주 `;
+};
+
+// ─── 부호 포함 정수 (달러 없음, 괄호) ───
+
+// 정수 차이값에 부호 + 괄호를 붙여 표시. 0 이면 빈 문자열.
+// 예: 3 → "(+3)", -3 → "(-3)", 0 → ""
+export const formatSignedInt = (diff: number): string => {
+  if (diff > 0) return `(+${diff})`;
+  if (diff < 0) return `(${diff})`;
+  return '';
 };

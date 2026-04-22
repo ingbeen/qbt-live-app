@@ -1,9 +1,14 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { COLORS, COLOR_PRESETS } from '../utils/colors';
-import { ASSETS, SYMBOLS } from '../utils/constants';
+import { SYMBOLS } from '../utils/constants';
 import type { AssetId, PendingOrder, Signal } from '../types/rtdb';
-import { directionLabel, toUpperTicker } from '../utils/format';
+import {
+  directionLabel,
+  formatPendingShares,
+  listPendingOrders,
+  toUpperTicker,
+} from '../utils/format';
 
 interface Props {
   pendingOrders: Partial<Record<AssetId, PendingOrder>> | null;
@@ -14,10 +19,7 @@ export const SignalNextFillBlock: React.FC<Props> = ({
   pendingOrders,
   signals,
 }) => {
-  const pendings = ASSETS.flatMap((id) => {
-    const p = pendingOrders?.[id];
-    return p ? [p] : [];
-  });
+  const pendings = listPendingOrders(pendingOrders);
 
   if (pendings.length === 0) return null;
 
@@ -27,11 +29,10 @@ export const SignalNextFillBlock: React.FC<Props> = ({
         시그널 {SYMBOLS.ARROW_RIGHT} 다음 거래일 체결 예정
       </Text>
       {pendings.map((p) => {
-        const close = signals?.[p.asset_id]?.close;
-        const sharesText =
-          close && close > 0
-            ? `${Math.round(Math.abs(p.delta_amount) / close)}주 `
-            : '';
+        const sharesText = formatPendingShares(
+          p.delta_amount,
+          signals?.[p.asset_id]?.close,
+        );
         return (
           <Text key={p.asset_id} style={styles.line}>
             {toUpperTicker(p.asset_id)} {sharesText}

@@ -3,18 +3,12 @@ import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { COLORS } from '../utils/colors';
 import { ASSETS, CASH_DIFF_THRESHOLD_USD, SYMBOLS } from '../utils/constants';
 import type { Portfolio } from '../types/rtdb';
-import { formatUSDInt, toUpperTicker } from '../utils/format';
+import { formatSignedInt, formatUSDInt, toUpperTicker } from '../utils/format';
 
 interface Props {
   portfolio: Portfolio;
   onSyncPress: () => void;
 }
-
-const formatDiff = (diff: number): string => {
-  if (diff > 0) return `(+${diff})`;
-  if (diff < 0) return `(${diff})`;
-  return '';
-};
 
 export const ModelCompareCard: React.FC<Props> = ({
   portfolio,
@@ -75,7 +69,7 @@ export const ModelCompareCard: React.FC<Props> = ({
                 <Text style={styles.assetCompare}>
                   M:{snap.model_shares} / A:{snap.actual_shares}
                   {diff !== 0 ? ' ' : ''}
-                  <Text style={{ color: diffColor }}>{formatDiff(diff)}</Text>
+                  <Text style={{ color: diffColor }}>{formatSignedInt(diff)}</Text>
                 </Text>
               </View>
             );
@@ -90,9 +84,7 @@ export const ModelCompareCard: React.FC<Props> = ({
               {formatUSDInt(portfolio.shared_cash_actual)}
               {cashDiff !== 0 ? ' ' : ''}
               <Text style={{ color: cashDiffColor }}>
-                {cashDiff !== 0
-                  ? `(${cashDiff > 0 ? '+' : ''}${formatUSDInt(cashDiff).replace('$', '')})`
-                  : ''}
+                {formatSignedInt(Math.round(cashDiff))}
               </Text>
             </Text>
           </View>

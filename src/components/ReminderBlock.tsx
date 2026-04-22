@@ -1,10 +1,15 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { COLORS, COLOR_PRESETS } from '../utils/colors';
-import { ASSETS, SYMBOLS } from '../utils/constants';
+import { SYMBOLS } from '../utils/constants';
 import type { AssetId, PendingOrder, Signal } from '../types/rtdb';
 import type { InboxItem } from '../services/rtdb';
-import { directionLabel, toUpperTicker } from '../utils/format';
+import {
+  directionLabel,
+  formatPendingShares,
+  listPendingOrders,
+  toUpperTicker,
+} from '../utils/format';
 
 interface Props {
   pendingOrders: Partial<Record<AssetId, PendingOrder>> | null;
@@ -27,13 +32,11 @@ export const ReminderBlock: React.FC<Props> = ({
   inboxFillDismiss,
   signals,
 }) => {
-  const pendingsToRemind = ASSETS.flatMap((id) => {
-    const p = pendingOrders?.[id];
-    if (!p) return [];
-    if (hasInboxForAsset(inboxFills, id)) return [];
-    if (hasInboxForAsset(inboxFillDismiss, id)) return [];
-    return [p];
-  });
+  const pendingsToRemind = listPendingOrders(pendingOrders).filter(
+    (p) =>
+      !hasInboxForAsset(inboxFills, p.asset_id) &&
+      !hasInboxForAsset(inboxFillDismiss, p.asset_id),
+  );
 
   if (pendingsToRemind.length === 0) return null;
 
@@ -43,11 +46,10 @@ export const ReminderBlock: React.FC<Props> = ({
         {SYMBOLS.WARN} 미입력 체결 리마인더
       </Text>
       {pendingsToRemind.map((p) => {
-        const close = signals?.[p.asset_id]?.close;
-        const sharesText =
-          close && close > 0
-            ? `${Math.round(Math.abs(p.delta_amount) / close)}주 `
-            : '';
+        const sharesText = formatPendingShares(
+          p.delta_amount,
+          signals?.[p.asset_id]?.close,
+        );
         return (
           <Text key={p.asset_id} style={styles.line}>
             {toUpperTicker(p.asset_id)} {sharesText}

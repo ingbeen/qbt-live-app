@@ -3,8 +3,8 @@
 QBT Live 시스템의 **Android 앱 클라이언트**. Firebase Realtime Database 를 읽어 포트폴리오/차트/시그널을 표시하고, 체결/잔고 보정을 RTDB inbox 로 기록한다.
 
 - **플랫폼**: Android 전용 (iOS 미지원)
-- **프레임워크**: React Native 0.85.1 CLI (Expo 아님)
-- **언어**: TypeScript 5.8.x
+- **프레임워크**: React Native CLI (정확 핀, Expo 아님). 버전은 `package.json` 참조
+- **언어**: TypeScript (버전은 `package.json` 참조)
 - **New Architecture**: 기본 ON (RN 0.82+ 강제, 비활성 불가)
 
 코딩 규칙 / 스타일 / 금지 사항은 [CLAUDE.md](CLAUDE.md) 를 단일 정본(SoT) 으로 참조한다. 서버↔앱 데이터 계약은 [docs/DESIGN_QBT_LIVE_FINAL.md](docs/DESIGN_QBT_LIVE_FINAL.md).
@@ -13,9 +13,9 @@ QBT Live 시스템의 **Android 앱 클라이언트**. Firebase Realtime Databas
 
 ## 전제 조건
 
-- **Node**: ≥ 22.11 (동작 확인: 22.22.2)
+- **Node**: `package.json` 의 `engines` 참조
 - **JDK**: Temurin 17
-- **Android SDK**: compileSdk 36 / targetSdk 36 / minSdk 24
+- **Android SDK**: `android/build.gradle` 참조
 - **Android 기기 또는 에뮬레이터** (Android 7.0+, API 24+)
 - **Firebase 설정 파일**: `android/app/google-services.json` 배치 필요 (커밋 금지, `.gitignore` 에 포함)
 

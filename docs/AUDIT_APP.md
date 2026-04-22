@@ -1,10 +1,10 @@
 # AUDIT_APP.md — 앱 코드/문서 감사 리포트
 
 > **작성일**: 2026-04-22
-> **최종 업데이트**: 2026-04-22 — 재검증 결과 3건 철회, 서버 확인 대기 3건 표시, PLAN_AUDIT_01 / 02 반영
+> **최종 업데이트**: 2026-04-22 — 재검증 결과 3건 철회, 서버 확인 대기 3건 표시, PLAN_AUDIT_01 / 02 / 03 반영
 > **범위**: `qbt-live-app` 프로젝트의 앱 측 (`src/`, `CLAUDE.md`, `README.md`, `docs/COMMANDS.md`)
 > **관련 리포**: 서버 측 확인·조치 필요 항목은 [AUDIT_SERVER.md](AUDIT_SERVER.md) 참조
-> **계획서**: [PLAN_AUDIT_01_CONSTANTS.md](PLAN_AUDIT_01_CONSTANTS.md) (완료), [PLAN_AUDIT_02_HELPERS.md](PLAN_AUDIT_02_HELPERS.md) (완료), 03 예정
+> **계획서**: [PLAN_AUDIT_01_CONSTANTS.md](PLAN_AUDIT_01_CONSTANTS.md) / [PLAN_AUDIT_02_HELPERS.md](PLAN_AUDIT_02_HELPERS.md) / [PLAN_AUDIT_03_DOCS_CLEANUP.md](PLAN_AUDIT_03_DOCS_CLEANUP.md) 모두 완료
 > **우선순위 표기**: High / Mid / Low
 > **상태 표기**: ✅ 완료 / ⏳ 예정 / ⏸ 서버 대기 / ✗ 철회
 
@@ -14,8 +14,7 @@
 
 | 상태 | 의미 | 건수 |
 |---|---|---|
-| ✅ | PLAN_AUDIT_01 / 02 로 처리 완료 | 7 |
-| ⏳ | PLAN_AUDIT_03 에서 처리 예정 | 4 |
+| ✅ | PLAN_AUDIT_01 / 02 / 03 로 처리 완료 | 11 (원본 7 + 재검증 추가 3 + CLAUDE.md:648) |
 | ⏸ | 서버 확인 결과 나온 뒤 별도 처리 | 3 |
 | ✗ | 재검증 결과 유효하지 않아 철회 | 3 |
 | — | 유지 판정 (리팩토링 불필요) / 당분간 Low 보류 | 2 |
@@ -148,21 +147,31 @@
 
 ## 8. 가변 수치/리스트가 문서 본문에 박혀있는 곳
 
-### 8.1 [Mid] ⏳ `README.md:16` Node 버전 동작 확인 값 — PLAN_AUDIT_03
-- **인용**: "Node: ≥ 22.11 (동작 확인: 22.22.2)"
-- **처리**: `package.json engines` 참조로 리다이렉트, 구체 버전 예시 제거.
+### 8.1 [Mid] ✅ `README.md:16` Node 버전 동작 확인 값 — PLAN_AUDIT_03
+- **처리**: "≥ 22.11 (동작 확인: 22.22.2)" → "`package.json` 의 `engines` 참조"
 
-### 8.2 [Mid] ⏳ `README.md:18` Android SDK 숫자 중복 — PLAN_AUDIT_03
-- **인용**: "Android SDK: compileSdk 36 / targetSdk 36 / minSdk 24"
-- **처리**: `android/build.gradle` 참조로 리다이렉트, 구체 숫자 제거.
+### 8.2 [Mid] ✅ `README.md:18` Android SDK 숫자 중복 — PLAN_AUDIT_03
+- **처리**: "compileSdk 36 / targetSdk 36 / minSdk 24" → "`android/build.gradle` 참조"
 
-### 8.3 [Mid] ⏳ `CLAUDE.md:647` RN/React 버전 하드코딩 — PLAN_AUDIT_03
-- **인용**: "각각 `0.85.1`, `19.2.3`"
-- **처리**: `package.json` 참조로 리다이렉트, 구체 버전 예시 제거.
+### 8.3 [Mid] ✅ `CLAUDE.md:647` RN/React 버전 하드코딩 — PLAN_AUDIT_03
+- **처리**: "각각 `0.85.1`, `19.2.3`" → "현재 고정된 버전은 `package.json` 참조"
 
-### 8.4 [Low] ⏳ `CLAUDE.md:24` Node 버전 괄호 예시 — PLAN_AUDIT_03
-- **인용**: "(22.11 이상)"
-- **처리**: 괄호 안 구체 숫자 제거.
+### 8.4 [Low] ✅ `CLAUDE.md:24` Node 버전 괄호 예시 — PLAN_AUDIT_03
+- **처리**: "(22.11 이상)" 제거.
+
+---
+
+### 8.5 [Mid] ✅ `README.md:6` RN 버전 하드코딩 — 재검증 추가 발견
+- **전**: "React Native 0.85.1 CLI (Expo 아님)"
+- **후**: "React Native CLI (정확 핀, Expo 아님). 버전은 `package.json` 참조"
+
+### 8.6 [Mid] ✅ `README.md:7` TypeScript 버전 하드코딩 — 재검증 추가 발견
+- **전**: "TypeScript 5.8.x"
+- **후**: "TypeScript (버전은 `package.json` 참조)"
+
+### 8.7 [Mid] ✅ `CLAUDE.md:648` `@react-native/*` 버전 하드코딩 — 재검증 추가 발견
+- **전**: "도 `0.85.1` 로 고정"
+- **후**: "도 `react-native` 와 동일한 정확 버전으로 고정"
 
 ---
 
@@ -174,9 +183,10 @@
 
 ## 10. 다음 단계
 
-- **PLAN_AUDIT_03** (예정): §8.1, §8.2, §8.3, §8.4 — 문서 버전 하드코딩 정리
 - **서버 답변 후 별도 작업** (예정): §2.1, §7.1, §7.2 — [AUDIT_SERVER.md](AUDIT_SERVER.md) 결과 반영
 - **미분류 잔여** (Low, 선택): §3.4 HistoryList.FILTERS, §3.5 WebView 메시지 타입 — 필요성 재판단 후 결정
+
+PLAN_AUDIT 시리즈는 모두 완료. 앱 측에서 즉시 조치 가능한 항목은 전부 반영되었고, 잔여는 서버 답변과 Low 우선순위 선택 항목뿐.
 
 ---
 

@@ -13,6 +13,11 @@ export const APP_VERSION = '1.0.0';
 
 export const RTDB_TIMEOUT_MS = 10_000;
 
+// ─── 시간 / 날짜 ───
+
+// 하루의 밀리초. 날짜 차이 계산 등에서 사용.
+export const MS_PER_DAY = 86_400_000;
+
 // ─── UI 수치 ───
 
 export const TOAST_AUTO_HIDE_MS = 3_000;

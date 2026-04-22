@@ -1,0 +1,188 @@
+# AUDIT_APP.md — 앱 코드/문서 감사 리포트
+
+> **작성일**: 2026-04-22
+> **최종 업데이트**: 2026-04-22 — 재검증 결과 3건 철회, 서버 확인 대기 3건 표시, PLAN_AUDIT_01 반영
+> **범위**: `qbt-live-app` 프로젝트의 앱 측 (`src/`, `CLAUDE.md`, `README.md`, `docs/COMMANDS.md`)
+> **관련 리포**: 서버 측 확인·조치 필요 항목은 [AUDIT_SERVER.md](AUDIT_SERVER.md) 참조
+> **계획서**: [PLAN_AUDIT_01_CONSTANTS.md](PLAN_AUDIT_01_CONSTANTS.md) (진행 중), 02 / 03 예정
+> **우선순위 표기**: High / Mid / Low
+> **상태 표기**: ✅ 완료 / ⏳ 예정 / ⏸ 서버 대기 / ✗ 철회
+
+---
+
+## 처리 상태 요약
+
+| 상태 | 의미 | 건수 |
+|---|---|---|
+| ✅ | PLAN_AUDIT_01 로 처리 완료 | 3 |
+| ⏳ | PLAN_AUDIT_02 / 03 에서 처리 예정 | 8 |
+| ⏸ | 서버 확인 결과 나온 뒤 별도 처리 | 3 |
+| ✗ | 재검증 결과 유효하지 않아 철회 | 3 |
+| — | 해당 없음 (이슈 자체 없음) | — |
+
+**원본 감사 당시 21건** → 재검증·수용으로 **철회 3건 제외 실질 18건**. 이 중 3건은 서버 답 대기.
+
+---
+
+## 카테고리별 요약
+
+| 카테고리 | 건수 (철회 후) | High | Mid | Low |
+|---|---|---|---|---|
+| 1. 비즈니스 로직 오류 | 0 | 0 | 0 | 0 |
+| 2. 버그 | 1 (서버 대기) | 0 | 1 | 0 |
+| 3. 상수화 필요 | 6 | 1 | 2 | 3 |
+| 4. 리팩토링 | 5 | 0 | 2 | 3 |
+| 5. 구조개선 | 0 | 0 | 0 | 0 |
+| 6. 불필요한 fallback | 1 | 0 | 0 | 1 |
+| 7. 문서/주석/코드 3자 불일치 | 2 (서버 대기) | 0 | 1 | 1 |
+| 8. 가변 수치 본문 하드코딩 | 4 | 0 | 3 | 1 |
+| 9. 과거/변경이력/계획 잔존 | 0 | 0 | 0 | 0 |
+| **합계** | **18** | **1** | **9** | **8** |
+
+---
+
+## 재검증으로 철회된 항목 (3건)
+
+과거 리포트에 있던 다음 항목들은 재검증 결과 **유효하지 않음** 으로 판명되어 삭제되었습니다.
+
+| 구 번호 | 주제 | 철회 사유 |
+|---|---|---|
+| 2.2 | `Toast` useEffect `onClose` 의존성 | `onClose` 는 zustand action 이라 참조 안정. effect 재실행 안 일어남. Toast.tsx:17-18 주석에도 명시. |
+| 2.3 | `AppState` 복귀 시 `refreshHome` 경쟁 | RN `AppState` 는 동일 state 연속 발생 안 함. 실무 재현 불가. |
+| 3.6 | 차트 HTML 내 색상 중복 | [src/utils/chartHtml.ts:1-4](../src/utils/chartHtml.ts#L1-L4) 주석 및 [CLAUDE.md §7.4](../CLAUDE.md) 에서 **허용된 예외**. 리팩토링하면 오히려 규칙 위반. |
+
+---
+
+## 1. 비즈니스 로직 오류
+
+해당 없음.
+
+---
+
+## 2. 버그
+
+### 2.1 [Mid] ⏸ `portfolio.assets[id]` 런타임 undefined 가능성
+- **파일**: [src/components/AssetSummaryCard.tsx:60](../src/components/AssetSummaryCard.tsx#L60), [src/components/ModelCompareCard.tsx:68](../src/components/ModelCompareCard.tsx#L68)
+- **현재**: `const snap = portfolio.assets[id];` — 이후 `snap.model_shares` 등 무방비 접근
+- **문제**: 타입상 `Record<AssetId, AssetSnapshot>` 이지만, RTDB 에서 특정 자산 키가 누락되면 `undefined`.
+- **권장**: 서버 확인 결과에 따라 앱 타입을 `Partial<Record<...>>` 로 변경 + 가드 추가, 또는 현상 유지.
+- **서버 확인**: [AUDIT_SERVER.md §3.2](AUDIT_SERVER.md) — 서버가 4자산 모두 항상 채우는지 계약 확인 필요.
+
+---
+
+## 3. 상수화 필요
+
+### 3.1 [High] ✅ `CASH_DIFF_THRESHOLD_USD` 상수 사용 — PLAN_AUDIT_01
+- **파일**: [src/components/ModelCompareCard.tsx:30-31](../src/components/ModelCompareCard.tsx#L30-L31)
+- **처리**: `Math.abs(cashDiff) >= 1` → `Math.abs(cashDiff) >= CASH_DIFF_THRESHOLD_USD`
+
+### 3.2 [Mid] ✅ `MS_PER_DAY` 상수 신설 — PLAN_AUDIT_01
+- **파일**: [src/utils/constants.ts](../src/utils/constants.ts) (신설), [src/components/UpdateStatusBadge.tsx:17](../src/components/UpdateStatusBadge.tsx#L17) (사용)
+- **처리**: `86_400_000` literal → `MS_PER_DAY` 상수
+
+### 3.3 [Mid] ✅ 모달 오버레이 색상 프리셋 — PLAN_AUDIT_01
+- **파일**: [src/utils/colors.ts](../src/utils/colors.ts) (신설), [src/components/SyncDialog.tsx:98](../src/components/SyncDialog.tsx#L98) (사용)
+- **처리**: `'rgba(0, 0, 0, 0.75)'` → `COLOR_PRESETS.modalOverlay`
+
+### 3.4 [Low] ⏳ `HistoryList.FILTERS` 로컬 상수
+- **파일**: [src/components/HistoryList.tsx:26-28](../src/components/HistoryList.tsx#L26-L28)
+- **권장**: 현 위치 유지. 다른 컴포넌트에서 같은 분류가 등장하는 시점에 이전.
+- **상태**: Low 라 당장 이동 불필요. 향후 재발견 시 고려.
+
+### 3.5 [Low] ⏳ WebView 메시지 타입 화이트리스트
+- **파일**: [src/components/ChartWebView.tsx:14](../src/components/ChartWebView.tsx#L14), [src/utils/chartHtml.ts:109-113](../src/utils/chartHtml.ts#L109-L113)
+- **권장**: `WEBVIEW_MSG = { READY, LOAD_EARLIER }` 상수화. chartHtml.ts 는 템플릿 리터럴로 주입.
+- **상태**: 가치 제한적 (문자열 2개뿐). 계획서 편성 시 재평가.
+
+---
+
+## 4. 리팩토링
+
+### 4.1 [Mid] ⏳ pending 주식수 계산 3중 중복 — PLAN_AUDIT_02
+- **파일**: [src/components/ReminderBlock.tsx:46-50](../src/components/ReminderBlock.tsx#L46-L50), [src/components/SignalNextFillBlock.tsx:30-34](../src/components/SignalNextFillBlock.tsx#L30-L34), [src/components/SyncDialog.tsx:48-52](../src/components/SyncDialog.tsx#L48-L52)
+- **권장**: `formatPendingShares(deltaAmount, close)` 를 `src/utils/format.ts` 에 추출.
+
+### 4.2 [Mid] ⏳ `ASSETS.flatMap` pending 수집 패턴 중복 — PLAN_AUDIT_02
+- **파일**: [src/components/ReminderBlock.tsx:30-36](../src/components/ReminderBlock.tsx#L30-L36), [src/components/SignalNextFillBlock.tsx:17-20](../src/components/SignalNextFillBlock.tsx#L17-L20), [src/components/SyncDialog.tsx:23-26](../src/components/SyncDialog.tsx#L23-L26)
+- **권장**: `listPendingOrders(pendingOrders)` 를 `src/utils/format.ts` 에 추출.
+
+### 4.3 [Low] ⏳ `ModelCompareCard.formatDiff` → `formatSignedUSD` + `formatSignedInt` 통합 — PLAN_AUDIT_02
+- **파일**: [src/components/ModelCompareCard.tsx:13-17, 90-94](../src/components/ModelCompareCard.tsx)
+- **권장**: `formatSignedInt` (달러 없는 정수 부호 포맷) 을 `format.ts` 에 신설 후, 주식수 diff / 현금 diff 양쪽을 공용 포맷으로 교체. 로컬 `formatDiff` 제거.
+
+### 4.4 [Low] 유지 `HistoryList` 의 3종 `toEvents` 변환 유사 구조
+- **파일**: [src/components/HistoryList.tsx:46-71](../src/components/HistoryList.tsx#L46-L71)
+- **판정**: 각 함수가 단일 책임 + 8줄 미만. 억지 추상화 위험.
+- **상태**: 현상 유지. `kind` 추가 시 재검토.
+
+### 4.5 [Low] 유지 `FillForm` / `AdjustForm` 제출 패턴 유사
+- **파일**: [src/components/FillForm.tsx](../src/components/FillForm.tsx), [src/components/AdjustForm.tsx](../src/components/AdjustForm.tsx)
+- **판정**: 필드 구성이 매우 달라 억지 추상화 위험이 더 큼.
+- **상태**: 현상 유지. 세 번째 폼 등장 시 재평가.
+
+---
+
+## 5. 구조개선
+
+해당 없음. `screens → components → services → utils` 의존 방향 및 store 단일성, default-export 규칙이 모두 준수되어 있음.
+
+---
+
+## 6. 불필요한 fallback
+
+### 6.1 [Low] ⏳ `close && close > 0` 표현 정비 — PLAN_AUDIT_02 (§4.1 과 병합)
+- **파일**: [src/components/ReminderBlock.tsx:48](../src/components/ReminderBlock.tsx#L48), [src/components/SignalNextFillBlock.tsx:32](../src/components/SignalNextFillBlock.tsx#L32), [src/components/SyncDialog.tsx:50](../src/components/SyncDialog.tsx#L50)
+- **처리**: §4.1 의 `formatPendingShares` 추출 시 `close != null && close > 0` 로 명시화.
+
+---
+
+## 7. 문서/주석/코드 3자 불일치
+
+### 7.1 [Mid] ⏸ `ChartMeta.ma_window` 필수성 불일치
+- **위치**: [docs/DESIGN_QBT_LIVE_FINAL.md §8.2.5.1](DESIGN_QBT_LIVE_FINAL.md), [src/types/rtdb.ts:72](../src/types/rtdb.ts#L72)
+- **불일치**: price chart meta 필수 vs equity chart meta 부재 vs 앱 타입 optional.
+- **서버 확인**: [AUDIT_SERVER.md §3.1](AUDIT_SERVER.md) — 결과에 따라 타입 분리 방향 결정.
+
+### 7.2 [Low] ⏸ `FillPayload.reason` 선택성 불일치
+- **위치**: [docs/DESIGN_QBT_LIVE_FINAL.md §8.2.7](DESIGN_QBT_LIVE_FINAL.md), [src/types/rtdb.ts:116](../src/types/rtdb.ts#L116), [src/services/rtdb.ts:101](../src/services/rtdb.ts#L101)
+- **불일치**: 설계상 필수(기본값 있음) vs 타입상 optional.
+- **서버 확인**: [AUDIT_SERVER.md §3.4](AUDIT_SERVER.md) — 결과에 따라 타입 엄격화 또는 설계서 변경.
+
+---
+
+## 8. 가변 수치/리스트가 문서 본문에 박혀있는 곳
+
+### 8.1 [Mid] ⏳ `README.md:16` Node 버전 동작 확인 값 — PLAN_AUDIT_03
+- **인용**: "Node: ≥ 22.11 (동작 확인: 22.22.2)"
+- **처리**: `package.json engines` 참조로 리다이렉트, 구체 버전 예시 제거.
+
+### 8.2 [Mid] ⏳ `README.md:18` Android SDK 숫자 중복 — PLAN_AUDIT_03
+- **인용**: "Android SDK: compileSdk 36 / targetSdk 36 / minSdk 24"
+- **처리**: `android/build.gradle` 참조로 리다이렉트, 구체 숫자 제거.
+
+### 8.3 [Mid] ⏳ `CLAUDE.md:647` RN/React 버전 하드코딩 — PLAN_AUDIT_03
+- **인용**: "각각 `0.85.1`, `19.2.3`"
+- **처리**: `package.json` 참조로 리다이렉트, 구체 버전 예시 제거.
+
+### 8.4 [Low] ⏳ `CLAUDE.md:24` Node 버전 괄호 예시 — PLAN_AUDIT_03
+- **인용**: "(22.11 이상)"
+- **처리**: 괄호 안 구체 숫자 제거.
+
+---
+
+## 9. 과거 상태 / 변경 이력 / 계획 단계 잔존
+
+해당 없음. 재검증 시에도 위반 사례 발견되지 않음.
+
+---
+
+## 10. 다음 단계
+
+- **PLAN_AUDIT_02** (예정): §4.1, §4.2, §4.3 + §6.1 — 헬퍼 추출 및 포맷 통합
+- **PLAN_AUDIT_03** (예정): §8.1, §8.2, §8.3, §8.4 — 문서 버전 하드코딩 정리
+- **서버 답변 후 별도 작업** (예정): §2.1, §7.1, §7.2 — [AUDIT_SERVER.md](AUDIT_SERVER.md) 결과 반영
+- **미분류 잔여** (Low, 선택): §3.4 HistoryList.FILTERS, §3.5 WebView 메시지 타입 — 필요성 재판단 후 결정
+
+---
+
+**문서 끝**

@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { COLORS } from '../utils/colors';
-import { STALE_WARNING_DAYS } from '../utils/constants';
+import { MS_PER_DAY, STALE_WARNING_DAYS } from '../utils/constants';
 import { today } from '../utils/format';
 import { Badge } from './Badge';
 
@@ -14,7 +14,7 @@ interface Props {
 const daysBetween = (isoA: string, isoB: string): number => {
   const a = new Date(isoA + 'T00:00:00+09:00').getTime();
   const b = new Date(isoB + 'T00:00:00+09:00').getTime();
-  return Math.floor((b - a) / 86_400_000);
+  return Math.floor((b - a) / MS_PER_DAY);
 };
 
 export const UpdateStatusBadge: React.FC<Props> = ({ executionDate }) => {

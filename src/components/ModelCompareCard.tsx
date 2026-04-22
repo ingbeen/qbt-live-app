@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { COLORS } from '../utils/colors';
-import { ASSETS, SYMBOLS } from '../utils/constants';
+import { ASSETS, CASH_DIFF_THRESHOLD_USD, SYMBOLS } from '../utils/constants';
 import type { Portfolio } from '../types/rtdb';
 import { formatUSDInt, toUpperTicker } from '../utils/format';
 
@@ -27,7 +27,8 @@ export const ModelCompareCard: React.FC<Props> = ({
   }, []);
 
   const cashDiff = portfolio.shared_cash_model - portfolio.shared_cash_actual;
-  const cashDiffColor = Math.abs(cashDiff) >= 1 ? COLORS.yellow : COLORS.sub;
+  const cashDiffColor =
+    Math.abs(cashDiff) >= CASH_DIFF_THRESHOLD_USD ? COLORS.yellow : COLORS.sub;
 
   return (
     <View style={styles.card}>

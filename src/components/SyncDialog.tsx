@@ -95,7 +95,7 @@ export const SyncDialog: React.FC<Props> = ({
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    backgroundColor: COLOR_PRESETS.modalOverlay,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 24,

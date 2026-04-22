@@ -33,4 +33,6 @@ export const COLOR_PRESETS = {
   orangeBg: withAlpha(COLORS.orange, '22'),
   orangeBorder: withAlpha(COLORS.orange, '70'),
   gridLine: withAlpha(COLORS.border, '22'),
+  // 모달 배경 오버레이. withAlpha 는 hex 전제라 rgba 문자열로 별도 정의.
+  modalOverlay: 'rgba(0, 0, 0, 0.75)',
 } as const;

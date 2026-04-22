@@ -10,7 +10,7 @@ interface ChartWebViewProps {
   onError?: (message: string) => void;
 }
 
-// WebView → RN 메시지 화이트리스트. 설계서 §14.4 외 타입은 무시.
+// WebView → RN 메시지 화이트리스트 (CLAUDE.md §7.2). 외 타입은 무시.
 type IncomingMessage = { type: 'ready' } | { type: 'load_earlier' };
 
 const isIncomingMessage = (v: unknown): v is IncomingMessage => {

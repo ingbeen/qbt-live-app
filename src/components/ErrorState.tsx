@@ -7,7 +7,7 @@ interface ErrorStateProps {
   onRetry: () => void;
 }
 
-// 홈/거래/차트 탭에서 데이터 로딩 실패 시 표시하는 공통 상태 화면(§12.5).
+// 홈/거래/차트 탭에서 데이터 로딩 실패 시 표시하는 공통 상태 화면 (CLAUDE.md §9 에러 처리).
 // 부분 실패(Toast + lastError 배너)가 아닌 전체 로드 실패 상황 전용.
 export const ErrorState: React.FC<ErrorStateProps> = ({ message, onRetry }) => (
   <View style={styles.container}>

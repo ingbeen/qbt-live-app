@@ -60,11 +60,17 @@ export const formatWeight = (ratio: number): string =>
 
 // ─── 날짜 ───
 
+/**
+ * 입력 Date 를 KST (UTC+9) 벽시계에 맞춰 조정한 Date 를 리턴.
+ * KST 는 DST 없는 고정 UTC+9 오프셋이므로 시즌 무관.
+ * 후속 `.toISOString()` 이 UTC 로 변환해도 슬라이스(0,10) 가 KST 날짜를 뽑아내게 하기 위함.
+ */
 const toKstDate = (d: Date): Date => {
   const offsetMin = 9 * 60;
   return new Date(d.getTime() + (offsetMin - d.getTimezoneOffset()) * 60_000);
 };
 
+/** KST 기준 오늘 날짜를 `YYYY-MM-DD` 로 리턴. */
 export const today = (): string => toKstDate(new Date()).toISOString().slice(0, 10);
 
 export const formatShortDate = (iso: string): string => {
@@ -77,6 +83,10 @@ export const formatShortDate = (iso: string): string => {
 
 // ─── KST 타임스탬프 (RTDB 쓰기용) ───
 
+/**
+ * 현재 시각을 KST (UTC+9) ISO-8601 문자열로 리턴.
+ * 예: "2026-04-22T15:30:22.000+09:00". RTDB 의 input_time_kst / applied_at 등에 사용.
+ */
 export const kstNow = (): string =>
   toKstDate(new Date()).toISOString().replace('Z', '+09:00');
 

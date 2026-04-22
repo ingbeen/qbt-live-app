@@ -10,7 +10,7 @@ import { COLORS } from '../utils/colors';
 import { SYMBOLS } from '../utils/constants';
 import { refreshNetworkState } from '../services/network';
 
-// 네트워크 미연결 시 전체 화면 차단(§12.2). isOnline===false 동안 App.tsx 가 이 화면만 렌더.
+// 네트워크 미연결 시 전체 화면 차단 (CLAUDE.md §6.6). isOnline===false 동안 App.tsx 가 이 화면만 렌더.
 // 복귀 시 NetInfo 리스너가 setOnline(true) 를 호출하면 App.tsx 렌더 트리가 원래 화면으로 돌아감.
 export const OfflineScreen: React.FC = () => {
   const [retrying, setRetrying] = useState(false);

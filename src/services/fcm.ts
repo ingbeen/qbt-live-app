@@ -103,13 +103,13 @@ export const ensureFcmToken = async (): Promise<void> => {
   });
 };
 
-// MVP: 포그라운드 알림 무시(CLAUDE.md §6.5). 사용자는 pull-to-refresh 로 갱신.
+// 포그라운드 알림 무시 (CLAUDE.md §6.5). 사용자는 pull-to-refresh 로 갱신.
 export const setupForegroundHandler = (): (() => void) =>
   onMessage(getMessaging(getApp()), async () => {
     // intentionally empty — 인앱 알림 표시하지 않음
   });
 
-// 백그라운드/종료 상태에서 알림 탭 → onTap() (§10 알림 탭은 홈 이동).
+// 백그라운드/종료 상태에서 알림 탭 → onTap() (CLAUDE.md §6.5: 알림 탭은 항상 홈 이동).
 export const setupNotificationTapHandler = (
   onTap: () => void,
 ): (() => void) => {

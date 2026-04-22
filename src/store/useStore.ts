@@ -174,7 +174,7 @@ export const useStore = create<Store>((set, get) => {
   setDeviceId: (deviceId) => set({ deviceId }),
   setFcmRegistered: (fcmRegistered) => set({ fcmRegistered }),
   // user / isOnline / deviceId / fcmRegistered 는 유지. 캐시 데이터만 초기화.
-  // AppState.active 복귀 시 캐시 무효화(§12.4) + 로그아웃 시 signOut 이 별도로 setUser(null) 호출.
+  // AppState.active 복귀 시 캐시 무효화 (§6.6) + 로그아웃 시 signOut 이 별도로 setUser(null) 호출.
   clearAll: () =>
     set({
       lastError: null,

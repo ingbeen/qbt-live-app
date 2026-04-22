@@ -1,7 +1,7 @@
 import NetInfo, { type NetInfoState } from '@react-native-community/netinfo';
 import { useStore } from '../store/useStore';
 
-// Android 에서 isInternetReachable 이 null 일 수 있으므로 !== false 패턴 사용.
+// Android 에서 isInternetReachable 이 null 일 수 있으므로 !== false 패턴 사용 (CLAUDE.md §6.6).
 const isOnline = (state: NetInfoState): boolean =>
   !!state.isConnected && state.isInternetReachable !== false;
 

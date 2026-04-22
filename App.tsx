@@ -21,7 +21,7 @@ import { AppNavigator } from './src/navigation/AppNavigator';
 import { OfflineScreen } from './src/components/OfflineScreen';
 import { COLORS } from './src/utils/colors';
 
-// Bottom Tab root param list. 4탭 이름은 AppNavigator 와 일치(§15).
+// Bottom Tab root param list. 4탭 이름은 AppNavigator 와 일치.
 export type RootTabParamList = {
   '홈': undefined;
   '차트': undefined;
@@ -31,7 +31,7 @@ export type RootTabParamList = {
 
 const navigationRef = createNavigationContainerRef<RootTabParamList>();
 
-// FCM 알림 탭 시 호출. ready 상태가 아니면 무시(§10.1 정책: 항상 홈 이동).
+// FCM 알림 탭 시 호출. ready 상태가 아니면 무시 (§6.5 정책: 알림 탭은 항상 홈 이동).
 const navigateHome = (): void => {
   if (navigationRef.isReady()) {
     navigationRef.navigate('홈');
@@ -55,7 +55,7 @@ export default function App() {
     );
     const unsubNet = setupNetworkListener();
 
-    // 포그라운드 복귀 시 캐시 무효화 + 홈 재로드(§12.4).
+    // 포그라운드 복귀 시 캐시 무효화 + 홈 재로드 (§6.6 네트워크/오프라인 차단 정책의 연속).
     // user 가 없으면 LoginScreen 표시 중이므로 스킵. clearAll 은 user/isOnline/deviceId 유지.
     const appStateSub = AppState.addEventListener('change', (state) => {
       if (state !== 'active') return;
@@ -86,7 +86,7 @@ export default function App() {
     };
   }, [user]);
 
-  // 오프라인 상태면 전체 차단(§12.2). 로그인/앱 화면 모두 숨김.
+  // 오프라인 상태면 전체 차단 (§6.6). 로그인/앱 화면 모두 숨김.
   if (!isOnline) {
     return (
       <GestureHandlerRootView style={{ flex: 1 }}>

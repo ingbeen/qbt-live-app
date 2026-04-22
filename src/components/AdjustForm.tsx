@@ -10,6 +10,7 @@ import DateTimePicker, {
   type DateTimePickerEvent,
 } from '@react-native-community/datetimepicker';
 import { COLORS } from '../utils/colors';
+import { ASSET_TARGETS } from '../utils/constants';
 import type {
   AssetId,
   BalanceAdjustPayload,
@@ -21,6 +22,11 @@ import {
   toUpperTicker,
   today,
 } from '../utils/format';
+import {
+  toIsoDate,
+  parseIntOrUndefined,
+  parseFloatOrUndefined,
+} from '../utils/parse';
 import { validateBalanceAdjust } from '../utils/validation';
 import { useStore } from '../store/useStore';
 
@@ -29,27 +35,6 @@ interface Props {
 }
 
 type Target = AssetId | 'cash';
-
-const TARGETS: readonly Target[] = ['sso', 'qld', 'gld', 'tlt', 'cash'];
-
-const toIsoDate = (d: Date): string => {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-};
-
-const parseIntOrUndefined = (s: string): number | undefined => {
-  if (!s) return undefined;
-  const n = parseInt(s, 10);
-  return Number.isNaN(n) ? undefined : n;
-};
-
-const parseFloatOrUndefined = (s: string): number | undefined => {
-  if (!s) return undefined;
-  const n = parseFloat(s);
-  return Number.isNaN(n) ? undefined : n;
-};
 
 const targetLabel = (t: Target): string =>
   t === 'cash' ? '현금' : toUpperTicker(t);
@@ -148,7 +133,7 @@ export const AdjustForm: React.FC<Props> = ({ portfolio }) => {
 
       <Text style={styles.label}>대상</Text>
       <View style={styles.row5}>
-        {TARGETS.map((t) => {
+        {ASSET_TARGETS.map((t) => {
           const isActive = target === t;
           return (
             <Pressable

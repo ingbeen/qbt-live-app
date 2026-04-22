@@ -14,6 +14,13 @@ export interface ValidationResult {
 
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
+// ISO-8601 날짜 형식 + 미래 아님 검증. 통과하면 null, 실패하면 사용자용 한글 메시지.
+export const validateIsoDateNotFuture = (value: string): string | null => {
+  if (!ISO_DATE_RE.test(value)) return 'YYYY-MM-DD 형식이어야 합니다';
+  if (value > today()) return '미래 날짜는 입력할 수 없습니다';
+  return null;
+};
+
 export const validateFill = (
   p: Partial<FillPayload>,
   portfolio: Portfolio | null,
@@ -36,10 +43,11 @@ export const validateFill = (
   if (p.actual_price == null || p.actual_price <= 0) {
     fieldErrors.actual_price = '체결가는 양수여야 합니다';
   }
-  if (!p.trade_date || !ISO_DATE_RE.test(p.trade_date)) {
+  if (!p.trade_date) {
     fieldErrors.trade_date = 'YYYY-MM-DD 형식이어야 합니다';
-  } else if (p.trade_date > today()) {
-    fieldErrors.trade_date = '미래 날짜는 입력할 수 없습니다';
+  } else {
+    const dateError = validateIsoDateNotFuture(p.trade_date);
+    if (dateError) fieldErrors.trade_date = dateError;
   }
 
   if (
@@ -100,11 +108,8 @@ export const validateBalanceAdjust = (
     }
   }
   if (p.new_entry_date != null) {
-    if (!ISO_DATE_RE.test(p.new_entry_date)) {
-      fieldErrors.new_entry_date = 'YYYY-MM-DD 형식이어야 합니다';
-    } else if (p.new_entry_date > today()) {
-      fieldErrors.new_entry_date = '미래 날짜는 입력할 수 없습니다';
-    }
+    const dateError = validateIsoDateNotFuture(p.new_entry_date);
+    if (dateError) fieldErrors.new_entry_date = dateError;
   }
   if (p.new_cash != null) {
     if (p.new_cash < 0) {

@@ -19,6 +19,27 @@ export const formatUSDInt = (amount: number): string => {
   return `${sign}$${Math.round(abs).toLocaleString('en-US')}`;
 };
 
+// ─── 주가 정밀도 (소수점 4자리) ───
+// 서버의 actual_price 는 ROUND_PRICE = 6 자리까지 저장되므로 formatUSD (2자리) 로는 손실.
+// 이력 조회 등 값 비교가 필요한 곳에서 사용한다.
+export const formatUSDPrice = (amount: number): string => {
+  const sign = amount < 0 ? '-' : '';
+  const abs = Math.abs(amount);
+  return `${sign}$${abs.toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 4,
+  })}`;
+};
+
+// ─── 부호 포함 정수 달러 ───
+// +$123 / -$45 / $0 형태. ModelCompareCard 의 현금 diff 같이 부호 강조가 필요한 곳에서 사용.
+export const formatSignedUSD = (amount: number): string => {
+  if (amount === 0) return '$0';
+  const sign = amount > 0 ? '+' : '-';
+  const abs = Math.abs(amount);
+  return `${sign}$${Math.round(abs).toLocaleString('en-US')}`;
+};
+
 // ─── 수량 ───
 
 export const formatShares = (shares: number): string =>

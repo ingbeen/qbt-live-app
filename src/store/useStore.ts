@@ -132,7 +132,12 @@ const toUserMessage = (e: unknown): string => {
   return '데이터를 불러올 수 없습니다.';
 };
 
-export const useStore = create<Store>((set, get) => ({
+export const useStore = create<Store>((set, get) => {
+  // loading 플래그 토글 헬퍼. 기존 `set({ loading: { ...get().loading, key: bool } })` 반복 제거용.
+  const setLoading = (key: string, value: boolean) =>
+    set((state) => ({ loading: { ...state.loading, [key]: value } }));
+
+  return {
   user: null,
   isOnline: true,
   lastError: null,
@@ -188,7 +193,7 @@ export const useStore = create<Store>((set, get) => ({
   hideToast: () => set({ lastToast: null }),
 
   refreshHome: async () => {
-    set({ loading: { ...get().loading, home: true } });
+    setLoading('home', true);
     try {
       const [
         portfolio,
@@ -216,14 +221,12 @@ export const useStore = create<Store>((set, get) => ({
         inboxFillDismiss,
         inboxModelSync,
         lastError: null,
-        loading: { ...get().loading, home: false },
       });
     } catch (e) {
       console.error('[store] refreshHome failed:', e);
-      set({
-        lastError: toUserMessage(e),
-        loading: { ...get().loading, home: false },
-      });
+      set({ lastError: toUserMessage(e) });
+    } finally {
+      setLoading('home', false);
     }
   },
 
@@ -242,7 +245,7 @@ export const useStore = create<Store>((set, get) => ({
   },
 
   refreshTrade: async () => {
-    set({ loading: { ...get().loading, trade: true } });
+    setLoading('trade', true);
     try {
       const [historyFills, historyBalanceAdjusts, historySignals] =
         await Promise.all([
@@ -255,14 +258,12 @@ export const useStore = create<Store>((set, get) => ({
         historyBalanceAdjusts,
         historySignals,
         lastError: null,
-        loading: { ...get().loading, trade: false },
       });
     } catch (e) {
       console.error('[store] refreshTrade failed:', e);
-      set({
-        lastError: toUserMessage(e),
-        loading: { ...get().loading, trade: false },
-      });
+      set({ lastError: toUserMessage(e) });
+    } finally {
+      setLoading('trade', false);
     }
   },
 
@@ -313,7 +314,7 @@ export const useStore = create<Store>((set, get) => ({
 
   refreshChart: async (target) => {
     const loadingKey = `chart_${target}`;
-    set({ loading: { ...get().loading, [loadingKey]: true } });
+    setLoading(loadingKey, true);
     try {
       if (target === 'equity') {
         const [meta, recent] = await Promise.all([
@@ -327,7 +328,6 @@ export const useStore = create<Store>((set, get) => ({
             archive: get().equityChart.archive,
           },
           lastError: null,
-          loading: { ...get().loading, [loadingKey]: false },
         });
       } else {
         const assetId = target;
@@ -346,15 +346,13 @@ export const useStore = create<Store>((set, get) => ({
             },
           },
           lastError: null,
-          loading: { ...get().loading, [loadingKey]: false },
         });
       }
     } catch (e) {
       console.error('[store] refreshChart failed:', e);
-      set({
-        lastError: toUserMessage(e),
-        loading: { ...get().loading, [loadingKey]: false },
-      });
+      set({ lastError: toUserMessage(e) });
+    } finally {
+      setLoading(loadingKey, false);
     }
   },
 
@@ -362,13 +360,10 @@ export const useStore = create<Store>((set, get) => ({
     const existing = get().priceCharts[assetId];
     if (existing?.archive[year]) return;
     const loadingKey = `chart_archive_${assetId}_${year}`;
-    set({ loading: { ...get().loading, [loadingKey]: true } });
+    setLoading(loadingKey, true);
     try {
       const archive = await readPriceChartArchive(assetId, year);
-      if (!archive) {
-        set({ loading: { ...get().loading, [loadingKey]: false } });
-        return;
-      }
+      if (!archive) return;
       const current = get().priceCharts[assetId] ?? {
         meta: null,
         recent: null,
@@ -383,27 +378,22 @@ export const useStore = create<Store>((set, get) => ({
           },
         },
         lastError: null,
-        loading: { ...get().loading, [loadingKey]: false },
       });
     } catch (e) {
       console.error('[store] loadPriceArchive failed:', e);
-      set({
-        lastError: toUserMessage(e),
-        loading: { ...get().loading, [loadingKey]: false },
-      });
+      set({ lastError: toUserMessage(e) });
+    } finally {
+      setLoading(loadingKey, false);
     }
   },
 
   loadEquityArchive: async (year) => {
     if (get().equityChart.archive[year]) return;
     const loadingKey = `chart_archive_equity_${year}`;
-    set({ loading: { ...get().loading, [loadingKey]: true } });
+    setLoading(loadingKey, true);
     try {
       const archive = await readEquityChartArchive(year);
-      if (!archive) {
-        set({ loading: { ...get().loading, [loadingKey]: false } });
-        return;
-      }
+      if (!archive) return;
       const current = get().equityChart;
       set({
         equityChart: {
@@ -411,14 +401,13 @@ export const useStore = create<Store>((set, get) => ({
           archive: { ...current.archive, [year]: archive },
         },
         lastError: null,
-        loading: { ...get().loading, [loadingKey]: false },
       });
     } catch (e) {
       console.error('[store] loadEquityArchive failed:', e);
-      set({
-        lastError: toUserMessage(e),
-        loading: { ...get().loading, [loadingKey]: false },
-      });
+      set({ lastError: toUserMessage(e) });
+    } finally {
+      setLoading(loadingKey, false);
     }
   },
-}));
+  };
+});

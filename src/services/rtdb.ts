@@ -17,10 +17,8 @@ import type {
   PriceChartSeries,
   EquityChartSeries,
 } from '../types/rtdb';
-import { RTDB_PATHS } from '../utils/constants';
+import { RTDB_PATHS, RTDB_TIMEOUT_MS } from '../utils/constants';
 import { kstNow } from '../utils/format';
-
-const TIMEOUT_MS = 10_000;
 
 export type InboxItem = { uuid: string; data: unknown };
 
@@ -35,7 +33,7 @@ const withTimeout = <T>(p: Promise<T>, ms: number): Promise<T> =>
 const dbRef = (path: string) => ref(getDatabase(getApp()), path);
 
 export const readOnce = async <T>(path: string): Promise<T | null> => {
-  const snap = await withTimeout(get(dbRef(path)), TIMEOUT_MS);
+  const snap = await withTimeout(get(dbRef(path)), RTDB_TIMEOUT_MS);
   return snap.exists() ? (snap.val() as T) : null;
 };
 
@@ -85,7 +83,7 @@ export const submitModelSync = async (): Promise<void> => {
   const payload: ModelSyncPayload = { input_time_kst: kstNow() };
   await withTimeout(
     set(dbRef(`${RTDB_PATHS.MODEL_SYNC_INBOX}/${key}`), payload),
-    TIMEOUT_MS,
+    RTDB_TIMEOUT_MS,
   );
 };
 
@@ -98,7 +96,7 @@ export const submitFill = async (p: FillPayload): Promise<void> => {
   };
   await withTimeout(
     set(dbRef(`${RTDB_PATHS.FILLS_INBOX}/${key}`), payload),
-    TIMEOUT_MS,
+    RTDB_TIMEOUT_MS,
   );
 };
 
@@ -112,7 +110,7 @@ export const submitBalanceAdjust = async (
   };
   await withTimeout(
     set(dbRef(`${RTDB_PATHS.BALANCE_ADJUST_INBOX}/${key}`), payload),
-    TIMEOUT_MS,
+    RTDB_TIMEOUT_MS,
   );
 };
 
@@ -128,7 +126,7 @@ export const submitFillDismiss = async (
   };
   await withTimeout(
     set(dbRef(`${RTDB_PATHS.FILL_DISMISS_INBOX}/${key}`), payload),
-    TIMEOUT_MS,
+    RTDB_TIMEOUT_MS,
   );
 };
 
@@ -141,7 +139,7 @@ export const submitDeviceToken = async (
 ): Promise<void> => {
   await withTimeout(
     set(dbRef(`${RTDB_PATHS.DEVICE_TOKENS}/${deviceId}`), token),
-    TIMEOUT_MS,
+    RTDB_TIMEOUT_MS,
   );
 };
 

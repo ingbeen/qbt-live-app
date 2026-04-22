@@ -25,6 +25,11 @@ import {
   toUpperTicker,
   today,
 } from '../utils/format';
+import {
+  toIsoDate,
+  parseIntOrUndefined,
+  parseFloatOrUndefined,
+} from '../utils/parse';
 import { validateFill } from '../utils/validation';
 import { useStore } from '../store/useStore';
 
@@ -33,25 +38,6 @@ interface Props {
   signals: Record<AssetId, Signal> | null;
   pendingOrders: Partial<Record<AssetId, PendingOrder>> | null;
 }
-
-const toIsoDate = (d: Date): string => {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-};
-
-const parseIntOrUndefined = (s: string): number | undefined => {
-  if (!s) return undefined;
-  const n = parseInt(s, 10);
-  return Number.isNaN(n) ? undefined : n;
-};
-
-const parseFloatOrUndefined = (s: string): number | undefined => {
-  if (!s) return undefined;
-  const n = parseFloat(s);
-  return Number.isNaN(n) ? undefined : n;
-};
 
 export const FillForm: React.FC<Props> = ({
   portfolio,

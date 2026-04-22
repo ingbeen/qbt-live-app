@@ -11,8 +11,8 @@ import {
   directionLabel,
   formatShares,
   formatShortDate,
-  formatUSD,
   formatUSDInt,
+  formatUSDPrice,
   toUpperTicker,
 } from '../utils/format';
 import { Badge } from './Badge';
@@ -43,48 +43,44 @@ type HistoryEvent =
       signal: SignalHistoryEntry['signal'];
     };
 
+const fillsToEvents = (fills: FillHistory[]): HistoryEvent[] =>
+  fills.map((f) => ({
+    kind: 'fill',
+    date: f.trade_date,
+    sortKey: f.input_time_kst,
+    fill: f,
+  }));
+
+const adjustsToEvents = (adjusts: BalanceAdjustHistory[]): HistoryEvent[] =>
+  adjusts.map((a) => ({
+    kind: 'balance_adjust',
+    date: a.applied_at.slice(0, 10),
+    sortKey: a.applied_at,
+    adjust: a,
+  }));
+
+const signalsToEvents = (signals: SignalHistoryEntry[]): HistoryEvent[] =>
+  signals
+    .filter((s) => s.signal.state !== 'none')
+    .map((s) => ({
+      kind: 'signal',
+      date: s.date,
+      sortKey: s.date,
+      asset_id: s.asset_id,
+      signal: s.signal,
+    }));
+
 const buildHistoryTimeline = (
   fills: FillHistory[] | null,
   adjusts: BalanceAdjustHistory[] | null,
   signals: SignalHistoryEntry[] | null,
   filter: Filter,
 ): HistoryEvent[] => {
-  const events: HistoryEvent[] = [];
-
-  if ((filter === '전체' || filter === '체결') && fills) {
-    fills.forEach((f) =>
-      events.push({
-        kind: 'fill',
-        date: f.trade_date,
-        sortKey: f.input_time_kst,
-        fill: f,
-      }),
-    );
-  }
-  if ((filter === '전체' || filter === '보정') && adjusts) {
-    adjusts.forEach((a) =>
-      events.push({
-        kind: 'balance_adjust',
-        date: a.applied_at.slice(0, 10),
-        sortKey: a.applied_at,
-        adjust: a,
-      }),
-    );
-  }
-  if ((filter === '전체' || filter === '신호') && signals) {
-    signals
-      .filter((s) => s.signal.state !== 'none')
-      .forEach((s) =>
-        events.push({
-          kind: 'signal',
-          date: s.date,
-          sortKey: s.date,
-          asset_id: s.asset_id,
-          signal: s.signal,
-        }),
-      );
-  }
-
+  const events: HistoryEvent[] = [
+    ...((filter === '전체' || filter === '체결') && fills ? fillsToEvents(fills) : []),
+    ...((filter === '전체' || filter === '보정') && adjusts ? adjustsToEvents(adjusts) : []),
+    ...((filter === '전체' || filter === '신호') && signals ? signalsToEvents(signals) : []),
+  ];
   events.sort((a, b) => b.sortKey.localeCompare(a.sortKey));
   return events;
 };
@@ -92,14 +88,14 @@ const buildHistoryTimeline = (
 const renderFillContent = (f: FillHistory): string =>
   `${toUpperTicker(f.asset_id)} ${directionLabel(f.direction)} ${formatShares(
     f.actual_shares,
-  )} ${formatUSD(f.actual_price)}`;
+  )} ${formatUSDPrice(f.actual_price)}`;
 
 const renderAdjustContent = (a: BalanceAdjustHistory): string => {
   const parts: string[] = [];
   if (a.asset_id) {
     parts.push(toUpperTicker(a.asset_id));
     if (a.new_shares != null) parts.push(`주수→${a.new_shares}`);
-    if (a.new_avg_price != null) parts.push(`평균가→${formatUSD(a.new_avg_price)}`);
+    if (a.new_avg_price != null) parts.push(`평균가→${formatUSDPrice(a.new_avg_price)}`);
     if (a.new_entry_date != null) parts.push(`진입일→${a.new_entry_date}`);
   }
   if (a.new_cash != null) parts.push(`현금→${formatUSDInt(a.new_cash)}`);

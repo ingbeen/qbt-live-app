@@ -22,6 +22,7 @@ import type {
 import {
   directionLabel,
   formatShares,
+  kstNow,
   toUpperTicker,
   today,
 } from '../utils/format';
@@ -95,10 +96,16 @@ export const FillForm: React.FC<Props> = ({
     if (!result.valid) return;
     setSubmitting(true);
     try {
-      await submitFill(payload as FillPayload);
+      const finalPayload: FillPayload = {
+        ...(payload as FillPayload),
+        input_time_kst: kstNow(),
+      };
+      await submitFill(finalPayload);
       setSharesText('');
       setPriceText('');
       setMemo('');
+      // 앱을 장시간 연 상태에서도 다음 입력이 당일 기준이 되도록 오늘 날짜로 리셋.
+      setTradeDate(today());
       setAttempted(false);
     } catch {
       // store.lastError 가 채워짐
@@ -123,7 +130,7 @@ export const FillForm: React.FC<Props> = ({
     <View style={styles.wrap}>
       {lastError ? <Text style={styles.errorBanner}>{lastError}</Text> : null}
 
-      {pending && signals?.[pending.asset_id] ? (
+      {pending && signals?.[pending.asset_id] && signals[pending.asset_id].close > 0 ? (
         <View style={styles.pendingHint}>
           <Text style={styles.pendingText}>
             {SYMBOLS.BOLT} {toUpperTicker(pending.asset_id)}{' '}
@@ -269,7 +276,7 @@ export const FillForm: React.FC<Props> = ({
       ) : null}
       {showPicker ? (
         <DateTimePicker
-          value={new Date(tradeDate + 'T00:00:00')}
+          value={new Date(tradeDate + 'T00:00:00+09:00')}
           mode="date"
           display="default"
           maximumDate={new Date()}
@@ -314,7 +321,7 @@ export const FillForm: React.FC<Props> = ({
         </Pressable>
       ) : null}
 
-      {portfolio.assets[assetId ?? 'sso'] && assetId ? (
+      {assetId ? (
         <Text style={styles.helpText}>
           현재 보유: {formatShares(portfolio.assets[assetId].actual_shares)}
         </Text>

@@ -19,6 +19,7 @@ import type {
 import {
   formatShares,
   formatUSDInt,
+  kstNow,
   toUpperTicker,
   today,
 } from '../utils/format';
@@ -107,7 +108,7 @@ export const AdjustForm: React.FC<Props> = ({ portfolio }) => {
       const finalPayload: BalanceAdjustPayload = {
         ...payload,
         reason: reason || '수동 보정',
-        input_time_kst: '',
+        input_time_kst: kstNow(),
       };
       await submitBalanceAdjust(finalPayload);
       resetFields();
@@ -220,7 +221,7 @@ export const AdjustForm: React.FC<Props> = ({ portfolio }) => {
           </View>
           {showPicker ? (
             <DateTimePicker
-              value={new Date((entryDate || today()) + 'T00:00:00')}
+              value={new Date((entryDate || today()) + 'T00:00:00+09:00')}
               mode="date"
               display="default"
               maximumDate={new Date()}

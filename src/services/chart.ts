@@ -1,7 +1,8 @@
 import type { PriceChartSeries, EquityChartSeries } from '../types/rtdb';
 
 // RTDB recent 와 archive/{현재_연도} 는 경계 날짜가 겹치므로 Map 으로 dedupe.
-// 동일 날짜에 대해 recent 가 우선 (더 최신).
+// 구현 순서: archives 먼저 ingest → recent 로 마지막 덮어쓰기. Map.set 은 키가 같으면
+// 값을 덮어쓰므로 동일 날짜에 대해 recent 값이 우선 적용된다 (서버 최신 기준).
 
 type PricePoint = {
   close: number;
@@ -19,6 +20,37 @@ type EquityPoint = {
 const dedupMarkers = (arr: string[]): string[] =>
   Array.from(new Set(arr)).sort();
 
+// 시리즈 내부의 배열 길이가 일치하지 않으면 가장 짧은 길이 기준으로 잘라 로그 경고.
+// RTDB 데이터 무결성 불변조건 위반 시 silent 실패를 막기 위함.
+const priceLength = (s: PriceChartSeries): number => {
+  const lens = [
+    s.dates.length,
+    s.close.length,
+    s.ma_value.length,
+    s.upper_band.length,
+    s.lower_band.length,
+  ];
+  const min = Math.min(...lens);
+  if (lens.some((l) => l !== min)) {
+    console.warn('[chart] price series length mismatch:', lens);
+  }
+  return min;
+};
+
+const equityLength = (s: EquityChartSeries): number => {
+  const lens = [
+    s.dates.length,
+    s.model_equity.length,
+    s.actual_equity.length,
+    s.drift_pct.length,
+  ];
+  const min = Math.min(...lens);
+  if (lens.some((l) => l !== min)) {
+    console.warn('[chart] equity series length mismatch:', lens);
+  }
+  return min;
+};
+
 export const mergeChartSeries = (
   recent: PriceChartSeries,
   archives: PriceChartSeries[],
@@ -26,14 +58,18 @@ export const mergeChartSeries = (
   const map = new Map<string, PricePoint>();
 
   const ingest = (s: PriceChartSeries): void => {
-    s.dates.forEach((date, i) => {
+    const len = priceLength(s);
+    for (let i = 0; i < len; i += 1) {
+      const date = s.dates[i];
+      const close = s.close[i];
+      if (date === undefined || close === undefined) continue;
       map.set(date, {
-        close: s.close[i] as number,
+        close,
         ma_value: s.ma_value[i] ?? null,
         upper_band: s.upper_band[i] ?? null,
         lower_band: s.lower_band[i] ?? null,
       });
-    });
+    }
   };
 
   archives.forEach(ingest);
@@ -72,13 +108,24 @@ export const mergeEquitySeries = (
   const map = new Map<string, EquityPoint>();
 
   const ingest = (s: EquityChartSeries): void => {
-    s.dates.forEach((date, i) => {
+    const len = equityLength(s);
+    for (let i = 0; i < len; i += 1) {
+      const date = s.dates[i];
+      const model = s.model_equity[i];
+      const actual = s.actual_equity[i];
+      const drift = s.drift_pct[i];
+      if (
+        date === undefined ||
+        model === undefined ||
+        actual === undefined ||
+        drift === undefined
+      ) continue;
       map.set(date, {
-        model_equity: s.model_equity[i] as number,
-        actual_equity: s.actual_equity[i] as number,
-        drift_pct: s.drift_pct[i] as number,
+        model_equity: model,
+        actual_equity: actual,
+        drift_pct: drift,
       });
-    });
+    }
   };
 
   archives.forEach(ingest);

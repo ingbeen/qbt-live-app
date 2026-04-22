@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { COLORS } from '../utils/colors';
-import { SYMBOLS } from '../utils/constants';
+import { SYMBOLS, TOAST_AUTO_HIDE_MS } from '../utils/constants';
 
 interface Props {
   message: string | null;
@@ -12,8 +12,10 @@ interface Props {
 export const Toast: React.FC<Props> = ({
   message,
   onClose,
-  autoHideMs = 3000,
+  autoHideMs = TOAST_AUTO_HIDE_MS,
 }) => {
+  // message 값이 달라질 때마다 타이머 재장전. 동일 문자열이 연속 set 되면 effect 는 재실행되지
+  // 않지만, 이전 타이머가 만료되며 자연히 hide → 다시 set 되므로 UX 상 문제가 되지 않는다.
   useEffect(() => {
     if (!message) return;
     const t = setTimeout(onClose, autoHideMs);

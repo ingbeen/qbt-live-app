@@ -32,6 +32,7 @@ export const PullToRefreshScrollView: React.FC<Props> = ({
     }
     contentContainerStyle={contentContainerStyle}
     style={{ backgroundColor: COLORS.bg }}
+    keyboardShouldPersistTaps="handled"
   >
     {children}
   </ScrollView>

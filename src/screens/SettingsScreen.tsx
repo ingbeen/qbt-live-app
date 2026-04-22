@@ -32,13 +32,12 @@ const Row: React.FC<RowProps> = ({ label, value, badge }) => (
 export const SettingsScreen: React.FC = () => {
   const user = useStore((s) => s.user);
   const portfolio = useStore((s) => s.portfolio);
-  const lastError = useStore((s) => s.lastError);
   const fcmRegistered = useStore((s) => s.fcmRegistered);
   const [signingOut, setSigningOut] = useState(false);
 
-  // portfolio 가 로드됐고 최근 에러가 없으면 [정상]. 둘 중 하나라도 어긋나면 [오류].
-  const rtdbOk = portfolio != null && !lastError;
-  const rtdbBadge = rtdbOk
+  // portfolio 가 로드된 상태면 RTDB 연결 정상. lastError 는 체결 저장 실패 등 다른 경로에서도
+  // 세팅되므로 연결 상태 판정에서 제외.
+  const rtdbBadge = portfolio != null
     ? { text: '정상', color: COLORS.green }
     : { text: '오류', color: COLORS.red };
 
@@ -46,9 +45,7 @@ export const SettingsScreen: React.FC = () => {
     ? { text: '등록됨', color: COLORS.green }
     : { text: '미등록', color: COLORS.red };
 
-  const lastRunValue = portfolio
-    ? `${portfolio.execution_date} 07:30 KST`
-    : '-';
+  const lastRunValue = portfolio ? portfolio.execution_date : '-';
 
   const handleSignOut = useCallback(async () => {
     if (signingOut) return;

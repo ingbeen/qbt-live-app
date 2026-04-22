@@ -60,9 +60,10 @@ export const AssetSummaryCard: React.FC<Props> = ({
         const snap = portfolio.assets[id];
         const pending = pendingOrders?.[id];
         const badge = getAssetBadge(snap, pending);
-        const close = signals?.[id]?.close ?? 0;
-        const valueUSD = snap.actual_shares * close;
-        const weight = totalEquity > 0 ? valueUSD / totalEquity : 0;
+        const close = signals?.[id]?.close;
+        const hasPrice = close !== undefined && close > 0;
+        const valueUSD = hasPrice ? snap.actual_shares * close : 0;
+        const weight = hasPrice && totalEquity > 0 ? valueUSD / totalEquity : null;
 
         return (
           <View key={id} style={styles.row}>
@@ -74,7 +75,9 @@ export const AssetSummaryCard: React.FC<Props> = ({
               <Text style={styles.rowShares}>
                 {formatShares(snap.actual_shares)}
               </Text>
-              <Text style={styles.rowWeight}>{formatWeight(weight)}</Text>
+              <Text style={styles.rowWeight}>
+                {weight !== null ? formatWeight(weight) : '-'}
+              </Text>
             </View>
           </View>
         );

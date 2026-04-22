@@ -121,10 +121,15 @@ interface Store {
   submitFillDismiss: (assetId: AssetId, reason?: string) => Promise<void>;
 }
 
+// RTDB 에러 메시지를 사용자용 한글 메시지로 변환.
+// PERMISSION_DENIED / denied by Security Rules 같은 Firebase RTDB 고유 패턴만 "권한 오류" 로 분류.
+// FCM / 일반 소문자 "permission" 에러는 RTDB 무관이므로 포함하지 않는다.
+const RTDB_PERMISSION_RE = /PERMISSION_DENIED|denied by.*rules/i;
+
 const toUserMessage = (e: unknown): string => {
   const raw = e instanceof Error ? e.message : String(e);
-  if (raw.includes('PERMISSION_DENIED') || raw.includes('permission')) {
-    return '권한이 없습니다. OWNER_UID 설정을 확인하세요.';
+  if (RTDB_PERMISSION_RE.test(raw)) {
+    return 'RTDB 접근 권한이 없습니다. 로그아웃 후 재로그인해 보세요.';
   }
   if (raw.includes('timeout') || raw.includes('network')) {
     return '데이터를 불러올 수 없습니다. 잠시 후 다시 시도하세요.';

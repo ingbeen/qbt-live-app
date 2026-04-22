@@ -30,16 +30,15 @@ export const subscribeAuthState = (
 ): (() => void) => {
   // Firebase Auth 는 자동 로그인 시 같은 user 로 2회 방출 (로컬 복원 → 토큰 refresh).
   // uid + email 동일하면 중복으로 간주해 무시한다. user 를 구독하는 useEffect 가
-  // 매 앱 재시작마다 2회 발동되어 ensureFcmToken / onTokenRefresh 가 누적되는 문제 방지.
-  let lastKey: string | null = null;
+  // 매 앱 재시작마다 2회 발동되어 ensureFcmToken / onTokenRefresh 가 누적되는 것 방지.
+  let lastUid: string | null = null;
+  let lastEmail: string | null = null;
   return onAuthStateChanged(getAuth(), (fbUser) => {
-    const key = fbUser ? `${fbUser.uid}|${fbUser.email ?? ''}` : 'null';
-    if (key === lastKey) return;
-    lastKey = key;
-    if (fbUser) {
-      onChange({ uid: fbUser.uid, email: fbUser.email });
-    } else {
-      onChange(null);
-    }
+    const uid = fbUser ? fbUser.uid : null;
+    const email = fbUser ? fbUser.email : null;
+    if (uid === lastUid && email === lastEmail) return;
+    lastUid = uid;
+    lastEmail = email;
+    onChange(fbUser ? { uid: fbUser.uid, email: fbUser.email } : null);
   });
 };

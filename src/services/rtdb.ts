@@ -87,11 +87,12 @@ export const submitModelSync = async (): Promise<void> => {
   );
 };
 
+// 호출부(FillForm) 가 input_time_kst 를 채워 전달하므로 서비스 단 폴백은 두지 않는다.
+// reason 은 설계서 기본값 "" 이므로 undefined 대비 폴백만 유지.
 export const submitFill = async (p: FillPayload): Promise<void> => {
   const key = uuid.v4() as string;
   const payload: FillPayload = {
     ...p,
-    input_time_kst: p.input_time_kst || kstNow(),
     reason: p.reason ?? '',
   };
   await withTimeout(
@@ -100,16 +101,13 @@ export const submitFill = async (p: FillPayload): Promise<void> => {
   );
 };
 
+// 호출부(AdjustForm) 가 input_time_kst 를 채워 전달.
 export const submitBalanceAdjust = async (
   p: BalanceAdjustPayload,
 ): Promise<void> => {
   const key = uuid.v4() as string;
-  const payload: BalanceAdjustPayload = {
-    ...p,
-    input_time_kst: p.input_time_kst || kstNow(),
-  };
   await withTimeout(
-    set(dbRef(`${RTDB_PATHS.BALANCE_ADJUST_INBOX}/${key}`), payload),
+    set(dbRef(`${RTDB_PATHS.BALANCE_ADJUST_INBOX}/${key}`), p),
     RTDB_TIMEOUT_MS,
   );
 };
@@ -178,12 +176,15 @@ export const readEquityChartArchive = (
 
 // ─── 히스토리 읽기 (중첩 트리 → flat 최신순 배열) ───
 
-export const readHistoryFills = async (): Promise<FillHistory[]> => {
-  const tree = await readOnce<Record<string, Record<string, FillHistory>>>(
-    RTDB_PATHS.HISTORY_FILLS,
-  );
+// /history/{fills,balance_adjusts}/{date}/{uuid} 구조 공통 로더.
+// RTDB 2단계 중첩 트리를 flatten 후 sortKey 기준 내림차순 정렬.
+const readNested2LevelTree = async <T>(
+  path: string,
+  sortKeyOf: (v: T) => string,
+): Promise<T[]> => {
+  const tree = await readOnce<Record<string, Record<string, T>>>(path);
   if (!tree) return [];
-  const flat: FillHistory[] = [];
+  const flat: T[] = [];
   for (const date of Object.keys(tree)) {
     const byUuid = tree[date];
     if (!byUuid) continue;
@@ -192,29 +193,21 @@ export const readHistoryFills = async (): Promise<FillHistory[]> => {
       if (v) flat.push(v);
     }
   }
-  flat.sort((a, b) => b.input_time_kst.localeCompare(a.input_time_kst));
+  flat.sort((a, b) => sortKeyOf(b).localeCompare(sortKeyOf(a)));
   return flat;
 };
 
-export const readHistoryBalanceAdjusts = async (): Promise<
-  BalanceAdjustHistory[]
-> => {
-  const tree = await readOnce<
-    Record<string, Record<string, BalanceAdjustHistory>>
-  >(RTDB_PATHS.HISTORY_BALANCE_ADJUSTS);
-  if (!tree) return [];
-  const flat: BalanceAdjustHistory[] = [];
-  for (const date of Object.keys(tree)) {
-    const byUuid = tree[date];
-    if (!byUuid) continue;
-    for (const uuidKey of Object.keys(byUuid)) {
-      const v = byUuid[uuidKey];
-      if (v) flat.push(v);
-    }
-  }
-  flat.sort((a, b) => b.applied_at.localeCompare(a.applied_at));
-  return flat;
-};
+export const readHistoryFills = (): Promise<FillHistory[]> =>
+  readNested2LevelTree<FillHistory>(
+    RTDB_PATHS.HISTORY_FILLS,
+    (v) => v.input_time_kst,
+  );
+
+export const readHistoryBalanceAdjusts = (): Promise<BalanceAdjustHistory[]> =>
+  readNested2LevelTree<BalanceAdjustHistory>(
+    RTDB_PATHS.HISTORY_BALANCE_ADJUSTS,
+    (v) => v.applied_at,
+  );
 
 export type SignalHistoryEntry = {
   date: string;

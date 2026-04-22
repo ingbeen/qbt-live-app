@@ -84,7 +84,12 @@ export const ChartScreen: React.FC = () => {
       const meta = priceCache?.meta;
       const recent = priceCache?.recent;
       const archiveMap = priceCache?.archive;
-      if (!meta || !recent || !archiveMap || recent.dates.length === 0) return;
+      if (!meta || !recent || !archiveMap) return;
+      if (recent.dates.length === 0) {
+        console.warn('[chart] empty price recent series, cannot load earlier');
+        setLastError('차트 데이터가 비어있습니다.');
+        return;
+      }
       const loadedYears = Object.keys(archiveMap).map(Number);
       const recentEarliestYear = parseInt(
         (recent.dates[0] ?? '').slice(0, 4),
@@ -99,7 +104,12 @@ export const ChartScreen: React.FC = () => {
     } else {
       const meta = equityCache.meta;
       const recent = equityCache.recent;
-      if (!meta || !recent || recent.dates.length === 0) return;
+      if (!meta || !recent) return;
+      if (recent.dates.length === 0) {
+        console.warn('[chart] empty equity recent series, cannot load earlier');
+        setLastError('차트 데이터가 비어있습니다.');
+        return;
+      }
       const loadedYears = Object.keys(equityCache.archive).map(Number);
       const recentEarliestYear = parseInt(
         (recent.dates[0] ?? '').slice(0, 4),
@@ -119,6 +129,7 @@ export const ChartScreen: React.FC = () => {
     equityCache,
     loadPriceArchive,
     loadEquityArchive,
+    setLastError,
   ]);
 
   const handleReady = useCallback(() => {
@@ -127,6 +138,8 @@ export const ChartScreen: React.FC = () => {
 
   const handleWebViewError = useCallback(
     (message: string) => {
+      // WebView 재로드 시 ready 이벤트가 다시 오므로 inject 대기 상태로 복귀.
+      setWebviewReady(false);
       setLastError(message);
     },
     [setLastError],

@@ -13,6 +13,7 @@ import { FillForm } from '../components/FillForm';
 import { AdjustForm } from '../components/AdjustForm';
 import { HistoryList } from '../components/HistoryList';
 import { Toast } from '../components/Toast';
+import { ErrorState } from '../components/ErrorState';
 
 type Mode = 'fill' | 'adjust';
 
@@ -24,6 +25,7 @@ export const TradeScreen: React.FC = () => {
   const historyBalanceAdjusts = useStore((s) => s.historyBalanceAdjusts);
   const historySignals = useStore((s) => s.historySignals);
   const loading = useStore((s) => s.loading);
+  const lastError = useStore((s) => s.lastError);
   const lastToast = useStore((s) => s.lastToast);
   const refreshHome = useStore((s) => s.refreshHome);
   const refreshTrade = useStore((s) => s.refreshTrade);
@@ -31,18 +33,29 @@ export const TradeScreen: React.FC = () => {
 
   const [mode, setMode] = useState<Mode>('fill');
 
+  const isLoadingHome = loading.home === true;
   const isLoadingTrade = loading.trade === true;
   const needsHomeData = portfolio === null;
 
+  // 마운트 시 거래 화면 전용 데이터(history) 1회 로드.
+  useEffect(() => {
+    refreshTrade();
+  }, [refreshTrade]);
+
+  // 홈 데이터가 비어있을 때만 홈 로드 (다른 탭에서 이미 로드됐으면 skip).
   useEffect(() => {
     if (needsHomeData) refreshHome();
-    refreshTrade();
-  }, [needsHomeData, refreshHome, refreshTrade]);
+  }, [needsHomeData, refreshHome]);
 
   const onRefresh = useCallback(() => {
     refreshHome();
     refreshTrade();
   }, [refreshHome, refreshTrade]);
+
+  // portfolio 가 null 이고 로딩도 끝난 상태 = 로드 실패. 무한 스피너 방지.
+  if (portfolio === null && !isLoadingHome && lastError) {
+    return <ErrorState message={lastError} onRetry={refreshHome} />;
+  }
 
   if (portfolio === null) {
     return (

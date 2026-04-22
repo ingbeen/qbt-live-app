@@ -58,6 +58,10 @@ export const requestNotificationPermission = async (): Promise<boolean> => {
   return true;
 };
 
+// onTokenRefresh 구독을 모듈 레벨로 저장하여 재호출 시 이전 리스너를 해제.
+// ensureFcmToken 이 로그아웃/재로그인 사이클마다 호출되면 여러 구독이 누적되는 것을 방지.
+let tokenRefreshUnsub: (() => void) | null = null;
+
 export const ensureFcmToken = async (): Promise<void> => {
   // Android 13+ 는 PermissionsAndroid.check 로 실제 권한 상태를 확인한다.
   // 권한이 없으면 토큰을 발급받아도 사용자에게 알림이 표시되지 않으므로 등록을 skip.
@@ -84,7 +88,12 @@ export const ensureFcmToken = async (): Promise<void> => {
     useStore.getState().setFcmRegistered(false);
     return;
   }
-  onTokenRefresh(messaging, async (newToken) => {
+  // 이전 onTokenRefresh 구독이 있으면 해제 후 재등록.
+  if (tokenRefreshUnsub) {
+    tokenRefreshUnsub();
+    tokenRefreshUnsub = null;
+  }
+  tokenRefreshUnsub = onTokenRefresh(messaging, async (newToken) => {
     try {
       await submitDeviceToken(deviceId, newToken);
       console.debug('[fcm] token refreshed');

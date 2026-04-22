@@ -9,8 +9,8 @@ interface Props {
   executionDate: string;
 }
 
-// 두 날짜의 달력일 차이. 주말/공휴일을 거래일로 계산하지 않으므로 STALE_WARNING_DAYS 는
-// 주말 2일 + 공휴일 여유를 포함한 값이어야 의미가 있다.
+// 두 날짜의 달력일 차이. execution_date (ET) 와 today() (KST) 의 1 일 TZ 오프셋 +
+// 주말 2 일 + 공휴일 여유를 STALE_WARNING_DAYS 가 모두 흡수해야 의미가 있다.
 const daysBetween = (isoA: string, isoB: string): number => {
   const a = new Date(isoA + 'T00:00:00+09:00').getTime();
   const b = new Date(isoB + 'T00:00:00+09:00').getTime();

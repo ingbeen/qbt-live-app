@@ -23,6 +23,8 @@ export const MS_PER_DAY = 86_400_000;
 export const TOAST_AUTO_HIDE_MS = 3_000;
 
 // UpdateStatusBadge: execution_date 가 오늘로부터 N일 초과 경과 시 경고. 달력일 기준.
+// execution_date 는 ET (미국 거래일), today() 는 KST 기준이라 평시에도 1 일 TZ 오프셋이
+// 발생. 4 = 주말 2 일 + 공휴일 여유 + TZ 오프셋 을 모두 흡수하는 값.
 export const STALE_WARNING_DAYS = 4;
 
 // ModelCompareCard: model/actual 현금 차이가 이 값 이상일 때만 경고 색상.

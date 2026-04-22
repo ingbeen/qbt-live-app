@@ -62,9 +62,7 @@ export default function App() {
       const st = useStore.getState();
       if (!st.user) return;
       st.clearAll();
-      st.refreshHome().catch((e) =>
-        console.error('[store] refreshHome on resume failed:', e),
-      );
+      st.refreshHome();
     });
 
     return () => {

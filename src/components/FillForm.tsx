@@ -5,7 +5,6 @@ import {
   TextInput,
   StyleSheet,
   Pressable,
-  Platform,
 } from 'react-native';
 import DateTimePicker, {
   type DateTimePickerEvent,
@@ -286,7 +285,7 @@ export const FillForm: React.FC<Props> = ({
         <DateTimePicker
           value={new Date(tradeDate + 'T00:00:00')}
           mode="date"
-          display={Platform.OS === 'ios' ? 'inline' : 'default'}
+          display="default"
           maximumDate={new Date()}
           onChange={onPickerChange}
         />

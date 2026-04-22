@@ -5,13 +5,11 @@ import {
   TextInput,
   StyleSheet,
   Pressable,
-  Platform,
 } from 'react-native';
 import DateTimePicker, {
   type DateTimePickerEvent,
 } from '@react-native-community/datetimepicker';
 import { COLORS } from '../utils/colors';
-import { ASSETS } from '../utils/constants';
 import type {
   AssetId,
   BalanceAdjustPayload,
@@ -239,7 +237,7 @@ export const AdjustForm: React.FC<Props> = ({ portfolio }) => {
             <DateTimePicker
               value={new Date((entryDate || today()) + 'T00:00:00')}
               mode="date"
-              display={Platform.OS === 'ios' ? 'inline' : 'default'}
+              display="default"
               maximumDate={new Date()}
               onChange={onPickerChange}
             />

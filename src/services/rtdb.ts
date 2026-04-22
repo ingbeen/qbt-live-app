@@ -145,9 +145,6 @@ export const submitDeviceToken = async (
   );
 };
 
-export const readDeviceToken = (deviceId: string): Promise<string | null> =>
-  readOnce<string>(`${RTDB_PATHS.DEVICE_TOKENS}/${deviceId}`);
-
 // ─── /charts/* ───
 
 export const readPriceChartMeta = (

@@ -7,7 +7,6 @@ import {
   MARGIN_MD,
   PADDING_MD,
   RADIUS_MD,
-  SYMBOLS,
 } from '../utils/constants';
 import { pressedOpacity } from '../utils/pressable';
 import type { Portfolio } from '../types/rtdb';
@@ -47,14 +46,9 @@ export const ModelCompareCard: React.FC<Props> = ({
         onPress={onToggle}
       >
         <Text style={styles.title}>Model 비교</Text>
-        <View style={styles.headerRight}>
-          <Text style={styles.driftBadge}>
-            Drift {formatDriftPct(portfolio.drift_pct)}
-          </Text>
-          <Text style={styles.arrow}>
-            {expanded ? SYMBOLS.ARROW_UP : SYMBOLS.ARROW_DOWN}
-          </Text>
-        </View>
+        <Text style={styles.driftBadge}>
+          Drift {formatDriftPct(portfolio.drift_pct)}
+        </Text>
       </Pressable>
 
       {expanded && (
@@ -142,21 +136,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
   title: {
     color: COLORS.text,
     fontSize: 13,
     fontWeight: '700',
   },
   driftBadge: {
-    color: COLORS.sub,
-    fontSize: 12,
-  },
-  arrow: {
     color: COLORS.sub,
     fontSize: 12,
   },

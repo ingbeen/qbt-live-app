@@ -1,11 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  StyleSheet,
-  Pressable,
-} from 'react-native';
+import { View, Text, TextInput, StyleSheet, Pressable } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { COLORS, COLOR_PRESETS } from '../utils/colors';
 import {
@@ -30,13 +24,11 @@ import {
   toUpperTicker,
   today,
 } from '../utils/format';
-import {
-  parseIntOrUndefined,
-  parseFloatOrUndefined,
-} from '../utils/parse';
+import { parseIntOrUndefined, parseFloatOrUndefined } from '../utils/parse';
 import { useDatePicker } from '../utils/useDatePicker';
 import { validateFill } from '../utils/validation';
 import { useStore } from '../store/useStore';
+import { FieldError } from './FieldError';
 
 interface Props {
   portfolio: Portfolio;
@@ -49,9 +41,9 @@ export const FillForm: React.FC<Props> = ({
   signals,
   pendingOrders,
 }) => {
-  const submitFill = useStore((s) => s.submitFill);
-  const submitFillDismiss = useStore((s) => s.submitFillDismiss);
-  const lastError = useStore((s) => s.lastError);
+  const submitFill = useStore(s => s.submitFill);
+  const submitFillDismiss = useStore(s => s.submitFillDismiss);
+  const lastError = useStore(s => s.lastError);
 
   const [assetId, setAssetId] = useState<AssetId | undefined>(undefined);
   const [direction, setDirection] = useState<Direction | undefined>(undefined);
@@ -61,7 +53,8 @@ export const FillForm: React.FC<Props> = ({
   const [memo, setMemo] = useState('');
   const [attempted, setAttempted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const { showPicker, openPicker, onPickerChange } = useDatePicker(setTradeDate);
+  const { showPicker, openPicker, onPickerChange } =
+    useDatePicker(setTradeDate);
 
   const payload = useMemo<Partial<FillPayload>>(
     () => ({
@@ -124,7 +117,9 @@ export const FillForm: React.FC<Props> = ({
     <View style={styles.wrap}>
       {lastError ? <Text style={styles.errorBanner}>{lastError}</Text> : null}
 
-      {pending && signals?.[pending.asset_id] && signals[pending.asset_id].close > 0 ? (
+      {pending &&
+      signals?.[pending.asset_id] &&
+      signals[pending.asset_id].close > 0 ? (
         <View style={styles.pendingHint}>
           <Text style={styles.pendingText}>
             {SYMBOLS.BOLT} {toUpperTicker(pending.asset_id)}{' '}
@@ -138,7 +133,7 @@ export const FillForm: React.FC<Props> = ({
 
       <Text style={styles.label}>자산</Text>
       <View style={styles.row4}>
-        {ASSETS.map((id) => {
+        {ASSETS.map(id => {
           const isActive = assetId === id;
           const hasPending = !!pendingOrders?.[id];
           return (
@@ -164,9 +159,7 @@ export const FillForm: React.FC<Props> = ({
           );
         })}
       </View>
-      {attempted && result.fieldErrors.asset_id ? (
-        <Text style={styles.fieldError}>{result.fieldErrors.asset_id}</Text>
-      ) : null}
+      <FieldError visible={attempted} message={result.fieldErrors.asset_id} />
 
       <Text style={styles.label}>방향</Text>
       <View style={styles.row2}>
@@ -213,9 +206,7 @@ export const FillForm: React.FC<Props> = ({
           </Text>
         </Pressable>
       </View>
-      {attempted && result.fieldErrors.direction ? (
-        <Text style={styles.fieldError}>{result.fieldErrors.direction}</Text>
-      ) : null}
+      <FieldError visible={attempted} message={result.fieldErrors.direction} />
 
       <View style={styles.row2}>
         <View style={styles.col}>
@@ -229,11 +220,10 @@ export const FillForm: React.FC<Props> = ({
             onChangeText={setSharesText}
             editable={!submitting}
           />
-          {attempted && result.fieldErrors.actual_shares ? (
-            <Text style={styles.fieldError}>
-              {result.fieldErrors.actual_shares}
-            </Text>
-          ) : null}
+          <FieldError
+            visible={attempted}
+            message={result.fieldErrors.actual_shares}
+          />
         </View>
         <View style={styles.col}>
           <Text style={styles.label}>체결가 (USD)</Text>
@@ -246,11 +236,10 @@ export const FillForm: React.FC<Props> = ({
             onChangeText={setPriceText}
             editable={!submitting}
           />
-          {attempted && result.fieldErrors.actual_price ? (
-            <Text style={styles.fieldError}>
-              {result.fieldErrors.actual_price}
-            </Text>
-          ) : null}
+          <FieldError
+            visible={attempted}
+            message={result.fieldErrors.actual_price}
+          />
         </View>
       </View>
 
@@ -265,9 +254,7 @@ export const FillForm: React.FC<Props> = ({
       >
         <Text style={styles.dateText}>{tradeDate}</Text>
       </Pressable>
-      {attempted && result.fieldErrors.trade_date ? (
-        <Text style={styles.fieldError}>{result.fieldErrors.trade_date}</Text>
-      ) : null}
+      <FieldError visible={attempted} message={result.fieldErrors.trade_date} />
       {showPicker ? (
         <DateTimePicker
           value={new Date(tradeDate + 'T00:00:00+09:00')}
@@ -424,11 +411,6 @@ const styles = StyleSheet.create({
   dateText: {
     color: COLORS.text,
     fontSize: 13,
-  },
-  fieldError: {
-    color: COLORS.red,
-    fontSize: 11,
-    marginTop: 4,
   },
   primaryButton: {
     backgroundColor: COLORS.accent,

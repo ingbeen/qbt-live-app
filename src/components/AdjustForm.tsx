@@ -1,11 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  StyleSheet,
-  Pressable,
-} from 'react-native';
+import { View, Text, TextInput, StyleSheet, Pressable } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { COLORS, COLOR_PRESETS } from '../utils/colors';
 import {
@@ -14,11 +8,7 @@ import {
   PADDING_MD,
   RADIUS_MD,
 } from '../utils/constants';
-import type {
-  AssetId,
-  BalanceAdjustPayload,
-  Portfolio,
-} from '../types/rtdb';
+import type { AssetId, BalanceAdjustPayload, Portfolio } from '../types/rtdb';
 import {
   formatShares,
   formatUSDInt,
@@ -26,13 +16,11 @@ import {
   toUpperTicker,
   today,
 } from '../utils/format';
-import {
-  parseIntOrUndefined,
-  parseFloatOrUndefined,
-} from '../utils/parse';
+import { parseIntOrUndefined, parseFloatOrUndefined } from '../utils/parse';
 import { useDatePicker } from '../utils/useDatePicker';
 import { validateBalanceAdjust } from '../utils/validation';
 import { useStore } from '../store/useStore';
+import { FieldError } from './FieldError';
 
 interface Props {
   portfolio: Portfolio;
@@ -47,8 +35,8 @@ const isAssetTarget = (t: Target | undefined): t is AssetId =>
   t !== undefined && t !== 'cash';
 
 export const AdjustForm: React.FC<Props> = ({ portfolio }) => {
-  const submitBalanceAdjust = useStore((s) => s.submitBalanceAdjust);
-  const lastError = useStore((s) => s.lastError);
+  const submitBalanceAdjust = useStore(s => s.submitBalanceAdjust);
+  const lastError = useStore(s => s.lastError);
 
   const [target, setTarget] = useState<Target | undefined>(undefined);
   const [sharesText, setSharesText] = useState('');
@@ -58,7 +46,8 @@ export const AdjustForm: React.FC<Props> = ({ portfolio }) => {
   const [reason, setReason] = useState('');
   const [attempted, setAttempted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const { showPicker, openPicker, onPickerChange } = useDatePicker(setEntryDate);
+  const { showPicker, openPicker, onPickerChange } =
+    useDatePicker(setEntryDate);
 
   const resetFields = useCallback(() => {
     setTarget(undefined);
@@ -124,7 +113,7 @@ export const AdjustForm: React.FC<Props> = ({ portfolio }) => {
 
       <Text style={styles.label}>대상</Text>
       <View style={styles.row5}>
-        {ASSET_TARGETS.map((t) => {
+        {ASSET_TARGETS.map(t => {
           const isActive = target === t;
           return (
             <Pressable
@@ -146,9 +135,7 @@ export const AdjustForm: React.FC<Props> = ({ portfolio }) => {
           );
         })}
       </View>
-      {attempted && result.fieldErrors.asset_id ? (
-        <Text style={styles.fieldError}>{result.fieldErrors.asset_id}</Text>
-      ) : null}
+      <FieldError visible={attempted} message={result.fieldErrors.asset_id} />
 
       {isAssetTarget(target) ? (
         <>
@@ -167,11 +154,10 @@ export const AdjustForm: React.FC<Props> = ({ portfolio }) => {
                 onChangeText={setSharesText}
                 editable={!submitting}
               />
-              {attempted && result.fieldErrors.new_shares ? (
-                <Text style={styles.fieldError}>
-                  {result.fieldErrors.new_shares}
-                </Text>
-              ) : null}
+              <FieldError
+                visible={attempted}
+                message={result.fieldErrors.new_shares}
+              />
             </View>
             <View style={styles.col}>
               <Text style={styles.label}>새 평균가 (USD)</Text>
@@ -184,11 +170,10 @@ export const AdjustForm: React.FC<Props> = ({ portfolio }) => {
                 onChangeText={setPriceText}
                 editable={!submitting}
               />
-              {attempted && result.fieldErrors.new_avg_price ? (
-                <Text style={styles.fieldError}>
-                  {result.fieldErrors.new_avg_price}
-                </Text>
-              ) : null}
+              <FieldError
+                visible={attempted}
+                message={result.fieldErrors.new_avg_price}
+              />
             </View>
             <View style={styles.col}>
               <Text style={styles.label}>새 진입일</Text>
@@ -202,11 +187,10 @@ export const AdjustForm: React.FC<Props> = ({ portfolio }) => {
               >
                 <Text style={styles.dateText}>{entryDate || '미변경'}</Text>
               </Pressable>
-              {attempted && result.fieldErrors.new_entry_date ? (
-                <Text style={styles.fieldError}>
-                  {result.fieldErrors.new_entry_date}
-                </Text>
-              ) : null}
+              <FieldError
+                visible={attempted}
+                message={result.fieldErrors.new_entry_date}
+              />
             </View>
           </View>
           {showPicker ? (
@@ -236,11 +220,10 @@ export const AdjustForm: React.FC<Props> = ({ portfolio }) => {
             onChangeText={setCashText}
             editable={!submitting}
           />
-          {attempted && result.fieldErrors.new_cash ? (
-            <Text style={styles.fieldError}>
-              {result.fieldErrors.new_cash}
-            </Text>
-          ) : null}
+          <FieldError
+            visible={attempted}
+            message={result.fieldErrors.new_cash}
+          />
         </>
       ) : null}
 
@@ -343,11 +326,6 @@ const styles = StyleSheet.create({
   dateText: {
     color: COLORS.text,
     fontSize: 13,
-  },
-  fieldError: {
-    color: COLORS.red,
-    fontSize: 11,
-    marginTop: 4,
   },
   helpText: {
     color: COLORS.sub,

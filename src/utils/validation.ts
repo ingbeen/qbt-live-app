@@ -1,5 +1,4 @@
 import type {
-  AssetId,
   BalanceAdjustPayload,
   FillPayload,
   Portfolio,
@@ -56,7 +55,7 @@ export const validateFill = (
     p.actual_shares != null &&
     portfolio
   ) {
-    const owned = portfolio.assets[p.asset_id]?.actual_shares ?? 0;
+    const owned = portfolio.assets[p.asset_id].actual_shares;
     if (p.actual_shares > owned) {
       fieldErrors.actual_shares = `매도 수량이 보유 주수(${owned}주)를 초과합니다`;
     }
@@ -123,8 +122,7 @@ export const validateBalanceAdjust = (
     (p.new_avg_price != null || p.new_entry_date != null) &&
     p.new_shares == null
   ) {
-    const owned =
-      portfolio.assets[p.asset_id as AssetId]?.actual_shares ?? 0;
+    const owned = portfolio.assets[p.asset_id].actual_shares;
     if (owned === 0) {
       fieldErrors.new_avg_price =
         '보유 주수가 0인 자산의 평균가/진입일을 설정할 수 없습니다';

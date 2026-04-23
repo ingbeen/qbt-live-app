@@ -15,7 +15,7 @@ interface Props {
   pendingOrders: Partial<Record<AssetId, PendingOrder>> | null;
   inboxFills: InboxItem[] | null;
   inboxFillDismiss: InboxItem[] | null;
-  signals: Record<AssetId, Signal> | null;
+  signals: Record<AssetId, Signal>;
 }
 
 const hasInboxForAsset = (
@@ -48,7 +48,7 @@ export const ReminderBlock: React.FC<Props> = ({
       {pendingsToRemind.map((p) => {
         const sharesText = formatPendingShares(
           p.delta_amount,
-          signals?.[p.asset_id]?.close,
+          signals[p.asset_id].close,
         );
         return (
           <Text key={p.asset_id} style={styles.line}>

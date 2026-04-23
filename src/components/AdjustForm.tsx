@@ -40,6 +40,9 @@ type Target = AssetId | 'cash';
 const targetLabel = (t: Target): string =>
   t === 'cash' ? '현금' : toUpperTicker(t);
 
+const isAssetTarget = (t: Target | undefined): t is AssetId =>
+  t !== undefined && t !== 'cash';
+
 export const AdjustForm: React.FC<Props> = ({ portfolio }) => {
   const submitBalanceAdjust = useStore((s) => s.submitBalanceAdjust);
   const lastError = useStore((s) => s.lastError);
@@ -119,10 +122,6 @@ export const AdjustForm: React.FC<Props> = ({ portfolio }) => {
     }
   }, [payload, reason, result.valid, resetFields, submitBalanceAdjust]);
 
-  const isAsset = target && target !== 'cash';
-  const currentShares = isAsset
-    ? portfolio.assets[target as AssetId].actual_shares
-    : null;
   const currentCash = portfolio.shared_cash_actual;
 
   return (
@@ -160,10 +159,10 @@ export const AdjustForm: React.FC<Props> = ({ portfolio }) => {
         <Text style={styles.fieldError}>{result.fieldErrors.asset_id}</Text>
       ) : null}
 
-      {isAsset ? (
+      {isAssetTarget(target) ? (
         <>
           <Text style={styles.helpText}>
-            현재: {formatShares(currentShares ?? 0)}
+            현재: {formatShares(portfolio.assets[target].actual_shares)}
           </Text>
           <View style={styles.row3}>
             <View style={styles.col}>

@@ -81,25 +81,29 @@ export const HomeScreen: React.FC = () => {
 
         <UpdateStatusBadge executionDate={portfolio.execution_date} />
 
-        <ReminderBlock
-          pendingOrders={pendingOrders}
-          inboxFills={inboxFills}
-          inboxFillDismiss={inboxFillDismiss}
-          signals={signals}
-        />
+        {signals ? (
+          <>
+            <ReminderBlock
+              pendingOrders={pendingOrders}
+              inboxFills={inboxFills}
+              inboxFillDismiss={inboxFillDismiss}
+              signals={signals}
+            />
 
-        <SignalNextFillBlock
-          pendingOrders={pendingOrders}
-          signals={signals}
-        />
+            <SignalNextFillBlock
+              pendingOrders={pendingOrders}
+              signals={signals}
+            />
 
-        <AssetSummaryCard
-          portfolio={portfolio}
-          signals={signals}
-          pendingOrders={pendingOrders}
-        />
+            <AssetSummaryCard
+              portfolio={portfolio}
+              signals={signals}
+              pendingOrders={pendingOrders}
+            />
 
-        <MAProximityCard signals={signals} />
+            <MAProximityCard signals={signals} />
+          </>
+        ) : null}
 
         <ModelCompareCard portfolio={portfolio} onSyncPress={onSyncPress} />
       </PullToRefreshScrollView>

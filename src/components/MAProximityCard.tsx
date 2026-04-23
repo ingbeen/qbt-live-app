@@ -6,7 +6,7 @@ import type { AssetId, Signal } from '../types/rtdb';
 import { formatSignedPct, toSignalTicker } from '../utils/format';
 
 interface Props {
-  signals: Record<AssetId, Signal> | null;
+  signals: Record<AssetId, Signal>;
 }
 
 export const MAProximityCard: React.FC<Props> = ({ signals }) => {
@@ -15,7 +15,7 @@ export const MAProximityCard: React.FC<Props> = ({ signals }) => {
       <Text style={styles.title}>MA 근접도 (200일선)</Text>
       <View style={styles.divider} />
       {ASSETS.map((id) => {
-        const pct = signals?.[id]?.ma_distance_pct ?? 0;
+        const pct = signals[id].ma_distance_pct;
         const color = pct >= 0 ? COLORS.green : COLORS.red;
         return (
           <View key={id} style={styles.row}>

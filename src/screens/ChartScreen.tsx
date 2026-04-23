@@ -85,17 +85,14 @@ export const ChartScreen: React.FC = () => {
       const recent = priceCache?.recent;
       const archiveMap = priceCache?.archive;
       if (!meta || !recent || !archiveMap) return;
-      if (recent.dates.length === 0) {
+      const firstDate = recent.dates[0];
+      if (!firstDate) {
         console.warn('[chart] empty price recent series, cannot load earlier');
         setLastError('차트 데이터가 비어있습니다.');
         return;
       }
       const loadedYears = Object.keys(archiveMap).map(Number);
-      const recentEarliestYear = parseInt(
-        (recent.dates[0] ?? '').slice(0, 4),
-        10,
-      );
-      if (!Number.isFinite(recentEarliestYear)) return;
+      const recentEarliestYear = parseInt(firstDate.slice(0, 4), 10);
       const earliestLoaded = Math.min(recentEarliestYear, ...loadedYears);
       const yearToLoad = earliestLoaded - 1;
       if (meta.archive_years.includes(yearToLoad)) {
@@ -105,17 +102,14 @@ export const ChartScreen: React.FC = () => {
       const meta = equityCache.meta;
       const recent = equityCache.recent;
       if (!meta || !recent) return;
-      if (recent.dates.length === 0) {
+      const firstDate = recent.dates[0];
+      if (!firstDate) {
         console.warn('[chart] empty equity recent series, cannot load earlier');
         setLastError('차트 데이터가 비어있습니다.');
         return;
       }
       const loadedYears = Object.keys(equityCache.archive).map(Number);
-      const recentEarliestYear = parseInt(
-        (recent.dates[0] ?? '').slice(0, 4),
-        10,
-      );
-      if (!Number.isFinite(recentEarliestYear)) return;
+      const recentEarliestYear = parseInt(firstDate.slice(0, 4), 10);
       const earliestLoaded = Math.min(recentEarliestYear, ...loadedYears);
       const yearToLoad = earliestLoaded - 1;
       if (meta.archive_years.includes(yearToLoad)) {

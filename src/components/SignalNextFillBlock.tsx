@@ -12,7 +12,7 @@ import {
 
 interface Props {
   pendingOrders: Partial<Record<AssetId, PendingOrder>> | null;
-  signals: Record<AssetId, Signal> | null;
+  signals: Record<AssetId, Signal>;
 }
 
 export const SignalNextFillBlock: React.FC<Props> = ({
@@ -31,7 +31,7 @@ export const SignalNextFillBlock: React.FC<Props> = ({
       {pendings.map((p) => {
         const sharesText = formatPendingShares(
           p.delta_amount,
-          signals?.[p.asset_id]?.close,
+          signals[p.asset_id].close,
         );
         return (
           <Text key={p.asset_id} style={styles.line}>

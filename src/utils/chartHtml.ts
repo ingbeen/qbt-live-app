@@ -1,8 +1,11 @@
 // Lightweight Charts 는 브라우저 전용 라이브러리. WebView 내부에서만 동작하므로
 // RN JS 모듈에서 import 할 수 없고 CDN 으로 로드. 버전은 재현성을 위해 CHART_LIB_VERSION 에 고정.
-// HTML 내부 색상은 Lightweight Charts 옵션에 직접 전달되므로 COLORS 상수를 주입할 수 없음
+// HTML 내부 색상은 Lightweight Charts 옵션에 직접 전달되므로 COLORS 상수를 직접 주입할 수 없음
 // (CLAUDE.md §5.3 스타일링 / §5.4 절대 금지 목록 — 하드코딩 색상 hex 금지 규칙의 예외).
+// 단, CHART_COLORS (colors.ts) 가 COLORS 를 참조하는 형태로 SoT 단일화되어 있어
+// 여기서는 보간만 수행한다. alpha 변형은 ${CHART_COLORS.x}22 처럼 접미 보간.
 
+import { CHART_COLORS } from './colors';
 import { CHART_LIB_VERSION } from './constants';
 
 export const generateChartHtml = (): string => `<!DOCTYPE html>
@@ -12,7 +15,7 @@ export const generateChartHtml = (): string => `<!DOCTYPE html>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <script src="https://unpkg.com/lightweight-charts@${CHART_LIB_VERSION}/dist/lightweight-charts.standalone.production.js"></script>
   <style>
-    html, body, #chart { margin: 0; padding: 0; width: 100%; height: 100%; background: #161b22; }
+    html, body, #chart { margin: 0; padding: 0; width: 100%; height: 100%; background: ${CHART_COLORS.background}; }
     body { overflow: hidden; }
   </style>
 </head>
@@ -21,10 +24,10 @@ export const generateChartHtml = (): string => `<!DOCTYPE html>
   <script>
     (function () {
       var chart = LightweightCharts.createChart(document.getElementById('chart'), {
-        layout: { background: { color: '#161b22' }, textColor: '#8b949e' },
-        grid: { vertLines: { color: '#30363d22' }, horzLines: { color: '#30363d22' } },
-        timeScale: { borderColor: '#30363d' },
-        rightPriceScale: { borderColor: '#30363d' },
+        layout: { background: { color: '${CHART_COLORS.background}' }, textColor: '${CHART_COLORS.sub}' },
+        grid: { vertLines: { color: '${CHART_COLORS.border}22' }, horzLines: { color: '${CHART_COLORS.border}22' } },
+        timeScale: { borderColor: '${CHART_COLORS.border}' },
+        rightPriceScale: { borderColor: '${CHART_COLORS.border}' },
         crosshair: { mode: 1 }
       });
 
@@ -48,10 +51,10 @@ export const generateChartHtml = (): string => `<!DOCTYPE html>
       window.setPriceChart = function (data) {
         clearAllSeries();
 
-        closeSeries = chart.addLineSeries({ color: '#58a6ff', lineWidth: 2 });
-        maSeries = chart.addLineSeries({ color: '#d29922', lineWidth: 1, lineStyle: 2 });
-        upperSeries = chart.addLineSeries({ color: '#f85149aa', lineWidth: 1, lineStyle: 2 });
-        lowerSeries = chart.addLineSeries({ color: '#3fb950aa', lineWidth: 1, lineStyle: 2 });
+        closeSeries = chart.addLineSeries({ color: '${CHART_COLORS.accent}', lineWidth: 2 });
+        maSeries = chart.addLineSeries({ color: '${CHART_COLORS.yellow}', lineWidth: 1, lineStyle: 2 });
+        upperSeries = chart.addLineSeries({ color: '${CHART_COLORS.red}aa', lineWidth: 1, lineStyle: 2 });
+        lowerSeries = chart.addLineSeries({ color: '${CHART_COLORS.green}aa', lineWidth: 1, lineStyle: 2 });
 
         closeSeries.setData(data.dates.map(function (d, i) { return { time: d, value: data.close[i] }; }));
         maSeries.setData(
@@ -73,16 +76,16 @@ export const generateChartHtml = (): string => `<!DOCTYPE html>
         // 마커 4종 — 시그널 ▲▼ + 내 체결 ●
         var markers = [];
         (data.buy_signals || []).forEach(function (d) {
-          markers.push({ time: d, position: 'belowBar', color: '#3fb950', shape: 'arrowUp', text: '' });
+          markers.push({ time: d, position: 'belowBar', color: '${CHART_COLORS.green}', shape: 'arrowUp', text: '' });
         });
         (data.sell_signals || []).forEach(function (d) {
-          markers.push({ time: d, position: 'aboveBar', color: '#f85149', shape: 'arrowDown', text: '' });
+          markers.push({ time: d, position: 'aboveBar', color: '${CHART_COLORS.red}', shape: 'arrowDown', text: '' });
         });
         (data.user_buys || []).forEach(function (d) {
-          markers.push({ time: d, position: 'belowBar', color: '#3fb950', shape: 'circle', text: '' });
+          markers.push({ time: d, position: 'belowBar', color: '${CHART_COLORS.green}', shape: 'circle', text: '' });
         });
         (data.user_sells || []).forEach(function (d) {
-          markers.push({ time: d, position: 'aboveBar', color: '#f85149', shape: 'circle', text: '' });
+          markers.push({ time: d, position: 'aboveBar', color: '${CHART_COLORS.red}', shape: 'circle', text: '' });
         });
         markers.sort(function (a, b) { return a.time.localeCompare(b.time); });
         closeSeries.setMarkers(markers);
@@ -92,8 +95,8 @@ export const generateChartHtml = (): string => `<!DOCTYPE html>
       window.setEquityChart = function (data) {
         clearAllSeries();
 
-        modelSeries = chart.addLineSeries({ color: '#58a6ff', lineWidth: 2, title: 'Model' });
-        actualSeries = chart.addLineSeries({ color: '#3fb950', lineWidth: 2, lineStyle: 2, title: 'Actual' });
+        modelSeries = chart.addLineSeries({ color: '${CHART_COLORS.accent}', lineWidth: 2, title: 'Model' });
+        actualSeries = chart.addLineSeries({ color: '${CHART_COLORS.green}', lineWidth: 2, lineStyle: 2, title: 'Actual' });
         modelSeries.setData(data.dates.map(function (d, i) { return { time: d, value: data.model_equity[i] }; }));
         actualSeries.setData(data.dates.map(function (d, i) { return { time: d, value: data.actual_equity[i] }; }));
       };

@@ -1,11 +1,17 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { COLORS, COLOR_PRESETS } from '../utils/colors';
-import { MARGIN_MD, PADDING_MD, RADIUS_MD } from '../utils/constants';
+import {
+  EVENT_LABELS,
+  MARGIN_MD,
+  PADDING_MD,
+  RADIUS_MD,
+} from '../utils/constants';
 import { pressedOpacity } from '../utils/pressable';
 import type {
   AssetId,
   BalanceAdjustHistory,
+  Direction,
   FillHistory,
 } from '../types/rtdb';
 import type { SignalHistoryEntry } from '../services/rtdb';
@@ -46,7 +52,7 @@ type HistoryEvent =
     };
 
 const fillsToEvents = (fills: FillHistory[]): HistoryEvent[] =>
-  fills.map((f) => ({
+  fills.map(f => ({
     kind: 'fill',
     date: f.trade_date,
     sortKey: f.input_time_kst,
@@ -54,7 +60,7 @@ const fillsToEvents = (fills: FillHistory[]): HistoryEvent[] =>
   }));
 
 const adjustsToEvents = (adjusts: BalanceAdjustHistory[]): HistoryEvent[] =>
-  adjusts.map((a) => ({
+  adjusts.map(a => ({
     kind: 'balance_adjust',
     date: a.applied_at.slice(0, 10),
     sortKey: a.applied_at,
@@ -63,8 +69,8 @@ const adjustsToEvents = (adjusts: BalanceAdjustHistory[]): HistoryEvent[] =>
 
 const signalsToEvents = (signals: SignalHistoryEntry[]): HistoryEvent[] =>
   signals
-    .filter((s) => s.signal.state !== 'none')
-    .map((s) => ({
+    .filter(s => s.signal.state !== 'none')
+    .map(s => ({
       kind: 'signal',
       date: s.date,
       sortKey: s.date,
@@ -79,9 +85,15 @@ const buildHistoryTimeline = (
   filter: Filter,
 ): HistoryEvent[] => {
   const events: HistoryEvent[] = [
-    ...((filter === '전체' || filter === '체결') && fills ? fillsToEvents(fills) : []),
-    ...((filter === '전체' || filter === '보정') && adjusts ? adjustsToEvents(adjusts) : []),
-    ...((filter === '전체' || filter === '신호') && signals ? signalsToEvents(signals) : []),
+    ...((filter === '전체' || filter === '체결') && fills
+      ? fillsToEvents(fills)
+      : []),
+    ...((filter === '전체' || filter === '보정') && adjusts
+      ? adjustsToEvents(adjusts)
+      : []),
+    ...((filter === '전체' || filter === '신호') && signals
+      ? signalsToEvents(signals)
+      : []),
   ];
   events.sort((a, b) => b.sortKey.localeCompare(a.sortKey));
   return events;
@@ -97,17 +109,18 @@ const renderAdjustContent = (a: BalanceAdjustHistory): string => {
   if (a.asset_id) {
     parts.push(toUpperTicker(a.asset_id));
     if (a.new_shares != null) parts.push(`주수→${a.new_shares}`);
-    if (a.new_avg_price != null) parts.push(`평균가→${formatUSDPrice(a.new_avg_price)}`);
+    if (a.new_avg_price != null)
+      parts.push(`평균가→${formatUSDPrice(a.new_avg_price)}`);
     if (a.new_entry_date != null) parts.push(`진입일→${a.new_entry_date}`);
   }
   if (a.new_cash != null) parts.push(`현금→${formatUSDInt(a.new_cash)}`);
-  return parts.join(', ') || '보정';
+  return parts.join(', ') || EVENT_LABELS.balance_adjust;
 };
 
 const renderSignalContent = (e: HistoryEvent & { kind: 'signal' }): string =>
-  `${toUpperTicker(e.asset_id)} ${
-    e.signal.state === 'buy' ? '매수' : '매도'
-  } 시그널`;
+  `${toUpperTicker(e.asset_id)} ${directionLabel(
+    e.signal.state as Direction,
+  )} 시그널`;
 
 const fillBarColor = (f: FillHistory): string =>
   f.direction === 'buy' ? COLORS.green : COLORS.red;
@@ -129,7 +142,7 @@ export const HistoryList: React.FC<Props> = ({
       <Text style={styles.title}>히스토리</Text>
 
       <View style={styles.chips}>
-        {FILTERS.map((f) => {
+        {FILTERS.map(f => {
           const isActive = filter === f;
           return (
             <Pressable
@@ -161,15 +174,18 @@ export const HistoryList: React.FC<Props> = ({
 
           if (e.kind === 'fill') {
             barColor = fillBarColor(e.fill);
-            typeBadge = { text: '체결', color: COLORS.text };
+            typeBadge = { text: EVENT_LABELS.fill, color: COLORS.text };
             content = renderFillContent(e.fill);
           } else if (e.kind === 'balance_adjust') {
             barColor = COLORS.yellow;
-            typeBadge = { text: '보정', color: COLORS.yellow };
+            typeBadge = {
+              text: EVENT_LABELS.balance_adjust,
+              color: COLORS.yellow,
+            };
             content = renderAdjustContent(e.adjust);
           } else {
             barColor = COLORS.accent;
-            typeBadge = { text: '신호', color: COLORS.accent };
+            typeBadge = { text: EVENT_LABELS.signal, color: COLORS.accent };
             content = renderSignalContent(e);
           }
 

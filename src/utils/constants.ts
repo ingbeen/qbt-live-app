@@ -91,3 +91,12 @@ export const TOAST_MESSAGES = {
   BALANCE_ADJUST: '보정이 저장되었습니다.\n다음 실행에 반영됩니다.',
   FILL_DISMISS: '스킵이 저장되었습니다.\n다음 실행에 반영됩니다.',
 } as const;
+
+// ─── 이벤트 종류별 한글 라벨 ───
+// RTDB 이벤트 종류(fill / balance_adjust / signal) 의 표시 라벨. HistoryList 등에서 반복 사용.
+
+export const EVENT_LABELS = {
+  fill: '체결',
+  balance_adjust: '보정',
+  signal: '신호',
+} as const;

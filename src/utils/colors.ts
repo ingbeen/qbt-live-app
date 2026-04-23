@@ -36,3 +36,16 @@ export const COLOR_PRESETS = {
   // 모달 배경 오버레이. withAlpha 는 hex 전제라 rgba 문자열로 별도 정의.
   modalOverlay: 'rgba(0, 0, 0, 0.75)',
 } as const;
+
+// WebView 차트 (chartHtml.ts) 가 사용하는 색상. RN COLORS 를 직접 import 할 수 없는 HTML/CSS
+// 컨텍스트로 hex 가 보간되며, 색상 SoT 는 COLORS 단일 정의를 따른다 (이 객체는 참조 매핑).
+// alpha 변형이 필요한 경우 chartHtml.ts 내부에서 ${CHART_COLORS.x}aa 처럼 접미 보간한다.
+export const CHART_COLORS = {
+  background: COLORS.card, // 차트 배경 (CSS body / chart layout)
+  sub: COLORS.sub, // 축 텍스트
+  border: COLORS.border, // 축선 / 그리드 (alpha 변형 별도 보간)
+  accent: COLORS.accent, // close / model equity 시리즈
+  yellow: COLORS.yellow, // MA 시리즈
+  red: COLORS.red, // upper band (alpha) / sell 마커
+  green: COLORS.green, // lower band (alpha) / buy 마커 / actual equity
+} as const;

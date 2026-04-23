@@ -74,12 +74,12 @@
 
 ### Step 4 — ModelCompareCard 에 drift 표시
 - 헤더 (`headerRow`) 에 drift 배지 추가:
-  - 레이아웃: `[Model 비교]    [Drift 0.37%]    [▼]`
+  - 레이아웃: `[Model 비교]                 [Drift 0.37%]`
   - 배지 스타일: 단색 (상태 색상 금지), 작은 padding, `COLORS.sub` 톤
-  - 항상 보임 (카드 접혀도 표시)
+  - 항상 보임 (카드 접혀도 표시). 카드 전체 영역이 Pressable 이므로 별도 펼침 화살표는 두지 않는다.
 - 토글 열렸을 때 본문 상단에 drift 수치 라인 추가:
-  - 레이아웃: `Model $X,XXX   Actual $X,XXX` 아래 `Drift: 0.37%` 한 줄
-  - 스타일: 기존 `totalsLabel`/`totalsValue` 톤 재사용
+  - 레이아웃: `Model $X,XXX   Actual $X,XXX   Drift 0.37%` 3열 구성
+  - 스타일: 기존 `totalsLabel` / `totalsValue` 톤 재사용
 
 ### Step 5 — AUDIT 문서 업데이트
 - `docs/AUDIT_20260422.md`:

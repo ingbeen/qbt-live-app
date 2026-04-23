@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { COLORS } from '../utils/colors';
-import { ASSETS } from '../utils/constants';
+import { ASSETS, MARGIN_MD, PADDING_MD, RADIUS_MD } from '../utils/constants';
 import type { AssetId, Signal } from '../types/rtdb';
 import { formatSignedPct, toSignalTicker } from '../utils/format';
 
@@ -35,9 +35,9 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.card,
     borderColor: COLORS.border,
     borderWidth: 1,
-    borderRadius: 8,
-    padding: 14,
-    marginBottom: 12,
+    borderRadius: RADIUS_MD,
+    padding: PADDING_MD,
+    marginBottom: MARGIN_MD,
   },
   title: {
     color: COLORS.text,

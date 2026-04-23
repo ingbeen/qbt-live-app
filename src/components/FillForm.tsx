@@ -10,7 +10,13 @@ import DateTimePicker, {
   type DateTimePickerEvent,
 } from '@react-native-community/datetimepicker';
 import { COLORS, COLOR_PRESETS } from '../utils/colors';
-import { ASSETS, SYMBOLS } from '../utils/constants';
+import {
+  ASSETS,
+  MARGIN_MD,
+  PADDING_MD,
+  RADIUS_MD,
+  SYMBOLS,
+} from '../utils/constants';
 import type {
   AssetId,
   Direction,
@@ -337,9 +343,9 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.card,
     borderColor: COLORS.border,
     borderWidth: 1,
-    borderRadius: 8,
-    padding: 14,
-    marginBottom: 12,
+    borderRadius: RADIUS_MD,
+    padding: PADDING_MD,
+    marginBottom: MARGIN_MD,
   },
   errorBanner: {
     color: COLORS.red,
@@ -354,7 +360,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     paddingVertical: 8,
     paddingHorizontal: 10,
-    marginBottom: 12,
+    marginBottom: MARGIN_MD,
   },
   pendingText: {
     color: COLORS.accent,
@@ -440,7 +446,7 @@ const styles = StyleSheet.create({
   },
   primaryButton: {
     backgroundColor: COLORS.accent,
-    borderRadius: 8,
+    borderRadius: RADIUS_MD,
     paddingVertical: 12,
     alignItems: 'center',
     marginTop: 16,
@@ -453,7 +459,7 @@ const styles = StyleSheet.create({
   secondaryButton: {
     borderColor: COLORS.border,
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: RADIUS_MD,
     paddingVertical: 12,
     alignItems: 'center',
     marginTop: 8,

@@ -1,6 +1,8 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { COLORS } from '../utils/colors';
+import { RADIUS_MD } from '../utils/constants';
+import { pressedOpacity } from '../utils/pressable';
 
 interface ErrorStateProps {
   message: string;
@@ -13,7 +15,7 @@ export const ErrorState: React.FC<ErrorStateProps> = ({ message, onRetry }) => (
   <View style={styles.container}>
     <Text style={styles.message}>{message}</Text>
     <Pressable
-      style={({ pressed }) => [styles.btn, pressed && { opacity: 0.7 }]}
+      style={({ pressed }) => [styles.btn, pressedOpacity(pressed)]}
       onPress={onRetry}
     >
       <Text style={styles.btnText}>다시 시도</Text>
@@ -39,7 +41,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.accent,
     paddingHorizontal: 20,
     paddingVertical: 10,
-    borderRadius: 8,
+    borderRadius: RADIUS_MD,
   },
   btnText: {
     color: COLORS.text,

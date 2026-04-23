@@ -11,7 +11,7 @@ import { useStore } from '../store/useStore';
 import { signOut } from '../services/auth';
 import { Badge } from '../components/Badge';
 import { COLORS, COLOR_PRESETS } from '../utils/colors';
-import { APP_VERSION } from '../utils/constants';
+import { APP_VERSION, PADDING_MD, RADIUS_MD } from '../utils/constants';
 
 interface RowProps {
   label: string;
@@ -98,13 +98,13 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.bg,
   },
   content: {
-    padding: 14,
+    padding: PADDING_MD,
   },
   card: {
     backgroundColor: COLORS.card,
     borderColor: COLORS.border,
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: RADIUS_MD,
     paddingVertical: 4,
   },
   row: {
@@ -134,7 +134,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
     borderColor: COLORS.red,
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: RADIUS_MD,
     paddingVertical: 14,
     alignItems: 'center',
     justifyContent: 'center',

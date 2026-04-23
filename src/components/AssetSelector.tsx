@@ -4,6 +4,7 @@ import { COLORS, COLOR_PRESETS } from '../utils/colors';
 import { ASSETS } from '../utils/constants';
 import type { AssetId } from '../types/rtdb';
 import { toUpperTicker } from '../utils/format';
+import { pressedOpacity } from '../utils/pressable';
 
 interface AssetSelectorProps {
   value: AssetId;
@@ -23,7 +24,7 @@ export const AssetSelector: React.FC<AssetSelectorProps> = ({
           style={({ pressed }) => [
             styles.cell,
             isActive && styles.cellActive,
-            pressed && { opacity: 0.7 },
+            pressedOpacity(pressed),
           ]}
           onPress={() => onChange(id)}
         >

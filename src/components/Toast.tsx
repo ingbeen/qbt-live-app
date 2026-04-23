@@ -1,7 +1,13 @@
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { COLORS } from '../utils/colors';
-import { SYMBOLS, TOAST_AUTO_HIDE_MS } from '../utils/constants';
+import {
+  PADDING_SM,
+  RADIUS_MD,
+  SYMBOLS,
+  TOAST_AUTO_HIDE_MS,
+} from '../utils/constants';
+import { pressedOpacity } from '../utils/pressable';
 
 interface Props {
   message: string | null;
@@ -29,7 +35,7 @@ export const Toast: React.FC<Props> = ({
       <Text style={styles.text}>{message}</Text>
       <Pressable
         onPress={onClose}
-        style={({ pressed }) => [styles.close, pressed && { opacity: 0.7 }]}
+        style={({ pressed }) => [styles.close, pressedOpacity(pressed)]}
       >
         <Text style={styles.closeText}>{SYMBOLS.CLOSE}</Text>
       </Pressable>
@@ -47,8 +53,8 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.toastBg,
     borderColor: COLORS.toastBorder,
     borderWidth: 1,
-    borderRadius: 8,
-    padding: 12,
+    borderRadius: RADIUS_MD,
+    padding: PADDING_SM,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',

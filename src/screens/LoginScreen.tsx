@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS } from '../utils/colors';
+import { MARGIN_MD, MARGIN_SM, RADIUS_MD } from '../utils/constants';
 import { signIn } from '../services/auth';
 
 export const LoginScreen: React.FC = () => {
@@ -115,22 +116,22 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.card,
     borderColor: COLORS.border,
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: RADIUS_MD,
     paddingVertical: 12,
     paddingHorizontal: 14,
     color: COLORS.text,
-    marginBottom: 12,
+    marginBottom: MARGIN_MD,
     fontSize: 16,
   },
   error: {
     color: COLORS.red,
     fontSize: 14,
-    marginBottom: 8,
+    marginBottom: MARGIN_SM,
     textAlign: 'center',
   },
   button: {
     backgroundColor: COLORS.accent,
-    borderRadius: 8,
+    borderRadius: RADIUS_MD,
     paddingVertical: 14,
     alignItems: 'center',
     marginTop: 8,

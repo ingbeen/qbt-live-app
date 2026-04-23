@@ -7,7 +7,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import { COLORS } from '../utils/colors';
-import { SYMBOLS } from '../utils/constants';
+import { RADIUS_MD, SYMBOLS } from '../utils/constants';
 import { refreshNetworkState } from '../services/network';
 
 // 네트워크 미연결 시 전체 화면 차단 (CLAUDE.md §6.6). isOnline===false 동안 App.tsx 가 이 화면만 렌더.
@@ -80,7 +80,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.accent,
     paddingHorizontal: 20,
     paddingVertical: 10,
-    borderRadius: 8,
+    borderRadius: RADIUS_MD,
     minWidth: 120,
     alignItems: 'center',
     justifyContent: 'center',

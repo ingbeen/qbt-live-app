@@ -1,7 +1,13 @@
 import React from 'react';
 import { Modal, View, Text, StyleSheet, Pressable } from 'react-native';
 import { COLORS, COLOR_PRESETS } from '../utils/colors';
-import { SYMBOLS } from '../utils/constants';
+import {
+  MARGIN_SM,
+  PADDING_SM,
+  RADIUS_MD,
+  SYMBOLS,
+} from '../utils/constants';
+import { pressedOpacity } from '../utils/pressable';
 import type { AssetId, PendingOrder, Signal } from '../types/rtdb';
 import {
   directionLabel,
@@ -70,7 +76,7 @@ export const SyncDialog: React.FC<Props> = ({
               style={({ pressed }) => [
                 styles.button,
                 styles.cancelButton,
-                pressed && { opacity: 0.7 },
+                pressedOpacity(pressed),
               ]}
               onPress={onCancel}
             >
@@ -80,7 +86,7 @@ export const SyncDialog: React.FC<Props> = ({
               style={({ pressed }) => [
                 styles.button,
                 styles.confirmButton,
-                pressed && { opacity: 0.7 },
+                pressedOpacity(pressed),
               ]}
               onPress={onConfirm}
             >
@@ -114,7 +120,7 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     fontSize: 16,
     fontWeight: '700',
-    marginBottom: 8,
+    marginBottom: MARGIN_SM,
   },
   body: {
     color: COLORS.sub,
@@ -125,8 +131,8 @@ const styles = StyleSheet.create({
     backgroundColor: COLOR_PRESETS.orangeBg,
     borderColor: COLOR_PRESETS.orangeBorder,
     borderWidth: 1,
-    borderRadius: 8,
-    padding: 12,
+    borderRadius: RADIUS_MD,
+    padding: PADDING_SM,
     marginBottom: 16,
   },
   pendingTitle: {
@@ -152,7 +158,7 @@ const styles = StyleSheet.create({
   button: {
     flex: 1,
     paddingVertical: 12,
-    borderRadius: 8,
+    borderRadius: RADIUS_MD,
     alignItems: 'center',
   },
   cancelButton: {

@@ -1,6 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { COLORS, COLOR_PRESETS } from '../utils/colors';
+import { MARGIN_MD, PADDING_MD, RADIUS_MD } from '../utils/constants';
+import { pressedOpacity } from '../utils/pressable';
 import type {
   AssetId,
   BalanceAdjustHistory,
@@ -135,7 +137,7 @@ export const HistoryList: React.FC<Props> = ({
               style={({ pressed }) => [
                 styles.chip,
                 isActive && styles.chipActive,
-                pressed && { opacity: 0.7 },
+                pressedOpacity(pressed),
               ]}
               onPress={() => setFilter(f)}
             >
@@ -194,8 +196,8 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.card,
     borderColor: COLORS.border,
     borderWidth: 1,
-    borderRadius: 8,
-    padding: 14,
+    borderRadius: RADIUS_MD,
+    padding: PADDING_MD,
   },
   title: {
     color: COLORS.text,
@@ -206,7 +208,7 @@ const styles = StyleSheet.create({
   chips: {
     flexDirection: 'row',
     gap: 6,
-    marginBottom: 12,
+    marginBottom: MARGIN_MD,
   },
   chip: {
     paddingVertical: 6,

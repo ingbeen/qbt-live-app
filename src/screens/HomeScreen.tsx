@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { COLORS } from '../utils/colors';
+import { MARGIN_MD } from '../utils/constants';
 import { useStore } from '../store/useStore';
 import { PullToRefreshScrollView } from '../components/PullToRefreshScrollView';
 import { UpdateStatusBadge } from '../components/UpdateStatusBadge';
@@ -140,7 +141,7 @@ const styles = StyleSheet.create({
   errorBanner: {
     color: COLORS.red,
     fontSize: 13,
-    marginBottom: 12,
+    marginBottom: MARGIN_MD,
     textAlign: 'center',
   },
 });

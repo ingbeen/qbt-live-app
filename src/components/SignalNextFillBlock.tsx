@@ -1,7 +1,12 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { COLORS, COLOR_PRESETS } from '../utils/colors';
-import { SYMBOLS } from '../utils/constants';
+import {
+  MARGIN_MD,
+  PADDING_SM,
+  RADIUS_MD,
+  SYMBOLS,
+} from '../utils/constants';
 import type { AssetId, PendingOrder, Signal } from '../types/rtdb';
 import {
   directionLabel,
@@ -49,9 +54,9 @@ const styles = StyleSheet.create({
     backgroundColor: COLOR_PRESETS.accentBg,
     borderColor: COLOR_PRESETS.accentBorder,
     borderWidth: 1,
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 12,
+    borderRadius: RADIUS_MD,
+    padding: PADDING_SM,
+    marginBottom: MARGIN_MD,
   },
   title: {
     color: COLORS.accent,

@@ -7,6 +7,8 @@ import {
   Pressable,
 } from 'react-native';
 import { COLORS, COLOR_PRESETS } from '../utils/colors';
+import { MARGIN_MD, RADIUS_MD } from '../utils/constants';
+import { pressedOpacity } from '../utils/pressable';
 import { useStore } from '../store/useStore';
 import { PullToRefreshScrollView } from '../components/PullToRefreshScrollView';
 import { FillForm } from '../components/FillForm';
@@ -77,7 +79,7 @@ export const TradeScreen: React.FC = () => {
             style={({ pressed }) => [
               styles.segmentItem,
               mode === 'fill' && styles.segmentItemActive,
-              pressed && { opacity: 0.7 },
+              pressedOpacity(pressed),
             ]}
             onPress={() => setMode('fill')}
           >
@@ -94,7 +96,7 @@ export const TradeScreen: React.FC = () => {
             style={({ pressed }) => [
               styles.segmentItem,
               mode === 'adjust' && styles.segmentItemActive,
-              pressed && { opacity: 0.7 },
+              pressedOpacity(pressed),
             ]}
             onPress={() => setMode('adjust')}
           >
@@ -151,9 +153,9 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.card,
     borderColor: COLORS.border,
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: RADIUS_MD,
     padding: 4,
-    marginBottom: 12,
+    marginBottom: MARGIN_MD,
   },
   segmentItem: {
     flex: 1,

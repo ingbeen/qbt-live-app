@@ -22,6 +22,15 @@ export const MS_PER_DAY = 86_400_000;
 
 export const TOAST_AUTO_HIDE_MS = 3_000;
 
+// ─── UI 레이아웃 공통 수치 ───
+// 카드 / 배지 / 버튼 등에 공통 적용. 1 회성 수치는 인라인 유지 (YAGNI).
+
+export const RADIUS_MD = 8;
+export const PADDING_SM = 12;
+export const PADDING_MD = 14;
+export const MARGIN_SM = 8;
+export const MARGIN_MD = 12;
+
 // UpdateStatusBadge: execution_date 가 오늘로부터 N일 초과 경과 시 경고. 달력일 기준.
 // execution_date 는 ET (미국 거래일), today() 는 KST 기준이라 평시에도 1 일 TZ 오프셋이
 // 발생. 4 = 주말 2 일 + 공휴일 여유 + TZ 오프셋 을 모두 흡수하는 값.

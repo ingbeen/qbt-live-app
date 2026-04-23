@@ -1,6 +1,8 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { COLORS } from '../utils/colors';
+import { RADIUS_MD } from '../utils/constants';
+import { pressedOpacity } from '../utils/pressable';
 
 export type ChartType = 'price' | 'equity';
 
@@ -21,7 +23,7 @@ export const ChartTypeToggle: React.FC<ChartTypeToggleProps> = ({
         style={({ pressed }) => [
           styles.cell,
           isPrice && styles.cellActive,
-          pressed && { opacity: 0.7 },
+          pressedOpacity(pressed),
         ]}
         onPress={() => onChange('price')}
       >
@@ -33,7 +35,7 @@ export const ChartTypeToggle: React.FC<ChartTypeToggleProps> = ({
         style={({ pressed }) => [
           styles.cell,
           isEquity && styles.cellActive,
-          pressed && { opacity: 0.7 },
+          pressedOpacity(pressed),
         ]}
         onPress={() => onChange('equity')}
       >
@@ -54,7 +56,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 10,
     backgroundColor: COLORS.card,
-    borderRadius: 8,
+    borderRadius: RADIUS_MD,
     borderWidth: 1,
     borderColor: COLORS.border,
     alignItems: 'center',

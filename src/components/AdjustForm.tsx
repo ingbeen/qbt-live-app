@@ -10,7 +10,12 @@ import DateTimePicker, {
   type DateTimePickerEvent,
 } from '@react-native-community/datetimepicker';
 import { COLORS, COLOR_PRESETS } from '../utils/colors';
-import { ASSET_TARGETS } from '../utils/constants';
+import {
+  ASSET_TARGETS,
+  MARGIN_MD,
+  PADDING_MD,
+  RADIUS_MD,
+} from '../utils/constants';
 import type {
   AssetId,
   BalanceAdjustPayload,
@@ -283,9 +288,9 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.card,
     borderColor: COLORS.border,
     borderWidth: 1,
-    borderRadius: 8,
-    padding: 14,
-    marginBottom: 12,
+    borderRadius: RADIUS_MD,
+    padding: PADDING_MD,
+    marginBottom: MARGIN_MD,
   },
   errorBanner: {
     color: COLORS.red,
@@ -365,7 +370,7 @@ const styles = StyleSheet.create({
   },
   primaryButton: {
     backgroundColor: COLORS.accent,
-    borderRadius: 8,
+    borderRadius: RADIUS_MD,
     paddingVertical: 12,
     alignItems: 'center',
     marginTop: 16,

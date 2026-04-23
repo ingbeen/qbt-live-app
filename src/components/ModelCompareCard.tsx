@@ -1,7 +1,15 @@
 import React, { useCallback, useState } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { COLORS } from '../utils/colors';
-import { ASSETS, CASH_DIFF_THRESHOLD_USD, SYMBOLS } from '../utils/constants';
+import {
+  ASSETS,
+  CASH_DIFF_THRESHOLD_USD,
+  MARGIN_MD,
+  PADDING_MD,
+  RADIUS_MD,
+  SYMBOLS,
+} from '../utils/constants';
+import { pressedOpacity } from '../utils/pressable';
 import type { Portfolio } from '../types/rtdb';
 import {
   formatDriftPct,
@@ -34,7 +42,7 @@ export const ModelCompareCard: React.FC<Props> = ({
       <Pressable
         style={({ pressed }) => [
           styles.headerRow,
-          pressed && { opacity: 0.7 },
+          pressedOpacity(pressed),
         ]}
         onPress={onToggle}
       >
@@ -108,7 +116,7 @@ export const ModelCompareCard: React.FC<Props> = ({
           <Pressable
             style={({ pressed }) => [
               styles.syncButton,
-              pressed && { opacity: 0.7 },
+              pressedOpacity(pressed),
             ]}
             onPress={onSyncPress}
           >
@@ -125,9 +133,9 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.card,
     borderColor: COLORS.border,
     borderWidth: 1,
-    borderRadius: 8,
-    padding: 14,
-    marginBottom: 12,
+    borderRadius: RADIUS_MD,
+    padding: PADDING_MD,
+    marginBottom: MARGIN_MD,
   },
   headerRow: {
     flexDirection: 'row',
@@ -191,7 +199,7 @@ const styles = StyleSheet.create({
   },
   syncButton: {
     backgroundColor: COLORS.accent,
-    borderRadius: 8,
+    borderRadius: RADIUS_MD,
     paddingVertical: 12,
     alignItems: 'center',
     marginTop: 12,

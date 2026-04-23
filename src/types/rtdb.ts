@@ -207,3 +207,15 @@ export interface SignalHistory {
   upper_band: number | null;
   lower_band: number | null;
 }
+
+// ============================================================
+// Service layer 결과 타입 (RTDB tree → 평탄화된 형태)
+// ============================================================
+
+export type InboxItem = { uuid: string; data: unknown };
+
+export type SignalHistoryEntry = {
+  date: string;
+  asset_id: AssetId;
+  signal: SignalHistory;
+};

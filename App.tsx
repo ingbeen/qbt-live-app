@@ -50,10 +50,20 @@ export default function App() {
     requestNotificationPermission().catch((e) =>
       console.error('[fcm] permission request failed:', e),
     );
-    const unsubAuth = subscribeAuthState((u) =>
-      useStore.getState().setUser(u),
-    );
-    const unsubNet = setupNetworkListener();
+    const unsubAuth = subscribeAuthState((u) => {
+      const st = useStore.getState();
+      // 로그아웃 전환(이전 user 있음 → null) 시 캐시/기기 식별자 초기화
+      // (auth.signOut 이 store 에 접근하지 않도록 분리 — CLAUDE.md §17.3).
+      if (!u && st.user) {
+        st.clearAll();
+        st.setDeviceId(null);
+        st.setFcmRegistered(false);
+      }
+      st.setUser(u);
+    });
+    const unsubNet = setupNetworkListener((online) => {
+      useStore.getState().setOnline(online);
+    });
 
     // 포그라운드 복귀 시 캐시 무효화 + 홈 재로드 (§6.6 네트워크/오프라인 차단 정책의 연속).
     // user 가 없으면 LoginScreen 표시 중이므로 스킵. clearAll 은 user/isOnline/deviceId 유지.
@@ -75,9 +85,13 @@ export default function App() {
   // 로그인 이후에만 FCM 토큰 등록 + 알림 핸들러 구독. 로그아웃 시 cleanup.
   useEffect(() => {
     if (!user) return;
-    ensureFcmToken().catch((e) =>
-      console.error('[fcm] ensure failed:', e),
-    );
+    ensureFcmToken()
+      .then(({ deviceId, registered }) => {
+        const st = useStore.getState();
+        st.setDeviceId(deviceId);
+        st.setFcmRegistered(registered);
+      })
+      .catch((e) => console.error('[fcm] ensure failed:', e));
     const unsubFg = setupForegroundHandler();
     const unsubTap = setupNotificationTapHandler(navigateHome);
     return () => {

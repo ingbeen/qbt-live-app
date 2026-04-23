@@ -17,11 +17,14 @@ import type {
   EquityChartMeta,
   PriceChartSeries,
   EquityChartSeries,
+  InboxItem,
+  SignalHistoryEntry,
 } from '../types/rtdb';
+
+// 외부에서 서비스 계층을 거쳐 접근하던 호출부 호환을 위한 re-export.
+export type { InboxItem, SignalHistoryEntry };
 import { RTDB_PATHS, RTDB_TIMEOUT_MS } from '../utils/constants';
 import { kstNow } from '../utils/format';
-
-export type InboxItem = { uuid: string; data: unknown };
 
 const withTimeout = <T>(p: Promise<T>, ms: number): Promise<T> =>
   Promise.race([
@@ -209,12 +212,6 @@ export const readHistoryBalanceAdjusts = (): Promise<BalanceAdjustHistory[]> =>
     RTDB_PATHS.HISTORY_BALANCE_ADJUSTS,
     (v) => v.applied_at,
   );
-
-export type SignalHistoryEntry = {
-  date: string;
-  asset_id: AssetId;
-  signal: SignalHistory;
-};
 
 export const readHistorySignals = async (): Promise<SignalHistoryEntry[]> => {
   const tree = await readOnce<

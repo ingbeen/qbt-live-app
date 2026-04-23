@@ -5,8 +5,7 @@ import { MARGIN_MD } from '../utils/constants';
 import { useStore } from '../store/useStore';
 import { PullToRefreshScrollView } from '../components/PullToRefreshScrollView';
 import { UpdateStatusBadge } from '../components/UpdateStatusBadge';
-import { ReminderBlock } from '../components/ReminderBlock';
-import { SignalNextFillBlock } from '../components/SignalNextFillBlock';
+import { PendingOrdersListBlock } from '../components/PendingOrdersListBlock';
 import { AssetSummaryCard } from '../components/AssetSummaryCard';
 import { MAProximityCard } from '../components/MAProximityCard';
 import { ModelCompareCard } from '../components/ModelCompareCard';
@@ -84,14 +83,16 @@ export const HomeScreen: React.FC = () => {
 
         {signals ? (
           <>
-            <ReminderBlock
+            <PendingOrdersListBlock
+              mode="remind"
               pendingOrders={pendingOrders}
+              signals={signals}
               inboxFills={inboxFills}
               inboxFillDismiss={inboxFillDismiss}
-              signals={signals}
             />
 
-            <SignalNextFillBlock
+            <PendingOrdersListBlock
+              mode="next"
               pendingOrders={pendingOrders}
               signals={signals}
             />

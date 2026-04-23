@@ -11,7 +11,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { PermissionsAndroid, Platform } from 'react-native';
 import uuid from 'react-native-uuid';
 import { submitDeviceToken } from './rtdb';
-import { useStore } from '../store/useStore';
 
 // device_id 는 /device_tokens/{device_id} 의 키. 설치 UUID 원칙
 // (DESIGN_QBT_LIVE_FINAL.md §8.2.10). CLAUDE.md §12 의 AsyncStorage
@@ -62,7 +61,14 @@ export const requestNotificationPermission = async (): Promise<boolean> => {
 // ensureFcmToken 이 로그아웃/재로그인 사이클마다 호출되면 여러 구독이 누적되는 것을 방지.
 let tokenRefreshUnsub: (() => void) | null = null;
 
-export const ensureFcmToken = async (): Promise<void> => {
+export type FcmTokenResult = {
+  deviceId: string | null;
+  registered: boolean;
+};
+
+// 토큰 등록 결과를 반환. store 갱신은 호출부가 결과를 받아 수행
+// (services 의 순수 I/O 역할 분리, CLAUDE.md §17.3).
+export const ensureFcmToken = async (): Promise<FcmTokenResult> => {
   // Android 13+ 는 PermissionsAndroid.check 로 실제 권한 상태를 확인한다.
   // 권한이 없으면 토큰을 발급받아도 사용자에게 알림이 표시되지 않으므로 등록을 skip.
   if (Platform.OS === 'android' && Platform.Version >= 33) {
@@ -71,8 +77,7 @@ export const ensureFcmToken = async (): Promise<void> => {
     );
     if (!granted) {
       console.warn('[fcm] notification permission denied');
-      useStore.getState().setFcmRegistered(false);
-      return;
+      return { deviceId: null, registered: false };
     }
   }
   const messaging = getMessaging(getApp());
@@ -80,13 +85,10 @@ export const ensureFcmToken = async (): Promise<void> => {
   try {
     const token = await getToken(messaging);
     await submitDeviceToken(deviceId, token);
-    useStore.getState().setDeviceId(deviceId);
-    useStore.getState().setFcmRegistered(true);
     console.debug('[fcm] token registered');
   } catch (e) {
     console.error('[fcm] token registration failed:', e);
-    useStore.getState().setFcmRegistered(false);
-    return;
+    return { deviceId: null, registered: false };
   }
   // 이전 onTokenRefresh 구독이 있으면 해제 후 재등록.
   if (tokenRefreshUnsub) {
@@ -101,6 +103,7 @@ export const ensureFcmToken = async (): Promise<void> => {
       console.error('[fcm] token refresh save failed:', e);
     }
   });
+  return { deviceId, registered: true };
 };
 
 // 포그라운드 알림 무시 (CLAUDE.md §6.5). 사용자는 pull-to-refresh 로 갱신.

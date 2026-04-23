@@ -34,14 +34,19 @@ import {
   submitFill as submitFillRtdb,
   submitBalanceAdjust as submitBalanceAdjustRtdb,
   submitFillDismiss as submitFillDismissRtdb,
-  type InboxItem,
-  type SignalHistoryEntry,
 } from '../services/rtdb';
+import type { AuthUser } from '../services/auth';
+import type { InboxItem, SignalHistoryEntry } from '../types/rtdb';
+import { TOAST_MESSAGES } from '../utils/constants';
+import {
+  LOADING_HOME,
+  LOADING_TRADE,
+  chartLoadingKey,
+  priceArchiveLoadingKey,
+  equityArchiveLoadingKey,
+} from '../utils/loadingKeys';
 
-export type AuthUser = {
-  uid: string;
-  email: string | null;
-};
+export type { AuthUser };
 
 // 차트 탭 로컬 캐시. meta/recent 는 첫 로드 전 null, archive 는 연도별 지연 로드.
 export interface PriceChartCache {
@@ -199,7 +204,7 @@ export const useStore = create<Store>((set, get) => {
   hideToast: () => set({ lastToast: null }),
 
   refreshHome: async () => {
-    setLoading('home', true);
+    setLoading(LOADING_HOME, true);
     try {
       const [
         portfolio,
@@ -232,7 +237,7 @@ export const useStore = create<Store>((set, get) => {
       console.error('[store] refreshHome failed:', e);
       set({ lastError: toUserMessage(e) });
     } finally {
-      setLoading('home', false);
+      setLoading(LOADING_HOME, false);
     }
   },
 
@@ -240,8 +245,7 @@ export const useStore = create<Store>((set, get) => {
     try {
       await submitModelSyncRtdb();
       set({
-        lastToast:
-          '동기화 요청이 저장되었습니다.\n다음 실행에 반영됩니다.',
+        lastToast: TOAST_MESSAGES.MODEL_SYNC,
         lastError: null,
       });
     } catch (e) {
@@ -251,7 +255,7 @@ export const useStore = create<Store>((set, get) => {
   },
 
   refreshTrade: async () => {
-    setLoading('trade', true);
+    setLoading(LOADING_TRADE, true);
     try {
       const [historyFills, historyBalanceAdjusts, historySignals] =
         await Promise.all([
@@ -269,7 +273,7 @@ export const useStore = create<Store>((set, get) => {
       console.error('[store] refreshTrade failed:', e);
       set({ lastError: toUserMessage(e) });
     } finally {
-      setLoading('trade', false);
+      setLoading(LOADING_TRADE, false);
     }
   },
 
@@ -277,8 +281,7 @@ export const useStore = create<Store>((set, get) => {
     try {
       await submitFillRtdb(p);
       set({
-        lastToast:
-          '체결이 저장되었습니다.\n다음 실행에 반영됩니다.',
+        lastToast: TOAST_MESSAGES.FILL,
         lastError: null,
       });
     } catch (e) {
@@ -292,8 +295,7 @@ export const useStore = create<Store>((set, get) => {
     try {
       await submitBalanceAdjustRtdb(p);
       set({
-        lastToast:
-          '보정이 저장되었습니다.\n다음 실행에 반영됩니다.',
+        lastToast: TOAST_MESSAGES.BALANCE_ADJUST,
         lastError: null,
       });
     } catch (e) {
@@ -307,8 +309,7 @@ export const useStore = create<Store>((set, get) => {
     try {
       await submitFillDismissRtdb(assetId, reason);
       set({
-        lastToast:
-          '스킵이 저장되었습니다.\n다음 실행에 반영됩니다.',
+        lastToast: TOAST_MESSAGES.FILL_DISMISS,
         lastError: null,
       });
     } catch (e) {
@@ -319,7 +320,7 @@ export const useStore = create<Store>((set, get) => {
   },
 
   refreshChart: async (target) => {
-    const loadingKey = `chart_${target}`;
+    const loadingKey = chartLoadingKey(target);
     setLoading(loadingKey, true);
     try {
       if (target === 'equity') {
@@ -365,7 +366,7 @@ export const useStore = create<Store>((set, get) => {
   loadPriceArchive: async (assetId, year) => {
     const existing = get().priceCharts[assetId];
     if (existing?.archive[year]) return;
-    const loadingKey = `chart_archive_${assetId}_${year}`;
+    const loadingKey = priceArchiveLoadingKey(assetId, year);
     setLoading(loadingKey, true);
     try {
       const archive = await readPriceChartArchive(assetId, year);
@@ -395,7 +396,7 @@ export const useStore = create<Store>((set, get) => {
 
   loadEquityArchive: async (year) => {
     if (get().equityChart.archive[year]) return;
-    const loadingKey = `chart_archive_equity_${year}`;
+    const loadingKey = equityArchiveLoadingKey(year);
     setLoading(loadingKey, true);
     try {
       const archive = await readEquityChartArchive(year);

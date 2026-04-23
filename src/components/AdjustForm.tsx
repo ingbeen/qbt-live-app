@@ -6,9 +6,7 @@ import {
   StyleSheet,
   Pressable,
 } from 'react-native';
-import DateTimePicker, {
-  type DateTimePickerEvent,
-} from '@react-native-community/datetimepicker';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { COLORS, COLOR_PRESETS } from '../utils/colors';
 import {
   ASSET_TARGETS,
@@ -29,10 +27,10 @@ import {
   today,
 } from '../utils/format';
 import {
-  toIsoDate,
   parseIntOrUndefined,
   parseFloatOrUndefined,
 } from '../utils/parse';
+import { useDatePicker } from '../utils/useDatePicker';
 import { validateBalanceAdjust } from '../utils/validation';
 import { useStore } from '../store/useStore';
 
@@ -58,9 +56,9 @@ export const AdjustForm: React.FC<Props> = ({ portfolio }) => {
   const [entryDate, setEntryDate] = useState('');
   const [cashText, setCashText] = useState('');
   const [reason, setReason] = useState('');
-  const [showPicker, setShowPicker] = useState(false);
   const [attempted, setAttempted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const { showPicker, openPicker, onPickerChange } = useDatePicker(setEntryDate);
 
   const resetFields = useCallback(() => {
     setTarget(undefined);
@@ -95,18 +93,6 @@ export const AdjustForm: React.FC<Props> = ({ portfolio }) => {
     () => validateBalanceAdjust(payload, portfolio),
     [payload, portfolio],
   );
-
-  const onPickerChange = useCallback(
-    (event: DateTimePickerEvent, selectedDate?: Date) => {
-      setShowPicker(false);
-      if (event.type === 'set' && selectedDate) {
-        setEntryDate(toIsoDate(selectedDate));
-      }
-    },
-    [],
-  );
-
-  const onOpenPicker = useCallback(() => setShowPicker(true), []);
 
   const onSubmit = useCallback(async () => {
     setAttempted(true);
@@ -211,7 +197,7 @@ export const AdjustForm: React.FC<Props> = ({ portfolio }) => {
                   styles.dateButton,
                   pressed && !submitting && { opacity: 0.7 },
                 ]}
-                onPress={onOpenPicker}
+                onPress={openPicker}
                 disabled={submitting}
               >
                 <Text style={styles.dateText}>{entryDate || '미변경'}</Text>

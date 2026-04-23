@@ -6,9 +6,7 @@ import {
   StyleSheet,
   Pressable,
 } from 'react-native';
-import DateTimePicker, {
-  type DateTimePickerEvent,
-} from '@react-native-community/datetimepicker';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { COLORS, COLOR_PRESETS } from '../utils/colors';
 import {
   ASSETS,
@@ -33,10 +31,10 @@ import {
   today,
 } from '../utils/format';
 import {
-  toIsoDate,
   parseIntOrUndefined,
   parseFloatOrUndefined,
 } from '../utils/parse';
+import { useDatePicker } from '../utils/useDatePicker';
 import { validateFill } from '../utils/validation';
 import { useStore } from '../store/useStore';
 
@@ -61,9 +59,9 @@ export const FillForm: React.FC<Props> = ({
   const [priceText, setPriceText] = useState('');
   const [tradeDate, setTradeDate] = useState(today());
   const [memo, setMemo] = useState('');
-  const [showPicker, setShowPicker] = useState(false);
   const [attempted, setAttempted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const { showPicker, openPicker, onPickerChange } = useDatePicker(setTradeDate);
 
   const payload = useMemo<Partial<FillPayload>>(
     () => ({
@@ -86,18 +84,6 @@ export const FillForm: React.FC<Props> = ({
 
   const pending = assetId ? pendingOrders?.[assetId] : undefined;
   const showSkipButton = !!pending;
-
-  const onPickerChange = useCallback(
-    (event: DateTimePickerEvent, selectedDate?: Date) => {
-      setShowPicker(false);
-      if (event.type === 'set' && selectedDate) {
-        setTradeDate(toIsoDate(selectedDate));
-      }
-    },
-    [],
-  );
-
-  const onOpenPicker = useCallback(() => setShowPicker(true), []);
 
   const onSubmit = useCallback(async () => {
     setAttempted(true);
@@ -274,7 +260,7 @@ export const FillForm: React.FC<Props> = ({
           styles.dateButton,
           pressed && !submitting && { opacity: 0.7 },
         ]}
-        onPress={onOpenPicker}
+        onPress={openPicker}
         disabled={submitting}
       >
         <Text style={styles.dateText}>{tradeDate}</Text>

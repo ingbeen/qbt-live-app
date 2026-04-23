@@ -81,3 +81,13 @@ export const SYMBOLS = {
   CLOSE: '✕',
   ARROW_RIGHT: '→',
 } as const;
+
+// ─── Inbox 쓰기 성공 시 표시하는 토스트 메시지 ───
+// 모든 inbox 쓰기는 "다음 실행에 반영됨" 이라는 공통 흐름. 메시지 토대는 같고 주어만 다름.
+
+export const TOAST_MESSAGES = {
+  MODEL_SYNC: '동기화 요청이 저장되었습니다.\n다음 실행에 반영됩니다.',
+  FILL: '체결이 저장되었습니다.\n다음 실행에 반영됩니다.',
+  BALANCE_ADJUST: '보정이 저장되었습니다.\n다음 실행에 반영됩니다.',
+  FILL_DISMISS: '스킵이 저장되었습니다.\n다음 실행에 반영됩니다.',
+} as const;

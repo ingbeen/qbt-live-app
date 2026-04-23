@@ -4,12 +4,13 @@ import type { WebView } from 'react-native-webview';
 import { COLORS } from '../utils/colors';
 import { useStore } from '../store/useStore';
 import type { AssetId } from '../types/rtdb';
-import { mergeChartSeries, mergeEquitySeries } from '../services/chart';
+import { injectEquityChart, injectPriceChart } from '../services/chartInject';
 import { ChartTypeToggle, type ChartType } from '../components/ChartTypeToggle';
 import { AssetSelector } from '../components/AssetSelector';
 import { ChartWebView } from '../components/ChartWebView';
 import { ChartLegend } from '../components/ChartLegend';
 import { Toast } from '../components/Toast';
+import { chartLoadingKey } from '../utils/loadingKeys';
 
 export const ChartScreen: React.FC = () => {
   const [chartType, setChartType] = useState<ChartType>('price');
@@ -26,8 +27,8 @@ export const ChartScreen: React.FC = () => {
   const lastError = useStore((s) => s.lastError);
   const setLastError = useStore((s) => s.setLastError);
 
-  const isPriceLoading = loading[`chart_${assetId}`] === true;
-  const isEquityLoading = loading['chart_equity'] === true;
+  const isPriceLoading = loading[chartLoadingKey(assetId)] === true;
+  const isEquityLoading = loading[chartLoadingKey('equity')] === true;
   const showSpinner =
     (chartType === 'price' && isPriceLoading && !priceCache?.recent) ||
     (chartType === 'equity' && isEquityLoading && !equityCache.recent);
@@ -54,21 +55,17 @@ export const ChartScreen: React.FC = () => {
     if (!webviewReady) return;
     if (chartType === 'price') {
       if (!priceCache?.recent) return;
-      const archives = Object.values(priceCache.archive).filter(
-        (v): v is NonNullable<typeof v> => v !== undefined,
-      );
-      const merged = mergeChartSeries(priceCache.recent, archives);
-      webviewRef.current?.injectJavaScript(
-        `window.setPriceChart(${JSON.stringify(merged)}); true;`,
+      injectPriceChart(
+        webviewRef.current,
+        priceCache.recent,
+        priceCache.archive,
       );
     } else {
       if (!equityCache.recent) return;
-      const archives = Object.values(equityCache.archive).filter(
-        (v): v is NonNullable<typeof v> => v !== undefined,
-      );
-      const merged = mergeEquitySeries(equityCache.recent, archives);
-      webviewRef.current?.injectJavaScript(
-        `window.setEquityChart(${JSON.stringify(merged)}); true;`,
+      injectEquityChart(
+        webviewRef.current,
+        equityCache.recent,
+        equityCache.archive,
       );
     }
   }, [webviewReady, chartType, priceCache, equityCache]);

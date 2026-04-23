@@ -4,7 +4,11 @@ import {
   signOut as fbSignOut,
   onAuthStateChanged,
 } from '@react-native-firebase/auth';
-import { useStore, type AuthUser } from '../store/useStore';
+
+export type AuthUser = {
+  uid: string;
+  email: string | null;
+};
 
 export const signIn = async (
   email: string,
@@ -15,13 +19,10 @@ export const signIn = async (
   await signInWithEmailAndPassword(getAuth(), email, password);
 };
 
+// Firebase Auth 만 처리. store 초기화 / user 제거 등 상태 전환은 호출부가
+// onSignOut 콜백에서 수행한다 (services 의 순수 I/O 역할 분리, CLAUDE.md §17.3).
 export const signOut = async (): Promise<void> => {
   await fbSignOut(getAuth());
-  const store = useStore.getState();
-  store.clearAll();
-  store.setUser(null);
-  store.setDeviceId(null);
-  store.setFcmRegistered(false);
 };
 
 export const subscribeAuthState = (

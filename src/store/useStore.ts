@@ -6,6 +6,8 @@ import type {
   AssetId,
   FillPayload,
   BalanceAdjustPayload,
+  FillDismissPayload,
+  ModelSyncPayload,
   FillHistory,
   BalanceAdjustHistory,
   PriceChartMeta,
@@ -83,10 +85,10 @@ interface Store {
   pendingOrders: Partial<Record<AssetId, PendingOrder>> | null;
 
   // inbox 4종
-  inboxFills: InboxItem[] | null;
-  inboxBalanceAdjusts: InboxItem[] | null;
-  inboxFillDismiss: InboxItem[] | null;
-  inboxModelSync: InboxItem[] | null;
+  inboxFills: InboxItem<FillPayload>[] | null;
+  inboxBalanceAdjusts: InboxItem<BalanceAdjustPayload>[] | null;
+  inboxFillDismiss: InboxItem<FillDismissPayload>[] | null;
+  inboxModelSync: InboxItem<ModelSyncPayload>[] | null;
 
   // /history/*
   historyFills: FillHistory[] | null;
@@ -146,275 +148,280 @@ const toUserMessage = (e: unknown): string => {
 export const useStore = create<Store>((set, get) => {
   // loading 플래그 토글 헬퍼. 기존 `set({ loading: { ...get().loading, key: bool } })` 반복 제거용.
   const setLoading = (key: string, value: boolean) =>
-    set((state) => ({ loading: { ...state.loading, [key]: value } }));
+    set(state => ({ loading: { ...state.loading, [key]: value } }));
 
   return {
-  user: null,
-  isOnline: true,
-  lastError: null,
-  deviceId: null,
-  fcmRegistered: false,
+    user: null,
+    isOnline: true,
+    lastError: null,
+    deviceId: null,
+    fcmRegistered: false,
 
-  portfolio: null,
-  signals: null,
-  pendingOrders: null,
+    portfolio: null,
+    signals: null,
+    pendingOrders: null,
 
-  inboxFills: null,
-  inboxBalanceAdjusts: null,
-  inboxFillDismiss: null,
-  inboxModelSync: null,
+    inboxFills: null,
+    inboxBalanceAdjusts: null,
+    inboxFillDismiss: null,
+    inboxModelSync: null,
 
-  historyFills: null,
-  historyBalanceAdjusts: null,
-  historySignals: null,
+    historyFills: null,
+    historyBalanceAdjusts: null,
+    historySignals: null,
 
-  priceCharts: {},
-  equityChart: emptyEquityCache(),
+    priceCharts: {},
+    equityChart: emptyEquityCache(),
 
-  loading: {},
-  lastToast: null,
+    loading: {},
+    lastToast: null,
 
-  setUser: (user) => set({ user }),
-  setOnline: (online) => set({ isOnline: online }),
-  setLastError: (lastError) => set({ lastError }),
-  setDeviceId: (deviceId) => set({ deviceId }),
-  setFcmRegistered: (fcmRegistered) => set({ fcmRegistered }),
-  // user / isOnline / deviceId / fcmRegistered 는 유지. 캐시 데이터만 초기화.
-  // AppState.active 복귀 시 캐시 무효화 (§6.6) + 로그아웃 시 signOut 이 별도로 setUser(null) 호출.
-  clearAll: () =>
-    set({
-      lastError: null,
-      portfolio: null,
-      signals: null,
-      pendingOrders: null,
-      inboxFills: null,
-      inboxBalanceAdjusts: null,
-      inboxFillDismiss: null,
-      inboxModelSync: null,
-      historyFills: null,
-      historyBalanceAdjusts: null,
-      historySignals: null,
-      priceCharts: {},
-      equityChart: emptyEquityCache(),
-      loading: {},
-      lastToast: null,
-    }),
+    // ─── 단순 setter / 캐시 초기화 / UI 상태 ───
 
-  showToast: (message) => set({ lastToast: message }),
-  hideToast: () => set({ lastToast: null }),
-
-  refreshHome: async () => {
-    setLoading(LOADING_HOME, true);
-    try {
-      const [
-        portfolio,
-        signals,
-        pendingOrders,
-        inboxFills,
-        inboxBalanceAdjusts,
-        inboxFillDismiss,
-        inboxModelSync,
-      ] = await Promise.all([
-        readPortfolio(),
-        readAllSignals(),
-        readAllPendingOrders(),
-        readInboxFills(),
-        readInboxBalanceAdjusts(),
-        readInboxFillDismiss(),
-        readInboxModelSync(),
-      ]);
+    setUser: user => set({ user }),
+    setOnline: online => set({ isOnline: online }),
+    setLastError: lastError => set({ lastError }),
+    setDeviceId: deviceId => set({ deviceId }),
+    setFcmRegistered: fcmRegistered => set({ fcmRegistered }),
+    // user / isOnline / deviceId / fcmRegistered 는 유지. 캐시 데이터만 초기화.
+    // AppState.active 복귀 시 캐시 무효화 (§6.6) + 로그아웃 시 signOut 이 별도로 setUser(null) 호출.
+    clearAll: () =>
       set({
-        portfolio,
-        signals,
-        pendingOrders,
-        inboxFills,
-        inboxBalanceAdjusts,
-        inboxFillDismiss,
-        inboxModelSync,
         lastError: null,
-      });
-    } catch (e) {
-      console.error('[store] refreshHome failed:', e);
-      set({ lastError: toUserMessage(e) });
-    } finally {
-      setLoading(LOADING_HOME, false);
-    }
-  },
+        portfolio: null,
+        signals: null,
+        pendingOrders: null,
+        inboxFills: null,
+        inboxBalanceAdjusts: null,
+        inboxFillDismiss: null,
+        inboxModelSync: null,
+        historyFills: null,
+        historyBalanceAdjusts: null,
+        historySignals: null,
+        priceCharts: {},
+        equityChart: emptyEquityCache(),
+        loading: {},
+        lastToast: null,
+      }),
 
-  submitModelSync: async () => {
-    try {
-      await submitModelSyncRtdb();
-      set({
-        lastToast: TOAST_MESSAGES.MODEL_SYNC,
-        lastError: null,
-      });
-    } catch (e) {
-      console.error('[store] submitModelSync failed:', e);
-      set({ lastError: toUserMessage(e) });
-    }
-  },
+    showToast: message => set({ lastToast: message }),
+    hideToast: () => set({ lastToast: null }),
 
-  refreshTrade: async () => {
-    setLoading(LOADING_TRADE, true);
-    try {
-      const [historyFills, historyBalanceAdjusts, historySignals] =
-        await Promise.all([
-          readHistoryFills(),
-          readHistoryBalanceAdjusts(),
-          readHistorySignals(),
-        ]);
-      set({
-        historyFills,
-        historyBalanceAdjusts,
-        historySignals,
-        lastError: null,
-      });
-    } catch (e) {
-      console.error('[store] refreshTrade failed:', e);
-      set({ lastError: toUserMessage(e) });
-    } finally {
-      setLoading(LOADING_TRADE, false);
-    }
-  },
+    // ─── 비동기 액션 (RTDB 읽기 / 쓰기 / archive 지연 로드) ───
+    // 순서: refreshHome → submitModelSync → refreshTrade → submit (fill/balance/dismiss) → refreshChart → loadArchive
 
-  submitFill: async (p) => {
-    try {
-      await submitFillRtdb(p);
-      set({
-        lastToast: TOAST_MESSAGES.FILL,
-        lastError: null,
-      });
-    } catch (e) {
-      console.error('[store] submitFill failed:', e);
-      set({ lastError: toUserMessage(e) });
-      throw e;
-    }
-  },
-
-  submitBalanceAdjust: async (p) => {
-    try {
-      await submitBalanceAdjustRtdb(p);
-      set({
-        lastToast: TOAST_MESSAGES.BALANCE_ADJUST,
-        lastError: null,
-      });
-    } catch (e) {
-      console.error('[store] submitBalanceAdjust failed:', e);
-      set({ lastError: toUserMessage(e) });
-      throw e;
-    }
-  },
-
-  submitFillDismiss: async (assetId, reason) => {
-    try {
-      await submitFillDismissRtdb(assetId, reason);
-      set({
-        lastToast: TOAST_MESSAGES.FILL_DISMISS,
-        lastError: null,
-      });
-    } catch (e) {
-      console.error('[store] submitFillDismiss failed:', e);
-      set({ lastError: toUserMessage(e) });
-      throw e;
-    }
-  },
-
-  refreshChart: async (target) => {
-    const loadingKey = chartLoadingKey(target);
-    setLoading(loadingKey, true);
-    try {
-      if (target === 'equity') {
-        const [meta, recent] = await Promise.all([
-          readEquityChartMeta(),
-          readEquityChartRecent(),
+    refreshHome: async () => {
+      setLoading(LOADING_HOME, true);
+      try {
+        const [
+          portfolio,
+          signals,
+          pendingOrders,
+          inboxFills,
+          inboxBalanceAdjusts,
+          inboxFillDismiss,
+          inboxModelSync,
+        ] = await Promise.all([
+          readPortfolio(),
+          readAllSignals(),
+          readAllPendingOrders(),
+          readInboxFills(),
+          readInboxBalanceAdjusts(),
+          readInboxFillDismiss(),
+          readInboxModelSync(),
         ]);
         set({
-          equityChart: {
-            meta,
-            recent,
-            archive: get().equityChart.archive,
-          },
+          portfolio,
+          signals,
+          pendingOrders,
+          inboxFills,
+          inboxBalanceAdjusts,
+          inboxFillDismiss,
+          inboxModelSync,
           lastError: null,
         });
-      } else {
-        const assetId = target;
-        const [meta, recent] = await Promise.all([
-          readPriceChartMeta(assetId),
-          readPriceChartRecent(assetId),
-        ]);
-        const existing = get().priceCharts[assetId];
+      } catch (e) {
+        console.error('[store] refreshHome failed:', e);
+        set({ lastError: toUserMessage(e) });
+      } finally {
+        setLoading(LOADING_HOME, false);
+      }
+    },
+
+    submitModelSync: async () => {
+      try {
+        await submitModelSyncRtdb();
+        set({
+          lastToast: TOAST_MESSAGES.MODEL_SYNC,
+          lastError: null,
+        });
+      } catch (e) {
+        console.error('[store] submitModelSync failed:', e);
+        set({ lastError: toUserMessage(e) });
+      }
+    },
+
+    refreshTrade: async () => {
+      setLoading(LOADING_TRADE, true);
+      try {
+        const [historyFills, historyBalanceAdjusts, historySignals] =
+          await Promise.all([
+            readHistoryFills(),
+            readHistoryBalanceAdjusts(),
+            readHistorySignals(),
+          ]);
+        set({
+          historyFills,
+          historyBalanceAdjusts,
+          historySignals,
+          lastError: null,
+        });
+      } catch (e) {
+        console.error('[store] refreshTrade failed:', e);
+        set({ lastError: toUserMessage(e) });
+      } finally {
+        setLoading(LOADING_TRADE, false);
+      }
+    },
+
+    submitFill: async p => {
+      try {
+        await submitFillRtdb(p);
+        set({
+          lastToast: TOAST_MESSAGES.FILL,
+          lastError: null,
+        });
+      } catch (e) {
+        console.error('[store] submitFill failed:', e);
+        set({ lastError: toUserMessage(e) });
+        throw e;
+      }
+    },
+
+    submitBalanceAdjust: async p => {
+      try {
+        await submitBalanceAdjustRtdb(p);
+        set({
+          lastToast: TOAST_MESSAGES.BALANCE_ADJUST,
+          lastError: null,
+        });
+      } catch (e) {
+        console.error('[store] submitBalanceAdjust failed:', e);
+        set({ lastError: toUserMessage(e) });
+        throw e;
+      }
+    },
+
+    submitFillDismiss: async (assetId, reason) => {
+      try {
+        await submitFillDismissRtdb(assetId, reason);
+        set({
+          lastToast: TOAST_MESSAGES.FILL_DISMISS,
+          lastError: null,
+        });
+      } catch (e) {
+        console.error('[store] submitFillDismiss failed:', e);
+        set({ lastError: toUserMessage(e) });
+        throw e;
+      }
+    },
+
+    refreshChart: async target => {
+      const loadingKey = chartLoadingKey(target);
+      setLoading(loadingKey, true);
+      try {
+        if (target === 'equity') {
+          const [meta, recent] = await Promise.all([
+            readEquityChartMeta(),
+            readEquityChartRecent(),
+          ]);
+          set({
+            equityChart: {
+              meta,
+              recent,
+              archive: get().equityChart.archive,
+            },
+            lastError: null,
+          });
+        } else {
+          const assetId = target;
+          const [meta, recent] = await Promise.all([
+            readPriceChartMeta(assetId),
+            readPriceChartRecent(assetId),
+          ]);
+          const existing = get().priceCharts[assetId];
+          set({
+            priceCharts: {
+              ...get().priceCharts,
+              [assetId]: {
+                meta,
+                recent,
+                archive: existing?.archive ?? {},
+              },
+            },
+            lastError: null,
+          });
+        }
+      } catch (e) {
+        console.error('[store] refreshChart failed:', e);
+        set({ lastError: toUserMessage(e) });
+      } finally {
+        setLoading(loadingKey, false);
+      }
+    },
+
+    loadPriceArchive: async (assetId, year) => {
+      const existing = get().priceCharts[assetId];
+      if (existing?.archive[year]) return;
+      const loadingKey = priceArchiveLoadingKey(assetId, year);
+      setLoading(loadingKey, true);
+      try {
+        const archive = await readPriceChartArchive(assetId, year);
+        if (!archive) return;
+        const current = get().priceCharts[assetId] ?? {
+          meta: null,
+          recent: null,
+          archive: {},
+        };
         set({
           priceCharts: {
             ...get().priceCharts,
             [assetId]: {
-              meta,
-              recent,
-              archive: existing?.archive ?? {},
+              ...current,
+              archive: { ...current.archive, [year]: archive },
             },
           },
           lastError: null,
         });
+      } catch (e) {
+        console.error('[store] loadPriceArchive failed:', e);
+        set({ lastError: toUserMessage(e) });
+      } finally {
+        setLoading(loadingKey, false);
       }
-    } catch (e) {
-      console.error('[store] refreshChart failed:', e);
-      set({ lastError: toUserMessage(e) });
-    } finally {
-      setLoading(loadingKey, false);
-    }
-  },
+    },
 
-  loadPriceArchive: async (assetId, year) => {
-    const existing = get().priceCharts[assetId];
-    if (existing?.archive[year]) return;
-    const loadingKey = priceArchiveLoadingKey(assetId, year);
-    setLoading(loadingKey, true);
-    try {
-      const archive = await readPriceChartArchive(assetId, year);
-      if (!archive) return;
-      const current = get().priceCharts[assetId] ?? {
-        meta: null,
-        recent: null,
-        archive: {},
-      };
-      set({
-        priceCharts: {
-          ...get().priceCharts,
-          [assetId]: {
+    loadEquityArchive: async year => {
+      if (get().equityChart.archive[year]) return;
+      const loadingKey = equityArchiveLoadingKey(year);
+      setLoading(loadingKey, true);
+      try {
+        const archive = await readEquityChartArchive(year);
+        if (!archive) return;
+        const current = get().equityChart;
+        set({
+          equityChart: {
             ...current,
             archive: { ...current.archive, [year]: archive },
           },
-        },
-        lastError: null,
-      });
-    } catch (e) {
-      console.error('[store] loadPriceArchive failed:', e);
-      set({ lastError: toUserMessage(e) });
-    } finally {
-      setLoading(loadingKey, false);
-    }
-  },
-
-  loadEquityArchive: async (year) => {
-    if (get().equityChart.archive[year]) return;
-    const loadingKey = equityArchiveLoadingKey(year);
-    setLoading(loadingKey, true);
-    try {
-      const archive = await readEquityChartArchive(year);
-      if (!archive) return;
-      const current = get().equityChart;
-      set({
-        equityChart: {
-          ...current,
-          archive: { ...current.archive, [year]: archive },
-        },
-        lastError: null,
-      });
-    } catch (e) {
-      console.error('[store] loadEquityArchive failed:', e);
-      set({ lastError: toUserMessage(e) });
-    } finally {
-      setLoading(loadingKey, false);
-    }
-  },
+          lastError: null,
+        });
+      } catch (e) {
+        console.error('[store] loadEquityArchive failed:', e);
+        set({ lastError: toUserMessage(e) });
+      } finally {
+        setLoading(loadingKey, false);
+      }
+    },
   };
 });

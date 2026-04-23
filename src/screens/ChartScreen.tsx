@@ -12,20 +12,41 @@ import { ChartLegend } from '../components/ChartLegend';
 import { Toast } from '../components/Toast';
 import { chartLoadingKey } from '../utils/loadingKeys';
 
+// recent.dates 의 가장 이른 연도와 archive 로드 연도들 중 최소값을 기준으로 직전 연도를 계산.
+// archive_years 에 포함되지 않으면 null (더 로드할 데이터 없음).
+// firstDate 빈 배열은 RTDB 계약 위반이므로 null + 호출부에서 사용자 에러 토스트.
+const computeYearToLoad = (
+  meta: { archive_years: number[] },
+  recent: { dates: string[] },
+  archiveMap: Record<number, unknown>,
+  target: 'price' | 'equity',
+): number | null => {
+  const firstDate = recent.dates[0];
+  if (!firstDate) {
+    console.warn(`[chart] empty ${target} recent series, cannot load earlier`);
+    return null;
+  }
+  const loadedYears = Object.keys(archiveMap).map(Number);
+  const recentEarliestYear = parseInt(firstDate.slice(0, 4), 10);
+  const earliestLoaded = Math.min(recentEarliestYear, ...loadedYears);
+  const yearToLoad = earliestLoaded - 1;
+  return meta.archive_years.includes(yearToLoad) ? yearToLoad : null;
+};
+
 export const ChartScreen: React.FC = () => {
   const [chartType, setChartType] = useState<ChartType>('price');
   const [assetId, setAssetId] = useState<AssetId>('sso');
   const [webviewReady, setWebviewReady] = useState(false);
   const webviewRef = useRef<WebView>(null);
 
-  const priceCache = useStore((s) => s.priceCharts[assetId]);
-  const equityCache = useStore((s) => s.equityChart);
-  const refreshChart = useStore((s) => s.refreshChart);
-  const loadPriceArchive = useStore((s) => s.loadPriceArchive);
-  const loadEquityArchive = useStore((s) => s.loadEquityArchive);
-  const loading = useStore((s) => s.loading);
-  const lastError = useStore((s) => s.lastError);
-  const setLastError = useStore((s) => s.setLastError);
+  const priceCache = useStore(s => s.priceCharts[assetId]);
+  const equityCache = useStore(s => s.equityChart);
+  const refreshChart = useStore(s => s.refreshChart);
+  const loadPriceArchive = useStore(s => s.loadPriceArchive);
+  const loadEquityArchive = useStore(s => s.loadEquityArchive);
+  const loading = useStore(s => s.loading);
+  const lastError = useStore(s => s.lastError);
+  const setLastError = useStore(s => s.setLastError);
 
   const isPriceLoading = loading[chartLoadingKey(assetId)] === true;
   const isEquityLoading = loading[chartLoadingKey('equity')] === true;
@@ -76,42 +97,38 @@ export const ChartScreen: React.FC = () => {
   }, [injectChartData]);
 
   // 좌측 끝 감지 → 필요한 전년도 archive 로드 후 재주입 (캐시 변경으로 Effect 2 자동 트리거).
+  // 분기는 유지 (각 cache/archive 로더 시그니처가 다름), 연도 계산만 computeYearToLoad 로 공통화.
   const loadEarlierData = useCallback(async () => {
     if (chartType === 'price') {
       const meta = priceCache?.meta;
       const recent = priceCache?.recent;
       const archiveMap = priceCache?.archive;
       if (!meta || !recent || !archiveMap) return;
-      const firstDate = recent.dates[0];
-      if (!firstDate) {
-        console.warn('[chart] empty price recent series, cannot load earlier');
-        setLastError('차트 데이터가 비어있습니다.');
+      const yearToLoad = computeYearToLoad(meta, recent, archiveMap, 'price');
+      if (yearToLoad === null) {
+        if (recent.dates.length === 0) {
+          setLastError('차트 데이터가 비어있습니다.');
+        }
         return;
       }
-      const loadedYears = Object.keys(archiveMap).map(Number);
-      const recentEarliestYear = parseInt(firstDate.slice(0, 4), 10);
-      const earliestLoaded = Math.min(recentEarliestYear, ...loadedYears);
-      const yearToLoad = earliestLoaded - 1;
-      if (meta.archive_years.includes(yearToLoad)) {
-        await loadPriceArchive(assetId, yearToLoad);
-      }
+      await loadPriceArchive(assetId, yearToLoad);
     } else {
       const meta = equityCache.meta;
       const recent = equityCache.recent;
       if (!meta || !recent) return;
-      const firstDate = recent.dates[0];
-      if (!firstDate) {
-        console.warn('[chart] empty equity recent series, cannot load earlier');
-        setLastError('차트 데이터가 비어있습니다.');
+      const yearToLoad = computeYearToLoad(
+        meta,
+        recent,
+        equityCache.archive,
+        'equity',
+      );
+      if (yearToLoad === null) {
+        if (recent.dates.length === 0) {
+          setLastError('차트 데이터가 비어있습니다.');
+        }
         return;
       }
-      const loadedYears = Object.keys(equityCache.archive).map(Number);
-      const recentEarliestYear = parseInt(firstDate.slice(0, 4), 10);
-      const earliestLoaded = Math.min(recentEarliestYear, ...loadedYears);
-      const yearToLoad = earliestLoaded - 1;
-      if (meta.archive_years.includes(yearToLoad)) {
-        await loadEquityArchive(yearToLoad);
-      }
+      await loadEquityArchive(yearToLoad);
     }
   }, [
     chartType,

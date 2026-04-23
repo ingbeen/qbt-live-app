@@ -77,7 +77,8 @@ const toKstDate = (d: Date): Date => {
 };
 
 /** KST 기준 오늘 날짜를 `YYYY-MM-DD` 로 리턴. */
-export const today = (): string => toKstDate(new Date()).toISOString().slice(0, 10);
+export const today = (): string =>
+  toKstDate(new Date()).toISOString().slice(0, 10);
 
 export const formatShortDate = (iso: string): string => {
   const parts = iso.split('-');
@@ -125,18 +126,30 @@ export const directionLabel = (d: number | Direction): '매수' | '매도' => {
 export const listPendingOrders = (
   pendingOrders: Partial<Record<AssetId, PendingOrder>> | null,
 ): PendingOrder[] =>
-  ASSETS.flatMap((id) => {
+  ASSETS.flatMap(id => {
     const p = pendingOrders?.[id];
     return p ? [p] : [];
   });
 
 // pending 주문의 delta_amount 를 주가로 나눠 정수 주식수 문자열로 포맷.
-// 주가가 없거나 0 이하면 빈 문자열. 반환 끝에 공백 1 칸 포함 (호출부의 뒤따르는 라벨과 간격).
+// 호출 시점에는 signals[asset_id].close 가 항상 양수여야 하지만, 외부 데이터 신뢰도 차원에서
+// CLAUDE.md §3.1 방식 1 (__DEV__ throw + 안전 폴백) 으로 처리. 반환 끝에 공백 1 칸 포함.
 export const formatPendingShares = (
   deltaAmount: number,
   close: number | undefined,
 ): string => {
-  if (close == null || close <= 0) return '';
+  if (close == null || close <= 0) {
+    if (__DEV__) {
+      throw new Error(
+        `[format] 내부 불변조건 위반: formatPendingShares close=${close} (양수 종가 기대)`,
+      );
+    }
+    console.error(
+      '[format] 내부 불변조건 위반: formatPendingShares close=',
+      close,
+    );
+    return '';
+  }
   return `${Math.round(Math.abs(deltaAmount) / close)}주 `;
 };
 

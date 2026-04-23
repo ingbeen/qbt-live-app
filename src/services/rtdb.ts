@@ -65,25 +65,31 @@ export const readAllPendingOrders = (): Promise<Partial<
 
 type InboxRecord = { processed?: boolean } & Record<string, unknown>;
 
-const readInbox = async (path: string): Promise<InboxItem[]> => {
+// 제네릭 T 로 호출부에서 정확한 payload 타입을 명시하여 단언 없이 it.data.X 접근 가능.
+// 서버는 RTDB rules 로 필드 구조를 강제하므로 캐스팅이 안전.
+const readInbox = async <T = unknown>(
+  path: string,
+): Promise<InboxItem<T>[]> => {
   const tree = await readOnce<Record<string, InboxRecord>>(path);
   if (!tree) return [];
   return Object.entries(tree)
     .filter(([, v]) => v.processed !== true)
-    .map(([uuid, data]) => ({ uuid, data }));
+    .map(([uuid, data]) => ({ uuid, data: data as T }));
 };
 
-export const readInboxFills = (): Promise<InboxItem[]> =>
-  readInbox(RTDB_PATHS.FILLS_INBOX);
+export const readInboxFills = (): Promise<InboxItem<FillPayload>[]> =>
+  readInbox<FillPayload>(RTDB_PATHS.FILLS_INBOX);
 
-export const readInboxBalanceAdjusts = (): Promise<InboxItem[]> =>
-  readInbox(RTDB_PATHS.BALANCE_ADJUST_INBOX);
+export const readInboxBalanceAdjusts = (): Promise<
+  InboxItem<BalanceAdjustPayload>[]
+> => readInbox<BalanceAdjustPayload>(RTDB_PATHS.BALANCE_ADJUST_INBOX);
 
-export const readInboxFillDismiss = (): Promise<InboxItem[]> =>
-  readInbox(RTDB_PATHS.FILL_DISMISS_INBOX);
+export const readInboxFillDismiss = (): Promise<
+  InboxItem<FillDismissPayload>[]
+> => readInbox<FillDismissPayload>(RTDB_PATHS.FILL_DISMISS_INBOX);
 
-export const readInboxModelSync = (): Promise<InboxItem[]> =>
-  readInbox(RTDB_PATHS.MODEL_SYNC_INBOX);
+export const readInboxModelSync = (): Promise<InboxItem<ModelSyncPayload>[]> =>
+  readInbox<ModelSyncPayload>(RTDB_PATHS.MODEL_SYNC_INBOX);
 
 // ─── 쓰기 헬퍼 (inbox push) ───
 
@@ -174,9 +180,7 @@ export const readEquityChartRecent = (): Promise<EquityChartSeries | null> =>
 export const readEquityChartArchive = (
   year: number,
 ): Promise<EquityChartSeries | null> =>
-  readOnce<EquityChartSeries>(
-    `${RTDB_PATHS.CHARTS_EQUITY}/archive/${year}`,
-  );
+  readOnce<EquityChartSeries>(`${RTDB_PATHS.CHARTS_EQUITY}/archive/${year}`);
 
 // ─── 히스토리 읽기 (중첩 트리 → flat 최신순 배열) ───
 
@@ -204,13 +208,13 @@ const readNested2LevelTree = async <T>(
 export const readHistoryFills = (): Promise<FillHistory[]> =>
   readNested2LevelTree<FillHistory>(
     RTDB_PATHS.HISTORY_FILLS,
-    (v) => v.input_time_kst,
+    v => v.input_time_kst,
   );
 
 export const readHistoryBalanceAdjusts = (): Promise<BalanceAdjustHistory[]> =>
   readNested2LevelTree<BalanceAdjustHistory>(
     RTDB_PATHS.HISTORY_BALANCE_ADJUSTS,
-    (v) => v.applied_at,
+    v => v.applied_at,
   );
 
 export const readHistorySignals = async (): Promise<SignalHistoryEntry[]> => {

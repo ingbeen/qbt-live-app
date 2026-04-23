@@ -212,7 +212,10 @@ export interface SignalHistory {
 // Service layer 결과 타입 (RTDB tree → 평탄화된 형태)
 // ============================================================
 
-export type InboxItem = { uuid: string; data: unknown };
+// 제네릭 T 로 inbox payload 타입을 좁힐 수 있다 (디폴트 unknown).
+// 사용처: useStore 에서 inbox 4종을 InboxItem<FillPayload> 등으로 정확화하면
+// 호출부(PendingOrdersListBlock 등)에서 ad-hoc 타입 단언 없이 it.data.X 접근 가능.
+export type InboxItem<T = unknown> = { uuid: string; data: T };
 
 export type SignalHistoryEntry = {
   date: string;

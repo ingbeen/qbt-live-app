@@ -172,21 +172,35 @@ export const HistoryList: React.FC<Props> = ({
           let typeBadge: { text: string; color: string };
           let content: string;
 
-          if (e.kind === 'fill') {
-            barColor = fillBarColor(e.fill);
-            typeBadge = { text: EVENT_LABELS.fill, color: COLORS.text };
-            content = renderFillContent(e.fill);
-          } else if (e.kind === 'balance_adjust') {
-            barColor = COLORS.yellow;
-            typeBadge = {
-              text: EVENT_LABELS.balance_adjust,
-              color: COLORS.yellow,
-            };
-            content = renderAdjustContent(e.adjust);
-          } else {
-            barColor = COLORS.accent;
-            typeBadge = { text: EVENT_LABELS.signal, color: COLORS.accent };
-            content = renderSignalContent(e);
+          switch (e.kind) {
+            case 'fill':
+              barColor = fillBarColor(e.fill);
+              typeBadge = { text: EVENT_LABELS.fill, color: COLORS.text };
+              content = renderFillContent(e.fill);
+              break;
+            case 'balance_adjust':
+              barColor = COLORS.yellow;
+              typeBadge = {
+                text: EVENT_LABELS.balance_adjust,
+                color: COLORS.yellow,
+              };
+              content = renderAdjustContent(e.adjust);
+              break;
+            case 'signal':
+              barColor = COLORS.accent;
+              typeBadge = { text: EVENT_LABELS.signal, color: COLORS.accent };
+              content = renderSignalContent(e);
+              break;
+            default: {
+              // CLAUDE.md §3.1 방식 2: discriminated union exhaustive 보호.
+              // 새 HistoryEvent kind 추가 시 컴파일 타임에 여기서 에러로 잡힘.
+              const _exhaustive: never = e;
+              throw new Error(
+                `내부 불변조건 위반: 알 수 없는 HistoryEvent kind=${
+                  (_exhaustive as { kind: string }).kind
+                }`,
+              );
+            }
           }
 
           return (

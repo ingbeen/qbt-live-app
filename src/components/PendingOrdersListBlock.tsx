@@ -1,13 +1,15 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { COLORS, COLOR_PRESETS } from '../utils/colors';
-import {
-  MARGIN_MD,
-  PADDING_SM,
-  RADIUS_MD,
-  SYMBOLS,
-} from '../utils/constants';
-import type { AssetId, InboxItem, PendingOrder, Signal } from '../types/rtdb';
+import { MARGIN_MD, PADDING_SM, RADIUS_MD, SYMBOLS } from '../utils/constants';
+import type {
+  AssetId,
+  FillDismissPayload,
+  FillPayload,
+  InboxItem,
+  PendingOrder,
+  Signal,
+} from '../types/rtdb';
 import {
   directionLabel,
   formatPendingShares,
@@ -24,17 +26,19 @@ interface Props {
   pendingOrders: Partial<Record<AssetId, PendingOrder>> | null;
   signals: Record<AssetId, Signal>;
   // remind 모드 전용: inbox 에 이미 입력된 자산은 리마인드하지 않는다.
-  inboxFills?: InboxItem[] | null;
-  inboxFillDismiss?: InboxItem[] | null;
+  inboxFills?: InboxItem<FillPayload>[] | null;
+  inboxFillDismiss?: InboxItem<FillDismissPayload>[] | null;
 }
 
+// FillPayload / FillDismissPayload 모두 asset_id: AssetId 필수 → 단언 없이 직접 비교.
 const hasInboxForAsset = (
-  items: InboxItem[] | null | undefined,
+  items:
+    | InboxItem<FillPayload>[]
+    | InboxItem<FillDismissPayload>[]
+    | null
+    | undefined,
   assetId: AssetId,
-): boolean =>
-  !!items?.some(
-    (it) => (it.data as { asset_id?: string }).asset_id === assetId,
-  );
+): boolean => !!items?.some(it => it.data.asset_id === assetId);
 
 export const PendingOrdersListBlock: React.FC<Props> = ({
   mode,
@@ -47,7 +51,7 @@ export const PendingOrdersListBlock: React.FC<Props> = ({
   const items =
     mode === 'remind'
       ? all.filter(
-          (p) =>
+          p =>
             !hasInboxForAsset(inboxFills, p.asset_id) &&
             !hasInboxForAsset(inboxFillDismiss, p.asset_id),
         )
@@ -65,7 +69,7 @@ export const PendingOrdersListBlock: React.FC<Props> = ({
   return (
     <View style={wrapStyle}>
       <Text style={titleStyle}>{title}</Text>
-      {items.map((p) => {
+      {items.map(p => {
         const sharesText = formatPendingShares(
           p.delta_amount,
           signals[p.asset_id].close,

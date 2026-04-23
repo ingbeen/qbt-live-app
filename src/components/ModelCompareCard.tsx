@@ -3,7 +3,12 @@ import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { COLORS } from '../utils/colors';
 import { ASSETS, CASH_DIFF_THRESHOLD_USD, SYMBOLS } from '../utils/constants';
 import type { Portfolio } from '../types/rtdb';
-import { formatSignedInt, formatUSDInt, toUpperTicker } from '../utils/format';
+import {
+  formatDriftPct,
+  formatSignedInt,
+  formatUSDInt,
+  toUpperTicker,
+} from '../utils/format';
 
 interface Props {
   portfolio: Portfolio;
@@ -34,9 +39,14 @@ export const ModelCompareCard: React.FC<Props> = ({
         onPress={onToggle}
       >
         <Text style={styles.title}>Model 비교</Text>
-        <Text style={styles.arrow}>
-          {expanded ? SYMBOLS.ARROW_UP : SYMBOLS.ARROW_DOWN}
-        </Text>
+        <View style={styles.headerRight}>
+          <Text style={styles.driftBadge}>
+            Drift {formatDriftPct(portfolio.drift_pct)}
+          </Text>
+          <Text style={styles.arrow}>
+            {expanded ? SYMBOLS.ARROW_UP : SYMBOLS.ARROW_DOWN}
+          </Text>
+        </View>
       </Pressable>
 
       {expanded && (
@@ -53,6 +63,12 @@ export const ModelCompareCard: React.FC<Props> = ({
               <Text style={styles.totalsLabel}>Actual</Text>
               <Text style={styles.totalsValue}>
                 {formatUSDInt(portfolio.actual_equity)}
+              </Text>
+            </View>
+            <View style={styles.totalsCol}>
+              <Text style={styles.totalsLabel}>Drift</Text>
+              <Text style={styles.totalsValue}>
+                {formatDriftPct(portfolio.drift_pct)}
               </Text>
             </View>
           </View>
@@ -118,10 +134,19 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   title: {
     color: COLORS.text,
     fontSize: 13,
     fontWeight: '700',
+  },
+  driftBadge: {
+    color: COLORS.sub,
+    fontSize: 12,
   },
   arrow: {
     color: COLORS.sub,

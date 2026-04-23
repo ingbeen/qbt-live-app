@@ -59,6 +59,11 @@ export const formatSignedPct = (ratio: number, digits: number = 2): string => {
 export const formatWeight = (ratio: number): string =>
   `${(ratio * 100).toFixed(1)}%`;
 
+// ─── drift (부호 없음, 소수점 2자리) ───
+// drift_pct 는 |model − actual| / model 로 항상 양수. 설계서 §12 / ROUND_RATIO = 4.
+export const formatDriftPct = (ratio: number): string =>
+  `${(ratio * 100).toFixed(2)}%`;
+
 // ─── 날짜 ───
 
 /**

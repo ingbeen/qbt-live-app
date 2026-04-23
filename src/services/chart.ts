@@ -14,7 +14,6 @@ type PricePoint = {
 type EquityPoint = {
   model_equity: number;
   actual_equity: number;
-  drift_pct: number;
 };
 
 const dedupMarkers = (arr: string[]): string[] =>
@@ -42,7 +41,6 @@ const equityLength = (s: EquityChartSeries): number => {
     s.dates.length,
     s.model_equity.length,
     s.actual_equity.length,
-    s.drift_pct.length,
   ];
   const min = Math.min(...lens);
   if (lens.some((l) => l !== min)) {
@@ -113,17 +111,14 @@ export const mergeEquitySeries = (
       const date = s.dates[i];
       const model = s.model_equity[i];
       const actual = s.actual_equity[i];
-      const drift = s.drift_pct[i];
       if (
         date === undefined ||
         model === undefined ||
-        actual === undefined ||
-        drift === undefined
+        actual === undefined
       ) continue;
       map.set(date, {
         model_equity: model,
         actual_equity: actual,
-        drift_pct: drift,
       });
     }
   };
@@ -136,6 +131,5 @@ export const mergeEquitySeries = (
     dates: sortedDates,
     model_equity: sortedDates.map((d) => map.get(d)!.model_equity),
     actual_equity: sortedDates.map((d) => map.get(d)!.actual_equity),
-    drift_pct: sortedDates.map((d) => map.get(d)!.drift_pct),
   };
 };

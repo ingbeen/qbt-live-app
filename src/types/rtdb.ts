@@ -111,7 +111,6 @@ export interface EquityChartSeries {
   dates: string[];
   model_equity: number[];
   actual_equity: number[];
-  drift_pct: number[];
 }
 
 // ============================================================

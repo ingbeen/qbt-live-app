@@ -1,7 +1,7 @@
 // Lightweight Charts 는 브라우저 전용 라이브러리. WebView 내부에서만 동작하므로
 // RN JS 모듈에서 import 할 수 없고 CDN 으로 로드. 버전은 재현성을 위해 CHART_LIB_VERSION 에 고정.
 // HTML 내부 색상은 Lightweight Charts 옵션에 직접 전달되므로 COLORS 상수를 주입할 수 없음
-// (CLAUDE.md §7 WebView 범주 — §3.3 RN 컴포넌트 하드코딩 금지 규칙의 예외).
+// (CLAUDE.md §5.3 스타일링 / §5.4 절대 금지 목록 — 하드코딩 색상 hex 금지 규칙의 예외).
 
 import { CHART_LIB_VERSION } from './constants';
 

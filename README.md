@@ -43,13 +43,13 @@ qbt-live-app/
 ├── App.tsx                 # 최상위 컴포넌트 (Firebase 초기화, Auth/Net 구독, 라우팅)
 ├── index.js                # RN 엔트리포인트
 ├── src/
-│   ├── screens/            # 탭별 최상위 컴포넌트 (Home, Chart, Trade, Settings, Login)
-│   ├── components/         # 재사용 UI 컴포넌트 (Badge, FillForm, ChartWebView, OfflineScreen 등)
-│   ├── services/           # 외부 I/O (firebase, auth, rtdb, fcm, network, chart)
-│   ├── store/              # Zustand 단일 store (useStore.ts)
-│   ├── utils/              # 순수 유틸 (format, validation, colors, constants, chartHtml)
-│   ├── types/              # RTDB 스키마 타입 정의 (rtdb.ts)
-│   └── navigation/         # React Navigation 설정 (AppNavigator.tsx)
+│   ├── screens/            # 탭별 최상위 컴포넌트 — 자세한 목록은 src/screens/ 참조
+│   ├── components/         # 재사용 UI 컴포넌트 — 자세한 목록은 src/components/ 참조
+│   ├── services/           # 외부 I/O (Firebase / WebView 등) — 자세한 목록은 src/services/ 참조
+│   ├── store/              # Zustand 단일 store
+│   ├── utils/              # 순수 유틸 (포맷/검증/색상/상수 등) — 자세한 목록은 src/utils/ 참조
+│   ├── types/              # RTDB 스키마 타입 정의
+│   └── navigation/         # React Navigation 설정
 ├── android/                # Android 네이티브 프로젝트
 ├── docs/
 │   └── DESIGN_QBT_LIVE_FINAL.md   # 서버↔앱 RTDB 데이터 계약 (서버 SoT)

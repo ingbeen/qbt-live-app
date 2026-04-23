@@ -87,6 +87,7 @@ live 내부 실행 순서 / 예외 훅 / ephemeral clone 메커니즘 등은 [sr
 **모든 금액 필드는 `USD` (미국 달러) 기준으로 저장된다.** 본 시스템은 환율 변환을 수행하지 않으며, 데이터 소스인 yfinance 에서 미국 상장 ETF 의 USD 원본 가격을 그대로 사용한다.
 
 **적용 대상 필드** (RTDB / Git 정본 공통):
+
 - 자본금 / 현금: `model_equity`, `actual_equity`, `shared_cash_model`, `shared_cash_actual`
 - 가격: `close`, `ma_value`, `upper_band`, `lower_band`, `actual_price` (체결 단가)
 - 시계열: `/charts/*/recent.close`, `/charts/equity/*/{recent,archive}.{model_equity,actual_equity}`
@@ -317,6 +318,8 @@ live 서버는 `qbt-live-state` 프라이빗 리포를 원장(JSON + CSV + histo
 
 RTDB 는 "앱 ↔ daily runner" 버스이며, 정본 저장소가 아니다. `/latest/*` 는 "오늘의 스냅샷" 이고 매 실행마다 전체 갱신되며 (inbox 패턴을 쓰는 이유), `/charts/*` 는 "시계열 데이터" 로 매일 meta + recent + 현재 연도 archive 만 daily 갱신된다.
 
+**예제 JSON 표기 주의**: 본 절 이하의 예제 JSON 에 등장하는 날짜 / 연도 / 가격 등 구체값은 작성 시점의 예시이며, 실제 값은 RTDB 에서 동적 결정된다. 필드 의미와 타입만 계약 SoT 로 본다.
+
 **식별자 규칙**: asset_id 소문자 / ticker 대문자 규칙은 §0 "식별자 규칙" 참고.
 
 **drift_pct 스케일**: RTDB 의 `drift_pct` 필드(`/latest/portfolio`) 는 내부 계산 / Git 정본과 동일하게 **0~1 ratio** 로 저장된다 (프로젝트 네이밍 관례: `_pct` 접미사 = 0~1 범위. 루트 CLAUDE.md "비율 표기 규칙" 참고). 정밀도는 `ROUND_RATIO = 4` 자리. 앱이 표시할 때 `× 100` 변환은 앱 계층의 책임. 정의 / 임계값 / 라벨은 §12 참고. drift 는 RTDB 에 스칼라 형태로만 노출되며 시계열은 제공하지 않는다 (§8.2.4 / §8.2.6 참고).
@@ -346,17 +349,17 @@ RTDB 는 "앱 ↔ daily runner" 버스이며, 정본 저장소가 아니다. `/l
 }
 ```
 
-| 필드                              | 타입              | null | 설명                                                                           |
-| --------------------------------- | ----------------- | ---- | ------------------------------------------------------------------------------ |
+| 필드                              | 타입              | null | 설명                                                                                                                                                                                                                                       |
+| --------------------------------- | ----------------- | ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `execution_date`                  | str               | 불가 | ISO 8601 날짜 (**미국 거래일 ET 기준**, 예: `"2026-04-10"`). GitHub Actions runner 가 `TZ=America/New_York` 에서 `date.today()` 를 사용하므로, cron 실행 시각이 한국 시간 기준 다음 날이어도 필드 값은 실행일 기준 미국 거래일로 저장된다. |
-| `model_equity`                    | number            | 불가 | model 축 총 자산가치 (**USD 기준**, `ROUND_CAPITAL = 0` 자리)                  |
-| `actual_equity`                   | number            | 불가 | actual 축 총 자산가치 (**USD 기준**, `ROUND_CAPITAL = 0` 자리)                 |
-| `drift_pct`                       | number            | 불가 | drift 비율 (0~1 ratio, `ROUND_RATIO = 4` 자리, 예: `0.0037` = 0.37%). §12 참고 |
-| `shared_cash_model`               | number            | 불가 | model 축 공유 현금 (**USD 기준**)                                              |
-| `shared_cash_actual`              | number            | 불가 | actual 축 공유 현금 (**USD 기준**)                                             |
-| `assets.{asset_id}.model_shares`  | int               | 불가 | model 축 보유 주식 수                                                          |
-| `assets.{asset_id}.actual_shares` | int               | 불가 | actual 축 보유 주식 수                                                         |
-| `assets.{asset_id}.signal_state`  | `"buy"`\|`"sell"` | 불가 | 누적 원장 신호 상태. 초기값 `"sell"` (포지션 없음). §3 참고                    |
+| `model_equity`                    | number            | 불가 | model 축 총 자산가치 (**USD 기준**, `ROUND_CAPITAL = 0` 자리)                                                                                                                                                                              |
+| `actual_equity`                   | number            | 불가 | actual 축 총 자산가치 (**USD 기준**, `ROUND_CAPITAL = 0` 자리)                                                                                                                                                                             |
+| `drift_pct`                       | number            | 불가 | drift 비율 (0~1 ratio, `ROUND_RATIO = 4` 자리, 예: `0.0037` = 0.37%). §12 참고                                                                                                                                                             |
+| `shared_cash_model`               | number            | 불가 | model 축 공유 현금 (**USD 기준**)                                                                                                                                                                                                          |
+| `shared_cash_actual`              | number            | 불가 | actual 축 공유 현금 (**USD 기준**)                                                                                                                                                                                                         |
+| `assets.{asset_id}.model_shares`  | int               | 불가 | model 축 보유 주식 수                                                                                                                                                                                                                      |
+| `assets.{asset_id}.actual_shares` | int               | 불가 | actual 축 보유 주식 수                                                                                                                                                                                                                     |
+| `assets.{asset_id}.signal_state`  | `"buy"`\|`"sell"` | 불가 | 누적 원장 신호 상태. 초기값 `"sell"` (포지션 없음). §3 참고                                                                                                                                                                                |
 
 **자산 키 보장**: `assets.{asset_id}` 는 항상 4 자산 (`sso`, `qld`, `gld`, `tlt`) 전부를 포함한다. 자산을 전량 매도하여 0 주 상태가 되어도 키는 유지되며 `model_shares=0`, `actual_shares=0`, `signal_state="sell"` 로 저장된다. 앱은 키 존재를 가정해도 안전하다.
 
@@ -385,14 +388,14 @@ RTDB 는 "앱 ↔ daily runner" 버스이며, 정본 저장소가 아니다. `/l
 }
 ```
 
-| 필드              | 타입                        | null | 설명                                                                                              |
-| ----------------- | --------------------------- | ---- | ------------------------------------------------------------------------------------------------- |
-| `state`           | `"buy"`\|`"sell"`\|`"none"` | 불가 | **당일 감지** 된 신호. `"none"` = 오늘 새 신호 없음. 누적 원장(`signal_state`) 과는 별개. §3 참고 |
-| `close`           | number                      | 불가 | 당일 종가 (**USD**, `ROUND_PRICE = 6` 자리)                                                       |
-| `ma_value`        | number                      | 가능 | 자산 슬롯의 `ma_window` 기준 MA 값 (**USD**, 워밍업 구간은 null)                                  |
-| `ma_distance_pct` | number                      | 불가 | `(close - ma_value) / ma_value` (비율 0~1, 음수 가능, `ROUND_RATIO = 4` 자리)                     |
+| 필드              | 타입                        | null | 설명                                                                                                  |
+| ----------------- | --------------------------- | ---- | ----------------------------------------------------------------------------------------------------- |
+| `state`           | `"buy"`\|`"sell"`\|`"none"` | 불가 | **당일 감지** 된 신호. `"none"` = 오늘 새 신호 없음. 누적 원장(`signal_state`) 과는 별개. §3 참고     |
+| `close`           | number                      | 불가 | 당일 종가 (**USD**, `ROUND_PRICE = 6` 자리)                                                           |
+| `ma_value`        | number                      | 가능 | 자산 슬롯의 `ma_window` 기준 MA 값 (**USD**, 워밍업 구간은 null)                                      |
+| `ma_distance_pct` | number                      | 불가 | `(close - ma_value) / ma_value` (비율 0~1, 음수 가능, `ROUND_RATIO = 4` 자리)                         |
 | `upper_band`      | number                      | 가능 | BufferZone 상단 밴드 (**USD**, 버퍼존 미사용 자산은 null). 전략이 다음 거래일 판단에 사용할 값과 동일 |
-| `lower_band`      | number                      | 가능 | BufferZone 하단 밴드 (**USD**, 버퍼존 미사용 자산은 null)                                         |
+| `lower_band`      | number                      | 가능 | BufferZone 하단 밴드 (**USD**, 버퍼존 미사용 자산은 null)                                             |
 
 #### 8.2.3 `/latest/pending_orders/{asset_id}` — 익일 체결 예정 주문
 
@@ -460,7 +463,7 @@ drift 스칼라 요약 (`drift_pct` / `model_equity` / `actual_equity`) 은 `/la
 | `first_date`    | str       | 자산 CSV 의 첫 거래일 (ISO 8601)                                                |
 | `last_date`     | str       | 자산 CSV 의 마지막 거래일 (ISO 8601)                                            |
 | `ma_window`     | int       | 자산 슬롯의 MA 윈도우 (워밍업 길이 계산용)                                      |
-| `recent_months` | int       | `recent` slice 가 포함하는 개월 수. 상수 `CHART_RECENT_MONTHS = 6`              |
+| `recent_months` | int       | `recent` slice 가 포함하는 개월 수. 상수 `CHART_RECENT_MONTHS` 참조             |
 | `archive_years` | list[int] | CSV 가 포함하는 연도 목록 (오름차순). 앱이 줌아웃 시 로드할 archive 경로를 결정 |
 
 앱은 `meta` 를 가장 먼저 한 번 읽고, 필요한 시점에 `recent` / `archive/{YYYY}` 로드 전략을 결정한다.
@@ -547,12 +550,12 @@ payload 구조는 `recent` 와 동일 (`dates`, `close`, `ma_value`, `upper_band
 }
 ```
 
-| 필드            | 타입      | 설명                                                                           |
-| --------------- | --------- | ------------------------------------------------------------------------------ |
-| `first_date`    | str       | summary.jsonl 의 첫 날짜 (ISO 8601, 운영 시작일)                               |
-| `last_date`     | str       | summary.jsonl 의 마지막 날짜 (ISO 8601)                                        |
-| `recent_months` | int       | `recent` slice 가 포함하는 개월 수. 상수 `CHART_RECENT_MONTHS = 6` (주가 공용) |
-| `archive_years` | list[int] | summary.jsonl 이 포함하는 연도 목록 (오름차순)                                 |
+| 필드            | 타입      | 설명                                                                            |
+| --------------- | --------- | ------------------------------------------------------------------------------- |
+| `first_date`    | str       | summary.jsonl 의 첫 날짜 (ISO 8601, 운영 시작일)                                |
+| `last_date`     | str       | summary.jsonl 의 마지막 날짜 (ISO 8601)                                         |
+| `recent_months` | int       | `recent` slice 가 포함하는 개월 수. 상수 `CHART_RECENT_MONTHS` 참조 (주가 공용) |
+| `archive_years` | list[int] | summary.jsonl 이 포함하는 연도 목록 (오름차순)                                  |
 
 ##### 8.2.6.2 `/charts/equity/recent`
 
@@ -566,9 +569,9 @@ payload 구조는 `recent` 와 동일 (`dates`, `close`, `ma_value`, `upper_band
 }
 ```
 
-| 필드            | 타입         | 설명                                             |
-| --------------- | ------------ | ------------------------------------------------ |
-| `dates`         | list[str]    | 해당 구간 거래일 (ISO 8601)                      |
+| 필드            | 타입         | 설명                                                      |
+| --------------- | ------------ | --------------------------------------------------------- |
+| `dates`         | list[str]    | 해당 구간 거래일 (ISO 8601)                               |
 | `model_equity`  | list[number] | model 축 총 자산가치 (**USD**, `ROUND_CAPITAL = 0` 자리)  |
 | `actual_equity` | list[number] | actual 축 총 자산가치 (**USD**, `ROUND_CAPITAL = 0` 자리) |
 
@@ -625,9 +628,9 @@ payload 구조는 `recent` 와 동일 (`dates`, `close`, `ma_value`, `upper_band
 
 **선택 필드**:
 
-| 필드     | 타입        | 설명                         |
-| -------- | ----------- | ---------------------------- |
-| `memo`   | str \| null | 사용자 자유 메모 (기본 null) |
+| 필드     | 타입        | 설명                                                                                                                                                                                                                 |
+| -------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `memo`   | str \| null | 사용자 자유 메모 (기본 null)                                                                                                                                                                                         |
 | `reason` | str         | 앱이 전송한 **자유 텍스트 사유** (기본 `""`). 서버는 이 값을 변환하지 않고 `ActualFill.reason` 에 그대로 저장하며 `/history/fills/` 미러에도 동일 값이 들어간다. 체결 탭 UI 는 현재 입력을 받지 않아 항상 `""` 이다. |
 
 **서버측 검증 (거부 조건)** — 위반 시 `run-daily` 가 즉시 중단되고 FCM + 텔레그램 실패 알림 발송:
@@ -871,17 +874,17 @@ GitHub Actions cron 으로 실행되는 daily runner 가 RTDB `/balance_adjust/i
 }
 ```
 
-| 필드             | 타입              | null | 설명                                                                                          |
-| ---------------- | ----------------- | ---- | --------------------------------------------------------------------------------------------- |
-| `asset_id`       | str               | 불가 | 자산 ID 소문자 (sso/qld/gld/tlt)                                                              |
-| `direction`      | `"buy"`\|`"sell"` | 불가 | 체결 방향                                                                                     |
-| `actual_price`   | number            | 불가 | 체결 단가 (**USD**, `ROUND_PRICE = 6` 자리)                                                   |
-| `actual_shares`  | int               | 불가 | 체결 주식 수                                                                                  |
-| `trade_date`     | str               | 불가 | 사용자가 입력한 체결 일자 (ISO 8601). 폴더 키와 동일                                          |
-| `input_time_kst` | str               | 불가 | 사용자가 앱에서 입력한 시각 (ISO 8601 KST)                                                    |
-| `memo`           | str               | 가능 | 사용자 메모 (UI 입력)                                                                         |
+| 필드             | 타입              | null | 설명                                                                                                 |
+| ---------------- | ----------------- | ---- | ---------------------------------------------------------------------------------------------------- |
+| `asset_id`       | str               | 불가 | 자산 ID 소문자 (sso/qld/gld/tlt)                                                                     |
+| `direction`      | `"buy"`\|`"sell"` | 불가 | 체결 방향                                                                                            |
+| `actual_price`   | number            | 불가 | 체결 단가 (**USD**, `ROUND_PRICE = 6` 자리)                                                          |
+| `actual_shares`  | int               | 불가 | 체결 주식 수                                                                                         |
+| `trade_date`     | str               | 불가 | 사용자가 입력한 체결 일자 (ISO 8601). 폴더 키와 동일                                                 |
+| `input_time_kst` | str               | 불가 | 사용자가 앱에서 입력한 시각 (ISO 8601 KST)                                                           |
+| `memo`           | str               | 가능 | 사용자 메모 (UI 입력)                                                                                |
 | `reason`         | str               | 불가 | 앱이 전송한 원본 값 그대로 (주로 `""`). `/history/fills/` 는 `ActualFill.reason` 을 그대로 미러한다. |
-| `applied_at`     | str               | 불가 | run-daily 가 이 fill 을 반영한 시각 (ISO 8601 KST). 같은 배치 내 모든 신규 레코드에 동일 부여 |
+| `applied_at`     | str               | 불가 | run-daily 가 이 fill 을 반영한 시각 (ISO 8601 KST). 같은 배치 내 모든 신규 레코드에 동일 부여        |
 
 **키 전략**:
 
@@ -1044,11 +1047,11 @@ live 는 평일 ET 17:27 (cron, `timezone: America/New_York`) 에 GitHub Actions
 
 각 RTDB 경로의 접근 권한 설계 (Firebase Console Rules 에 반영):
 
-| 경로 | 읽기 | 쓰기 |
-|---|---|---|
-| `/latest/*`, `/charts/*`, `/history/*` | `auth.uid === OWNER_UID` | 쓰기 금지 (Admin SDK 는 Rules 우회) |
-| `/fills/inbox/*`, `/balance_adjust/inbox/*`, `/fill_dismiss/inbox/*`, `/model_sync/inbox/*` | `auth.uid === OWNER_UID` | `auth.uid === OWNER_UID` |
-| `/device_tokens/{device_id}` | `auth.uid === OWNER_UID` | `auth.uid === OWNER_UID` |
+| 경로                                                                                        | 읽기                     | 쓰기                                |
+| ------------------------------------------------------------------------------------------- | ------------------------ | ----------------------------------- |
+| `/latest/*`, `/charts/*`, `/history/*`                                                      | `auth.uid === OWNER_UID` | 쓰기 금지 (Admin SDK 는 Rules 우회) |
+| `/fills/inbox/*`, `/balance_adjust/inbox/*`, `/fill_dismiss/inbox/*`, `/model_sync/inbox/*` | `auth.uid === OWNER_UID` | `auth.uid === OWNER_UID`            |
+| `/device_tokens/{device_id}`                                                                | `auth.uid === OWNER_UID` | `auth.uid === OWNER_UID`            |
 
 - Admin SDK (Service Account) 는 Rules 를 우회한다. 서버 daily runner 의 모든 쓰기는 Rules 와 무관하게 성공한다.
 - 앱은 Firebase Auth Email/Password 로 로그인한 `OWNER_UID` 계정으로만 접근한다.

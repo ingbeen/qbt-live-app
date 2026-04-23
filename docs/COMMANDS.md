@@ -39,7 +39,6 @@ npm start                 # Metro 번들러 (포트 8081)
 npm run android           # Metro 포함 빌드/실행 (Metro 가 안 떠 있을 때)
 npm run android -- --no-packager   # Metro 없이 빌드/설치 (Terminal A 상주 시)
 npm run lint              # ESLint
-npm test                  # Jest
 ```
 
 ---

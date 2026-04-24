@@ -20,7 +20,7 @@
 ---
 
 **작성일**: 2026-04-24 20:15
-**마지막 업데이트**: 2026-04-24 20:40
+**마지막 업데이트**: 2026-04-24 21:00
 **관련 범위**: utils (chartHtml, constants), CLAUDE.md §9, docs/COMMANDS.md (변경 없음)
 **관련 문서**: CLAUDE.md §9 (WebView + TradingView Charts 규칙), DESIGN_QBT_LIVE_FINAL.md
 
@@ -176,11 +176,11 @@
 
 **작업 내용**:
 
-- [ ] `src/utils/chartHtml.ts` `createChart` 옵션의 `timeScale` 블록 확장:
-  - `rightOffset: 60`
+- [x] `src/utils/chartHtml.ts` `createChart` 옵션의 `timeScale` 블록 확장:
+  - `rightOffset: CHART_EDGE_MARGIN_BARS` (60)
   - `fixRightEdge: true`
   - (기존) `borderColor`, `tickMarkFormatter` 유지
-- [ ] 기존 `subscribeVisibleLogicalRangeChange` 콜백 내부 로직 병합:
+- [x] 기존 `subscribeVisibleLogicalRangeChange` 콜백 내부 로직 병합:
   ```js
   chart.timeScale().subscribeVisibleLogicalRangeChange(function (range) {
     if (!range) return;
@@ -198,8 +198,8 @@
     }
   });
   ```
-- [ ] 상수화 — chartHtml 내부에 `var CHART_EDGE_MARGIN_BARS = 60;` 선언하고 위 두 곳 (`rightOffset`, 좌측 가드) 에서 참조
-- [ ] 실기 검증 (Phase 2 한정):
+- [x] 상수화 — chartHtml 내부에 `var CHART_EDGE_MARGIN_BARS = 60;` 선언하고 위 두 곳 (`rightOffset`, 좌측 가드) 에서 참조
+- [ ] 실기 검증 (Phase 2 한정) — 사용자 대기:
   - 우측: 마지막 봉 뒤 약 60 봉 빈 공간 존재, 그 이상 오른쪽 스크롤 불가 (튕김 허용)
   - 좌측: 첫 봉 앞 약 60 봉 빈 공간까지 스크롤 가능, 그 이상은 -60 에서 재조정 (튕김)
   - 기존 선제 로드 (threshold 30) 는 정상 동작
@@ -274,5 +274,6 @@
 
 - 2026-04-24 20:15: Draft 작성. 사용자 지시 "옵션 B (1 plan, Phase 분리)" 확정. Phase 1 완료 시점 사용자 커밋 대기 → Phase 2 완료 시점 사용자 커밋 대기 → 마지막 Phase 최종 검증 흐름으로 진행 예정.
 - 2026-04-24 20:40: Phase 0 / Phase 1 완료. `CHART_LIB_VERSION` 5.1.0 갱신, `chartHtml.ts` 의 `addLineSeries` 6개를 `addSeries(LightweightCharts.LineSeries, ...)` 로 치환, `setMarkers` 를 `createSeriesMarkers` primitive 패턴으로 치환 + `clearAllSeries` 에 detach 추가. `npx tsc --noEmit` 출력 없음(통과). Phase 2 진행 전 사용자 실기 검증 + 커밋 대기.
+- 2026-04-24 21:00: Phase 2 완료. `chartHtml.ts` IIFE 상단에 `CHART_EDGE_MARGIN_BARS = 60` 상수 선언, `timeScale` 옵션에 `rightOffset: CHART_EDGE_MARGIN_BARS` + `fixRightEdge: true` 추가, `subscribeVisibleLogicalRangeChange` 콜백에 `range.from < -CHART_EDGE_MARGIN_BARS` 시 경계 재조정 분기 추가 (기존 load_earlier 트리거와 공존). `npx tsc --noEmit` 통과. 마지막 Phase 진행 전 사용자 실기 검증 + 커밋 대기.
 
 ---

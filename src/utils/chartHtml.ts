@@ -43,6 +43,10 @@ export const generateChartHtml = (): string => `<!DOCTYPE html>
   </div>
   <script>
     (function () {
+      // 차트 좌우 경계에 둘 여유 (bars). 우측은 rightOffset 으로 공식 지원,
+      // 좌측은 동등 옵션이 없어 subscribeVisibleLogicalRangeChange 에서 재조정.
+      var CHART_EDGE_MARGIN_BARS = 60;
+
       // 날짜 포맷: 축 tickMark 와 크로스헤어 수직 라벨 모두 YYYY-MM-DD 로 통일.
       // Lightweight Charts 가 Time 을 문자열로 받으면 그대로 통과시키는 formatter.
       var identityDateFormatter = function (time) {
@@ -54,7 +58,9 @@ export const generateChartHtml = (): string => `<!DOCTYPE html>
         grid: { vertLines: { color: '${CHART_COLORS.border}22' }, horzLines: { color: '${CHART_COLORS.border}22' } },
         timeScale: {
           borderColor: '${CHART_COLORS.border}',
-          tickMarkFormatter: identityDateFormatter
+          tickMarkFormatter: identityDateFormatter,
+          rightOffset: CHART_EDGE_MARGIN_BARS,
+          fixRightEdge: true
         },
         rightPriceScale: { borderColor: '${CHART_COLORS.border}' },
         crosshair: { mode: 1 },
@@ -139,11 +145,19 @@ export const generateChartHtml = (): string => `<!DOCTYPE html>
         actualSeries.setData(data.dates.map(function (d, i) { return { time: d, value: data.actual_equity[i] }; }));
       };
 
-      // 좌측 끝 감지 → RN 에 archive 로드 요청 (throttle: 같은 호출 반복 방지)
-      // threshold 는 관성 스크롤 대응을 위해 30봉 이내로 들어오면 선제 로드 요청.
+      // 좌측 경계 재조정 + 좌측 끝 감지 → RN 에 archive 로드 요청.
+      // 좌측으로 CHART_EDGE_MARGIN_BARS 이상 끌려가면 경계에 고정 (whitespace 주입 대신).
+      // threshold 30 은 관성 스크롤 대응을 위해 조기 선제 로드 트리거.
       var lastEarlierRequest = 0;
       chart.timeScale().subscribeVisibleLogicalRangeChange(function (range) {
         if (!range) return;
+        if (range.from < -CHART_EDGE_MARGIN_BARS) {
+          chart.timeScale().setVisibleLogicalRange({
+            from: -CHART_EDGE_MARGIN_BARS,
+            to: range.to
+          });
+          return;
+        }
         if (range.from < 30) {
           var now = Date.now();
           if (now - lastEarlierRequest < 1500) return;

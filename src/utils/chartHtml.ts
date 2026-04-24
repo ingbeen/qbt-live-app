@@ -15,20 +15,53 @@ export const generateChartHtml = (): string => `<!DOCTYPE html>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <script src="https://unpkg.com/lightweight-charts@${CHART_LIB_VERSION}/dist/lightweight-charts.standalone.production.js"></script>
   <style>
-    html, body, #chart { margin: 0; padding: 0; width: 100%; height: 100%; background: ${CHART_COLORS.background}; }
+    html, body { margin: 0; padding: 0; width: 100%; height: 100%; background: ${CHART_COLORS.background}; }
+    #chart-wrap { position: relative; width: 100%; height: 100%; }
+    #chart { width: 100%; height: 100%; }
+    #chart-loading-overlay {
+      position: absolute;
+      top: 0; left: 0; bottom: 0;
+      width: 40%;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: ${CHART_COLORS.background};
+      opacity: 0.9;
+      color: ${CHART_COLORS.sub};
+      font-family: -apple-system, Roboto, 'Segoe UI', sans-serif;
+      font-size: 12px;
+      pointer-events: none;
+      z-index: 2;
+    }
     body { overflow: hidden; }
   </style>
 </head>
 <body>
-  <div id="chart"></div>
+  <div id="chart-wrap">
+    <div id="chart"></div>
+    <div id="chart-loading-overlay">불러오는 중…</div>
+  </div>
   <script>
     (function () {
+      // 날짜 포맷: 축 tickMark 와 크로스헤어 수직 라벨 모두 YYYY-MM-DD 로 통일.
+      // Lightweight Charts 가 Time 을 문자열로 받으면 그대로 통과시키는 formatter.
+      var identityDateFormatter = function (time) {
+        return typeof time === 'string' ? time : '';
+      };
+
       var chart = LightweightCharts.createChart(document.getElementById('chart'), {
         layout: { background: { color: '${CHART_COLORS.background}' }, textColor: '${CHART_COLORS.sub}' },
         grid: { vertLines: { color: '${CHART_COLORS.border}22' }, horzLines: { color: '${CHART_COLORS.border}22' } },
-        timeScale: { borderColor: '${CHART_COLORS.border}' },
+        timeScale: {
+          borderColor: '${CHART_COLORS.border}',
+          tickMarkFormatter: identityDateFormatter
+        },
         rightPriceScale: { borderColor: '${CHART_COLORS.border}' },
-        crosshair: { mode: 1 }
+        crosshair: { mode: 1 },
+        localization: {
+          dateFormat: 'yyyy-MM-dd',
+          timeFormatter: identityDateFormatter
+        }
       });
 
       var closeSeries = null;
@@ -102,15 +135,57 @@ export const generateChartHtml = (): string => `<!DOCTYPE html>
       };
 
       // 좌측 끝 감지 → RN 에 archive 로드 요청 (throttle: 같은 호출 반복 방지)
+      // threshold 는 관성 스크롤 대응을 위해 30봉 이내로 들어오면 선제 로드 요청.
       var lastEarlierRequest = 0;
       chart.timeScale().subscribeVisibleLogicalRangeChange(function (range) {
         if (!range) return;
-        if (range.from < 10) {
+        if (range.from < 30) {
           var now = Date.now();
           if (now - lastEarlierRequest < 1500) return;
           lastEarlierRequest = now;
           window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'load_earlier' }));
         }
+      });
+
+      // RN 이 archive 로드 중임을 알려올 때 좌측 영역을 반투명 마스킹. 연속 호출에 idempotent.
+      window.setLoadingOverlay = function (on) {
+        var el = document.getElementById('chart-loading-overlay');
+        if (!el) return;
+        el.style.display = on ? 'flex' : 'none';
+      };
+
+      // 크로스헤어 이동 시 각 시리즈 값을 RN 상단 헤더로 전송. series 교체 후에도
+      // 모듈 scope 의 *Series 참조가 최신이라 별도 재구독 불필요.
+      chart.subscribeCrosshairMove(function (param) {
+        if (!param || !param.time || !param.seriesData) return;
+        var v = {};
+        if (closeSeries) {
+          var d1 = param.seriesData.get(closeSeries);
+          if (d1 && typeof d1.value === 'number') v.close = d1.value;
+        }
+        if (maSeries) {
+          var d2 = param.seriesData.get(maSeries);
+          if (d2 && typeof d2.value === 'number') v.ma = d2.value;
+        }
+        if (upperSeries) {
+          var d3 = param.seriesData.get(upperSeries);
+          if (d3 && typeof d3.value === 'number') v.upper = d3.value;
+        }
+        if (lowerSeries) {
+          var d4 = param.seriesData.get(lowerSeries);
+          if (d4 && typeof d4.value === 'number') v.lower = d4.value;
+        }
+        if (modelSeries) {
+          var d5 = param.seriesData.get(modelSeries);
+          if (d5 && typeof d5.value === 'number') v.model = d5.value;
+        }
+        if (actualSeries) {
+          var d6 = param.seriesData.get(actualSeries);
+          if (d6 && typeof d6.value === 'number') v.actual = d6.value;
+        }
+        window.ReactNativeWebView.postMessage(
+          JSON.stringify({ type: 'crosshair', date: param.time, values: v })
+        );
       });
 
       window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'ready' }));

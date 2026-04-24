@@ -120,8 +120,12 @@ interface Store {
   refreshHome: () => Promise<void>;
   refreshTrade: () => Promise<void>;
   refreshChart: (target: ChartTarget) => Promise<void>;
-  loadPriceArchive: (assetId: AssetId, year: number) => Promise<void>;
-  loadEquityArchive: (year: number) => Promise<void>;
+  loadPriceArchive: (
+    assetId: AssetId,
+    year: number,
+    prefetchNext?: boolean,
+  ) => Promise<void>;
+  loadEquityArchive: (year: number, prefetchNext?: boolean) => Promise<void>;
 
   // 액션: 쓰기
   submitModelSync: () => Promise<void>;
@@ -432,7 +436,7 @@ export const useStore = create<Store>((set, get) => {
       }
     },
 
-    loadPriceArchive: async (assetId, year) => {
+    loadPriceArchive: async (assetId, year, prefetchNext = true) => {
       const existing = get().priceCharts[assetId];
       if (existing?.archive[year]) return;
       const loadingKey = priceArchiveLoadingKey(assetId, year);
@@ -461,9 +465,28 @@ export const useStore = create<Store>((set, get) => {
       } finally {
         setLoading(loadingKey, false);
       }
+      // 선제 로드: 현재 연도 완료 후 전년도도 자동 확보. 재귀 폭주 방지 위해
+      // 다음 호출은 prefetchNext=false 로 전달. 파이어앤포겟 — 실패해도 사용자
+      // 경로(좌측 스크롤)에서 재시도되므로 catch 로 흡수만.
+      if (prefetchNext) {
+        const nextYear = year - 1;
+        const latest = get().priceCharts[assetId];
+        const nextLoading =
+          get().loading[priceArchiveLoadingKey(assetId, nextYear)] === true;
+        if (
+          latest?.meta &&
+          latest.meta.archive_years.includes(nextYear) &&
+          !latest.archive[nextYear] &&
+          !nextLoading
+        ) {
+          get()
+            .loadPriceArchive(assetId, nextYear, false)
+            .catch(() => {});
+        }
+      }
     },
 
-    loadEquityArchive: async year => {
+    loadEquityArchive: async (year, prefetchNext = true) => {
       if (get().equityChart.archive[year]) return;
       const loadingKey = equityArchiveLoadingKey(year);
       setLoading(loadingKey, true);
@@ -483,6 +506,22 @@ export const useStore = create<Store>((set, get) => {
         set({ lastError: toUserMessage(e) });
       } finally {
         setLoading(loadingKey, false);
+      }
+      if (prefetchNext) {
+        const nextYear = year - 1;
+        const latest = get().equityChart;
+        const nextLoading =
+          get().loading[equityArchiveLoadingKey(nextYear)] === true;
+        if (
+          latest.meta &&
+          latest.meta.archive_years.includes(nextYear) &&
+          !latest.archive[nextYear] &&
+          !nextLoading
+        ) {
+          get()
+            .loadEquityArchive(nextYear, false)
+            .catch(() => {});
+        }
       }
     },
   };

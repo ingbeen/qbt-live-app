@@ -9,9 +9,19 @@ import { ChartTypeToggle, type ChartType } from '../components/ChartTypeToggle';
 import { AssetSelector } from '../components/AssetSelector';
 import { ChartWebView } from '../components/ChartWebView';
 import { ChartLegend } from '../components/ChartLegend';
+import {
+  ChartValueHeader,
+  type CrosshairValues,
+} from '../components/ChartValueHeader';
 import { Toast } from '../components/Toast';
 import { chartLoadingKey } from '../utils/loadingKeys';
 import { computeNextArchiveYear } from '../utils/chartArchive';
+
+// loading 맵의 키 접두사. useStore 의 loadingKeys 헬퍼 생성 규칙과 동일하게 맞춤.
+// (chart_archive_{assetId}_{year} / chart_archive_equity_{year})
+const PRICE_ARCHIVE_PREFIX = (assetId: AssetId): string =>
+  `chart_archive_${assetId}_`;
+const EQUITY_ARCHIVE_PREFIX = 'chart_archive_equity_';
 
 // 좌측 스크롤 로드 시 필요한 연도 1개를 결정.
 // 판정 규칙은 `computeNextArchiveYear` 에 통일 (초기 로드와 동일 규칙 공유).
@@ -31,10 +41,19 @@ const computeYearToLoad = (
   return computeNextArchiveYear(firstDate, meta.archive_years, loadedYears);
 };
 
+interface CrosshairState {
+  date: string | null;
+  values: CrosshairValues | null;
+}
+
 export const ChartScreen: React.FC = () => {
   const [chartType, setChartType] = useState<ChartType>('price');
   const [assetId, setAssetId] = useState<AssetId>('sso');
   const [webviewReady, setWebviewReady] = useState(false);
+  const [crosshair, setCrosshair] = useState<CrosshairState>({
+    date: null,
+    values: null,
+  });
   const webviewRef = useRef<WebView>(null);
 
   const priceCache = useStore(s => s.priceCharts[assetId]);
@@ -51,6 +70,16 @@ export const ChartScreen: React.FC = () => {
   const showSpinner =
     (chartType === 'price' && isPriceLoading && !priceCache?.recent) ||
     (chartType === 'equity' && isEquityLoading && !equityCache.recent);
+
+  // 좌측 archive 선제 로드 중인지 판단. 해당 차트 타입의 archive 키 중 하나라도
+  // true 이면 WebView 좌측에 마스킹 오버레이 표시.
+  const isArchiveLoading = React.useMemo(() => {
+    const prefix =
+      chartType === 'price'
+        ? PRICE_ARCHIVE_PREFIX(assetId)
+        : EQUITY_ARCHIVE_PREFIX;
+    return Object.entries(loading).some(([k, v]) => v && k.startsWith(prefix));
+  }, [loading, chartType, assetId]);
 
   // Effect 1: 캐시 없으면 recent + meta 로드. 이미 있으면 skip (재진입 캐시 활용).
   useEffect(() => {
@@ -93,6 +122,66 @@ export const ChartScreen: React.FC = () => {
   useEffect(() => {
     injectChartData();
   }, [injectChartData]);
+
+  // Effect 3: archive 로드 중 여부를 WebView 로 전달하여 좌측 영역을 마스킹.
+  useEffect(() => {
+    if (!webviewReady) return;
+    webviewRef.current?.injectJavaScript(
+      `window.setLoadingOverlay(${isArchiveLoading}); true;`,
+    );
+  }, [webviewReady, isArchiveLoading]);
+
+  // Effect 4: 차트 타입/자산 전환 또는 캐시 로드 시 상단 헤더를 최신 봉 값으로 리셋.
+  // 이후 사용자가 크로스헤어를 움직이면 handleCrosshair 가 값을 덮어씀.
+  // recent 의 마지막 인덱스 기준 (병합 시리즈 최종 값과 동일).
+  useEffect(() => {
+    if (chartType === 'price') {
+      const recent = priceCache?.recent;
+      if (!recent) {
+        setCrosshair({ date: null, values: null });
+        return;
+      }
+      const idx = recent.dates.length - 1;
+      if (idx < 0) {
+        setCrosshair({ date: null, values: null });
+        return;
+      }
+      const date = recent.dates[idx];
+      if (!date) return;
+      const values: CrosshairValues = {
+        close: recent.close[idx] ?? undefined,
+        ma: recent.ma_value[idx] ?? undefined,
+        upper: recent.upper_band[idx] ?? undefined,
+        lower: recent.lower_band[idx] ?? undefined,
+      };
+      setCrosshair({ date, values });
+    } else {
+      const recent = equityCache.recent;
+      if (!recent) {
+        setCrosshair({ date: null, values: null });
+        return;
+      }
+      const idx = recent.dates.length - 1;
+      if (idx < 0) {
+        setCrosshair({ date: null, values: null });
+        return;
+      }
+      const date = recent.dates[idx];
+      if (!date) return;
+      const values: CrosshairValues = {
+        model: recent.model_equity[idx] ?? undefined,
+        actual: recent.actual_equity[idx] ?? undefined,
+      };
+      setCrosshair({ date, values });
+    }
+  }, [chartType, assetId, priceCache?.recent, equityCache.recent]);
+
+  const handleCrosshair = useCallback(
+    (date: string, values: CrosshairValues) => {
+      setCrosshair({ date, values });
+    },
+    [],
+  );
 
   // 좌측 끝 감지 → 필요한 전년도 archive 로드 후 재주입 (캐시 변경으로 Effect 2 자동 트리거).
   // 분기는 유지 (각 cache/archive 로더 시그니처가 다름), 연도 계산만 computeYearToLoad 로 공통화.
@@ -166,11 +255,18 @@ export const ChartScreen: React.FC = () => {
         ) : null}
       </View>
 
+      <ChartValueHeader
+        type={chartType}
+        date={crosshair.date}
+        values={crosshair.values}
+      />
+
       <View style={styles.chartArea}>
         <ChartWebView
           ref={webviewRef}
           onReady={handleReady}
           onLoadEarlier={loadEarlierData}
+          onCrosshair={handleCrosshair}
           onError={handleWebViewError}
         />
         {showSpinner ? (

@@ -565,6 +565,10 @@ database().ref('/latest/portfolio').on('value', handler);
 - 메시지 타입 **화이트리스트**:
   - `ready` — WebView 초기 로딩 완료
   - `load_earlier` — 좌측 끝 도달 → archive 로드 필요
+  - `crosshair` — 크로스헤어 이동 시 각 시리즈 값 전송 (payload: `{ date, values }`)
+- RN → WebView 주입 함수:
+  - `window.setPriceChart(data)` / `window.setEquityChart(data)` — 차트 데이터 갱신
+  - `window.setLoadingOverlay(on: boolean)` — archive 선제 로드 중 좌측 영역 마스킹
 
 ### 9.3 WebView 설정
 

@@ -43,9 +43,13 @@ export const generateChartHtml = (): string => `<!DOCTYPE html>
   </div>
   <script>
     (function () {
-      // 차트 좌우 경계에 둘 여유 (bars). 우측은 rightOffset 으로 공식 지원,
-      // 좌측은 동등 옵션이 없어 subscribeVisibleLogicalRangeChange 에서 재조정.
+      // 차트 좌우 경계에 둘 여유 (bars). rightOffset 은 여유 공간 생성에,
+      // 좌우 모두의 "그 이상 스크롤 불가" 는 subscribeVisibleLogicalRangeChange
+      // 에서 재조정한다 (fixRightEdge 는 rightOffset 을 무효화하는 공식 이슈로 미사용).
       var CHART_EDGE_MARGIN_BARS = 60;
+      // 현재 차트에 로드된 데이터 봉 수. 우측 경계 재조정에 사용. setPriceChart /
+      // setEquityChart 호출마다 data.dates.length 로 갱신.
+      var currentBarCount = 0;
 
       // 날짜 포맷: 축 tickMark 와 크로스헤어 수직 라벨 모두 YYYY-MM-DD 로 통일.
       // Lightweight Charts 가 Time 을 문자열로 받으면 그대로 통과시키는 formatter.
@@ -59,14 +63,18 @@ export const generateChartHtml = (): string => `<!DOCTYPE html>
         timeScale: {
           borderColor: '${CHART_COLORS.border}',
           tickMarkFormatter: identityDateFormatter,
-          rightOffset: CHART_EDGE_MARGIN_BARS,
-          fixRightEdge: true
+          rightOffset: CHART_EDGE_MARGIN_BARS
         },
-        rightPriceScale: { borderColor: '${CHART_COLORS.border}' },
+        rightPriceScale: { borderColor: '${CHART_COLORS.border}', autoScale: true },
         crosshair: { mode: 1 },
         localization: {
           dateFormat: 'yyyy-MM-dd',
           timeFormatter: identityDateFormatter
+        },
+        // Y축 수동 드래그를 차단하여 가격 오토스케일이 깨지지 않도록 고정.
+        // X축(time) 조작은 스크롤/핀치에 그대로 필요하므로 true 유지.
+        handleScale: {
+          axisPressedMouseMove: { price: false, time: true }
         }
       });
 
@@ -133,6 +141,8 @@ export const generateChartHtml = (): string => `<!DOCTYPE html>
         // v5: setMarkers 대신 createSeriesMarkers primitive 를 closeSeries 에 attach.
         // clearAllSeries 에서 detach 하므로 여기서는 매 호출 새로 생성.
         closeMarkers = LightweightCharts.createSeriesMarkers(closeSeries, markers);
+
+        currentBarCount = data.dates.length;
       };
 
       // Equity 차트 모드
@@ -143,18 +153,32 @@ export const generateChartHtml = (): string => `<!DOCTYPE html>
         actualSeries = chart.addSeries(LightweightCharts.LineSeries, { color: '${CHART_COLORS.green}', lineWidth: 2, lineStyle: 2, title: 'Actual' });
         modelSeries.setData(data.dates.map(function (d, i) { return { time: d, value: data.model_equity[i] }; }));
         actualSeries.setData(data.dates.map(function (d, i) { return { time: d, value: data.actual_equity[i] }; }));
+
+        currentBarCount = data.dates.length;
       };
 
-      // 좌측 경계 재조정 + 좌측 끝 감지 → RN 에 archive 로드 요청.
-      // 좌측으로 CHART_EDGE_MARGIN_BARS 이상 끌려가면 경계에 고정 (whitespace 주입 대신).
+      // 좌우 경계 재조정 + 좌측 끝 감지 → RN 에 archive 로드 요청.
+      // 양쪽 모두 CHART_EDGE_MARGIN_BARS 를 넘어가면 현재 span(to-from) 을
+      // 유지한 채 경계에 밀착시킨다. 단순 from/to 치환은 관성 스크롤로 둘 다
+      // 경계 바깥에 있을 때 from>to assertion 실패를 유발하므로 span 방식 사용.
       // threshold 30 은 관성 스크롤 대응을 위해 조기 선제 로드 트리거.
       var lastEarlierRequest = 0;
       chart.timeScale().subscribeVisibleLogicalRangeChange(function (range) {
         if (!range) return;
+        var span = range.to - range.from;
         if (range.from < -CHART_EDGE_MARGIN_BARS) {
           chart.timeScale().setVisibleLogicalRange({
             from: -CHART_EDGE_MARGIN_BARS,
-            to: range.to
+            to: -CHART_EDGE_MARGIN_BARS + span
+          });
+          return;
+        }
+        // 우측 경계: 마지막 봉 + margin 초과 시 재조정
+        var maxTo = currentBarCount - 1 + CHART_EDGE_MARGIN_BARS;
+        if (currentBarCount > 0 && range.to > maxTo) {
+          chart.timeScale().setVisibleLogicalRange({
+            from: maxTo - span,
+            to: maxTo
           });
           return;
         }

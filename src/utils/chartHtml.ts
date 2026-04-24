@@ -61,10 +61,12 @@ export const generateChartHtml = (): string => `<!DOCTYPE html>
         timeScale: {
           borderColor: '${CHART_COLORS.border}',
           tickMarkFormatter: identityDateFormatter,
-          // rightOffset: 0 + fixLeftEdge / fixRightEdge 로 경계 너머 스크롤을 제스처 단계에서 원천 차단.
-          // (이전 방식인 subscribeVisibleLogicalRangeChange 에서 사후 되돌림은 튕김이 보여 제거.)
+          // 우측만 고정 (마지막 봉 밖으로 스크롤 차단, 튕김 없음).
+          // 좌측은 자유: subscribeVisibleLogicalRangeChange 에서 range.from<30 일 때
+          // load_earlier 를 트리거해 archive 를 자동 prepend 한다. fixLeftEdge: true 로
+          // 막으면 좌측 제스처가 원천 차단되어 load_earlier 트리거가 이어지지 않으므로 false 유지.
           rightOffset: 0,
-          fixLeftEdge: true,
+          fixLeftEdge: false,
           fixRightEdge: true
         },
         rightPriceScale: { borderColor: '${CHART_COLORS.border}', autoScale: true },

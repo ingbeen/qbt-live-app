@@ -23,10 +23,10 @@ import { COLORS } from './src/utils/colors';
 
 // Bottom Tab root param list. 4탭 이름은 AppNavigator 와 일치.
 export type RootTabParamList = {
-  '홈': undefined;
-  '차트': undefined;
-  '거래': undefined;
-  '설정': undefined;
+  홈: undefined;
+  차트: undefined;
+  거래: undefined;
+  설정: undefined;
 };
 
 const navigationRef = createNavigationContainerRef<RootTabParamList>();
@@ -39,18 +39,18 @@ const navigateHome = (): void => {
 };
 
 export default function App() {
-  const user = useStore((s) => s.user);
-  const isOnline = useStore((s) => s.isOnline);
+  const user = useStore(s => s.user);
+  const isOnline = useStore(s => s.isOnline);
 
   useEffect(() => {
     initFirebase();
     // 앱 시작 시점에 알림 권한 다이얼로그 표시 (Android 13+).
     // 첫 설치 후 최초 실행에서만 시스템 다이얼로그 노출. FCM 토큰 등록은
     // 로그인 후 ensureFcmToken 이 담당 (관심사 분리).
-    requestNotificationPermission().catch((e) =>
+    requestNotificationPermission().catch(e =>
       console.error('[fcm] permission request failed:', e),
     );
-    const unsubAuth = subscribeAuthState((u) => {
+    const unsubAuth = subscribeAuthState(u => {
       const st = useStore.getState();
       // 로그아웃 전환(이전 user 있음 → null) 시 캐시/기기 식별자 초기화
       // (auth.signOut 이 store 에 접근하지 않도록 분리 — CLAUDE.md §17.3).
@@ -61,13 +61,13 @@ export default function App() {
       }
       st.setUser(u);
     });
-    const unsubNet = setupNetworkListener((online) => {
+    const unsubNet = setupNetworkListener(online => {
       useStore.getState().setOnline(online);
     });
 
     // 포그라운드 복귀 시 캐시 무효화 + 홈 재로드 (§6.6 네트워크/오프라인 차단 정책의 연속).
     // user 가 없으면 LoginScreen 표시 중이므로 스킵. clearAll 은 user/isOnline/deviceId 유지.
-    const appStateSub = AppState.addEventListener('change', (state) => {
+    const appStateSub = AppState.addEventListener('change', state => {
       if (state !== 'active') return;
       const st = useStore.getState();
       if (!st.user) return;
@@ -91,7 +91,7 @@ export default function App() {
         st.setDeviceId(deviceId);
         st.setFcmRegistered(registered);
       })
-      .catch((e) => console.error('[fcm] ensure failed:', e));
+      .catch(e => console.error('[fcm] ensure failed:', e));
     const unsubFg = setupForegroundHandler();
     const unsubTap = setupNotificationTapHandler(navigateHome);
     return () => {

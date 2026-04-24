@@ -1,12 +1,7 @@
 import React from 'react';
 import { Modal, View, Text, StyleSheet, Pressable } from 'react-native';
 import { COLORS, COLOR_PRESETS } from '../utils/colors';
-import {
-  MARGIN_SM,
-  PADDING_SM,
-  RADIUS_MD,
-  SYMBOLS,
-} from '../utils/constants';
+import { MARGIN_SM, PADDING_SM, RADIUS_MD, SYMBOLS } from '../utils/constants';
 import { pressedOpacity } from '../utils/pressable';
 import type { AssetId, PendingOrder, Signal } from '../types/rtdb';
 import {
@@ -43,16 +38,14 @@ export const SyncDialog: React.FC<Props> = ({
       <View style={styles.backdrop}>
         <View style={styles.dialog}>
           <Text style={styles.title}>Model 동기화</Text>
-          <Text style={styles.body}>
-            Model을 실제 기준으로 동기화합니다.
-          </Text>
+          <Text style={styles.body}>Model을 실제 기준으로 동기화합니다.</Text>
 
           {pendings.length > 0 && (
             <View style={styles.pendingBox}>
               <Text style={styles.pendingTitle}>
                 {SYMBOLS.WARN} 체결 예정 주문이 있습니다:
               </Text>
-              {pendings.map((p) => {
+              {pendings.map(p => {
                 const sharesText = formatPendingShares(
                   p.delta_amount,
                   signals?.[p.asset_id]?.close,

@@ -32,7 +32,7 @@ export const subscribeAuthState = (
   // uid + email 동일하면 중복으로 간주해 무시하여 구독 측의 useEffect 가 2회 발동되지 않게 한다.
   let lastUid: string | null = null;
   let lastEmail: string | null = null;
-  return onAuthStateChanged(getAuth(), (fbUser) => {
+  return onAuthStateChanged(getAuth(), fbUser => {
     const uid = fbUser ? fbUser.uid : null;
     const email = fbUser ? fbUser.email : null;
     if (uid === lastUid && email === lastEmail) return;

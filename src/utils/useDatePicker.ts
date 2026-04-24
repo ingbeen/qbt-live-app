@@ -8,10 +8,7 @@ import { toIsoDate } from './parse';
 export interface UseDatePickerResult {
   showPicker: boolean;
   openPicker: () => void;
-  onPickerChange: (
-    event: DateTimePickerEvent,
-    selectedDate?: Date,
-  ) => void;
+  onPickerChange: (event: DateTimePickerEvent, selectedDate?: Date) => void;
 }
 
 export const useDatePicker = (

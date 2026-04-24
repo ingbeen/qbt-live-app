@@ -14,17 +14,17 @@ import { Toast } from '../components/Toast';
 import { ErrorState } from '../components/ErrorState';
 
 export const HomeScreen: React.FC = () => {
-  const portfolio = useStore((s) => s.portfolio);
-  const signals = useStore((s) => s.signals);
-  const pendingOrders = useStore((s) => s.pendingOrders);
-  const inboxFills = useStore((s) => s.inboxFills);
-  const inboxFillDismiss = useStore((s) => s.inboxFillDismiss);
-  const loading = useStore((s) => s.loading);
-  const lastError = useStore((s) => s.lastError);
-  const lastToast = useStore((s) => s.lastToast);
-  const refreshHome = useStore((s) => s.refreshHome);
-  const submitModelSync = useStore((s) => s.submitModelSync);
-  const hideToast = useStore((s) => s.hideToast);
+  const portfolio = useStore(s => s.portfolio);
+  const signals = useStore(s => s.signals);
+  const pendingOrders = useStore(s => s.pendingOrders);
+  const inboxFills = useStore(s => s.inboxFills);
+  const inboxFillDismiss = useStore(s => s.inboxFillDismiss);
+  const loading = useStore(s => s.loading);
+  const lastError = useStore(s => s.lastError);
+  const lastToast = useStore(s => s.lastToast);
+  const refreshHome = useStore(s => s.refreshHome);
+  const submitModelSync = useStore(s => s.submitModelSync);
+  const hideToast = useStore(s => s.hideToast);
 
   const [dialogVisible, setDialogVisible] = useState(false);
 
@@ -75,9 +75,7 @@ export const HomeScreen: React.FC = () => {
         onRefresh={onRefresh}
         contentContainerStyle={styles.content}
       >
-        {lastError ? (
-          <Text style={styles.errorBanner}>{lastError}</Text>
-        ) : null}
+        {lastError ? <Text style={styles.errorBanner}>{lastError}</Text> : null}
 
         <UpdateStatusBadge executionDate={portfolio.execution_date} />
 

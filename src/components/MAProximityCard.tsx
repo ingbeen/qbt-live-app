@@ -14,7 +14,7 @@ export const MAProximityCard: React.FC<Props> = ({ signals }) => {
     <View style={styles.card}>
       <Text style={styles.title}>MA 근접도 (200일선)</Text>
       <View style={styles.divider} />
-      {ASSETS.map((id) => {
+      {ASSETS.map(id => {
         const pct = signals[id].ma_distance_pct;
         const color = pct >= 0 ? COLORS.green : COLORS.red;
         return (

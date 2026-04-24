@@ -47,6 +47,7 @@ import {
   priceArchiveLoadingKey,
   equityArchiveLoadingKey,
 } from '../utils/loadingKeys';
+import { computeNextArchiveYear } from '../utils/chartArchive';
 
 export type { AuthUser };
 
@@ -335,11 +336,41 @@ export const useStore = create<Store>((set, get) => {
             readEquityChartMeta(),
             readEquityChartRecent(),
           ]);
+          // recent 가 해당 연도 1/1 부터 시작하지 않으면 recent 앞쪽을 채우기
+          // 위해 첫 연도 archive 를 함께 로드. 실패해도 recent 는 세팅한다
+          // (좌측 스크롤로 재시도 가능).
+          const existingEquity = get().equityChart;
+          const loadedYears = Object.keys(existingEquity.archive).map(Number);
+          const firstYearToLoad =
+            meta && recent
+              ? computeNextArchiveYear(
+                  recent.dates[0],
+                  meta.archive_years,
+                  loadedYears,
+                )
+              : null;
+          let firstArchive: EquityChartSeries | null = null;
+          if (firstYearToLoad !== null) {
+            try {
+              firstArchive = await readEquityChartArchive(firstYearToLoad);
+            } catch (archErr) {
+              console.error(
+                '[store] refreshChart equity initial archive load failed:',
+                archErr,
+              );
+            }
+          }
+          const mergedArchive: Partial<Record<number, EquityChartSeries>> = {
+            ...existingEquity.archive,
+          };
+          if (firstYearToLoad !== null && firstArchive) {
+            mergedArchive[firstYearToLoad] = firstArchive;
+          }
           set({
             equityChart: {
               meta,
               recent,
-              archive: get().equityChart.archive,
+              archive: mergedArchive,
             },
             lastError: null,
           });
@@ -350,13 +381,44 @@ export const useStore = create<Store>((set, get) => {
             readPriceChartRecent(assetId),
           ]);
           const existing = get().priceCharts[assetId];
+          const loadedYears = existing
+            ? Object.keys(existing.archive).map(Number)
+            : [];
+          const firstYearToLoad =
+            meta && recent
+              ? computeNextArchiveYear(
+                  recent.dates[0],
+                  meta.archive_years,
+                  loadedYears,
+                )
+              : null;
+          let firstArchive: PriceChartSeries | null = null;
+          if (firstYearToLoad !== null) {
+            try {
+              firstArchive = await readPriceChartArchive(
+                assetId,
+                firstYearToLoad,
+              );
+            } catch (archErr) {
+              console.error(
+                '[store] refreshChart price initial archive load failed:',
+                archErr,
+              );
+            }
+          }
+          const mergedArchive: Partial<Record<number, PriceChartSeries>> = {
+            ...(existing?.archive ?? {}),
+          };
+          if (firstYearToLoad !== null && firstArchive) {
+            mergedArchive[firstYearToLoad] = firstArchive;
+          }
           set({
             priceCharts: {
               ...get().priceCharts,
               [assetId]: {
                 meta,
                 recent,
-                archive: existing?.archive ?? {},
+                archive: mergedArchive,
               },
             },
             lastError: null,

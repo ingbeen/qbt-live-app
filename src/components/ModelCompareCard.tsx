@@ -29,7 +29,7 @@ export const ModelCompareCard: React.FC<Props> = ({
   const [expanded, setExpanded] = useState(false);
 
   const onToggle = useCallback(() => {
-    setExpanded((prev) => !prev);
+    setExpanded(prev => !prev);
   }, []);
 
   const cashDiff = portfolio.shared_cash_model - portfolio.shared_cash_actual;
@@ -39,10 +39,7 @@ export const ModelCompareCard: React.FC<Props> = ({
   return (
     <View style={styles.card}>
       <Pressable
-        style={({ pressed }) => [
-          styles.headerRow,
-          pressedOpacity(pressed),
-        ]}
+        style={({ pressed }) => [styles.headerRow, pressedOpacity(pressed)]}
         onPress={onToggle}
       >
         <Text style={styles.title}>Model 비교</Text>
@@ -77,7 +74,7 @@ export const ModelCompareCard: React.FC<Props> = ({
 
           <View style={styles.divider} />
 
-          {ASSETS.map((id) => {
+          {ASSETS.map(id => {
             const snap = portfolio.assets[id];
             const diff = snap.model_shares - snap.actual_shares;
             const diffColor = diff !== 0 ? COLORS.yellow : COLORS.sub;
@@ -87,7 +84,9 @@ export const ModelCompareCard: React.FC<Props> = ({
                 <Text style={styles.assetCompare}>
                   M:{snap.model_shares} / A:{snap.actual_shares}
                   {diff !== 0 ? ' ' : ''}
-                  <Text style={{ color: diffColor }}>{formatSignedInt(diff)}</Text>
+                  <Text style={{ color: diffColor }}>
+                    {formatSignedInt(diff)}
+                  </Text>
                 </Text>
               </View>
             );

@@ -16,7 +16,7 @@ export const AssetSelector: React.FC<AssetSelectorProps> = ({
   onChange,
 }) => (
   <View style={styles.row}>
-    {ASSETS.map((id) => {
+    {ASSETS.map(id => {
       const isActive = value === id;
       return (
         <Pressable

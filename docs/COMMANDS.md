@@ -6,24 +6,19 @@
 
 ---
 
-## 1. 일상 개발 워크플로우 (멀티 터미널)
+## 1. 일상 개발 워크플로우
 
 프로젝트 루트 기준. Git Bash(VSCode 통합 터미널) 사용.
 
-### Terminal A — Metro 번들러 (상주)
+### 빌드/설치/실행
 
 ```sh
-npm start
+npm run android
 ```
 
-### Terminal B — 작업별 1회 빌드/설치
+> `npm run android` 는 Metro 번들러를 포함해 자동으로 띄우고, 빌드/설치까지 수행한다.
 
-```sh
-# Metro 는 Terminal A 에서 돌고 있으므로 --no-packager 로 중복 실행 방지
-npm run android -- --no-packager
-```
-
-### Terminal C — 로그 관찰 (필요 시)
+### 로그 관찰 (필요 시, 별도 터미널)
 
 ```sh
 adb logcat -s ReactNativeJS:V chromium:V
@@ -35,9 +30,7 @@ adb logcat -s ReactNativeJS:V chromium:V
 
 ```sh
 npm install               # 의존성 설치 (package-lock.json 기준)
-npm start                 # Metro 번들러 (포트 8081)
-npm run android           # Metro 포함 빌드/실행 (Metro 가 안 떠 있을 때)
-npm run android -- --no-packager   # Metro 없이 빌드/설치 (Terminal A 상주 시)
+npm run android           # Metro 포함 빌드/설치/실행
 npm run lint              # ESLint
 ```
 

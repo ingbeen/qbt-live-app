@@ -27,13 +27,19 @@ const getDeviceId = (): Promise<string> => {
       const stored = await AsyncStorage.getItem(DEVICE_ID_KEY);
       if (stored) return stored;
     } catch (error) {
-      console.warn('[fcm] AsyncStorage read failed, falling back to new UUID', error);
+      console.warn(
+        '[fcm] AsyncStorage read failed, falling back to new UUID',
+        error,
+      );
     }
     const fresh = uuid.v4() as string;
     try {
       await AsyncStorage.setItem(DEVICE_ID_KEY, fresh);
     } catch (error) {
-      console.warn('[fcm] AsyncStorage write failed, device_id will not persist', error);
+      console.warn(
+        '[fcm] AsyncStorage write failed, device_id will not persist',
+        error,
+      );
     }
     return fresh;
   })();
@@ -95,7 +101,7 @@ export const ensureFcmToken = async (): Promise<FcmTokenResult> => {
     tokenRefreshUnsub();
     tokenRefreshUnsub = null;
   }
-  tokenRefreshUnsub = onTokenRefresh(messaging, async (newToken) => {
+  tokenRefreshUnsub = onTokenRefresh(messaging, async newToken => {
     try {
       await submitDeviceToken(deviceId, newToken);
       console.debug('[fcm] token refreshed');
@@ -119,9 +125,9 @@ export const setupNotificationTapHandler = (
   const messaging = getMessaging(getApp());
   const unsub = onNotificationOpenedApp(messaging, () => onTap());
   getInitialNotification(messaging)
-    .then((msg) => {
+    .then(msg => {
       if (msg) onTap();
     })
-    .catch((e) => console.error('[fcm] getInitialNotification failed:', e));
+    .catch(e => console.error('[fcm] getInitialNotification failed:', e));
   return unsub;
 };

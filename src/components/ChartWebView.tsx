@@ -53,12 +53,12 @@ export const ChartWebView = forwardRef<WebView, ChartWebViewProps>(
         scalesPageToFit={false}
         scrollEnabled={false}
         onMessage={handleMessage}
-        onError={(syntheticEvent) => {
+        onError={syntheticEvent => {
           const { nativeEvent } = syntheticEvent;
           console.error('[chart] WebView error:', nativeEvent);
           onError?.('차트를 불러올 수 없습니다. 네트워크를 확인하세요.');
         }}
-        onHttpError={(syntheticEvent) => {
+        onHttpError={syntheticEvent => {
           const { nativeEvent } = syntheticEvent;
           console.error('[chart] WebView HTTP error:', nativeEvent);
         }}

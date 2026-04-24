@@ -88,9 +88,7 @@ export const validateBalanceAdjust = (
   }
 
   const assetFieldsSet =
-    p.new_shares != null ||
-    p.new_avg_price != null ||
-    p.new_entry_date != null;
+    p.new_shares != null || p.new_avg_price != null || p.new_entry_date != null;
 
   if (assetFieldsSet && !p.asset_id) {
     fieldErrors.asset_id = '자산을 선택하세요';

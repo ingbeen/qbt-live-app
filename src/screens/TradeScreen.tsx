@@ -20,18 +20,18 @@ import { ErrorState } from '../components/ErrorState';
 type Mode = 'fill' | 'adjust';
 
 export const TradeScreen: React.FC = () => {
-  const portfolio = useStore((s) => s.portfolio);
-  const signals = useStore((s) => s.signals);
-  const pendingOrders = useStore((s) => s.pendingOrders);
-  const historyFills = useStore((s) => s.historyFills);
-  const historyBalanceAdjusts = useStore((s) => s.historyBalanceAdjusts);
-  const historySignals = useStore((s) => s.historySignals);
-  const loading = useStore((s) => s.loading);
-  const lastError = useStore((s) => s.lastError);
-  const lastToast = useStore((s) => s.lastToast);
-  const refreshHome = useStore((s) => s.refreshHome);
-  const refreshTrade = useStore((s) => s.refreshTrade);
-  const hideToast = useStore((s) => s.hideToast);
+  const portfolio = useStore(s => s.portfolio);
+  const signals = useStore(s => s.signals);
+  const pendingOrders = useStore(s => s.pendingOrders);
+  const historyFills = useStore(s => s.historyFills);
+  const historyBalanceAdjusts = useStore(s => s.historyBalanceAdjusts);
+  const historySignals = useStore(s => s.historySignals);
+  const loading = useStore(s => s.loading);
+  const lastError = useStore(s => s.lastError);
+  const lastToast = useStore(s => s.lastToast);
+  const refreshHome = useStore(s => s.refreshHome);
+  const refreshTrade = useStore(s => s.refreshTrade);
+  const hideToast = useStore(s => s.hideToast);
 
   const [mode, setMode] = useState<Mode>('fill');
 

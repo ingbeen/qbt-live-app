@@ -30,16 +30,17 @@ const Row: React.FC<RowProps> = ({ label, value, badge }) => (
 );
 
 export const SettingsScreen: React.FC = () => {
-  const user = useStore((s) => s.user);
-  const portfolio = useStore((s) => s.portfolio);
-  const fcmRegistered = useStore((s) => s.fcmRegistered);
+  const user = useStore(s => s.user);
+  const portfolio = useStore(s => s.portfolio);
+  const fcmRegistered = useStore(s => s.fcmRegistered);
   const [signingOut, setSigningOut] = useState(false);
 
   // portfolio 가 로드된 상태면 RTDB 연결 정상. lastError 는 체결 저장 실패 등 다른 경로에서도
   // 세팅되므로 연결 상태 판정에서 제외.
-  const rtdbBadge = portfolio != null
-    ? { text: '정상', color: COLORS.green }
-    : { text: '오류', color: COLORS.red };
+  const rtdbBadge =
+    portfolio != null
+      ? { text: '정상', color: COLORS.green }
+      : { text: '오류', color: COLORS.red };
 
   const fcmBadge = fcmRegistered
     ? { text: '등록됨', color: COLORS.green }
@@ -60,10 +61,7 @@ export const SettingsScreen: React.FC = () => {
   }, [signingOut]);
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-    >
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.card}>
         <Row label="계정" value={user?.email ?? '-'} />
         <Row label="Firebase" value="qbt-live (Spark)" />

@@ -30,20 +30,16 @@ const priceLength = (s: PriceChartSeries): number => {
     s.lower_band.length,
   ];
   const min = Math.min(...lens);
-  if (lens.some((l) => l !== min)) {
+  if (lens.some(l => l !== min)) {
     console.warn('[chart] price series length mismatch:', lens);
   }
   return min;
 };
 
 const equityLength = (s: EquityChartSeries): number => {
-  const lens = [
-    s.dates.length,
-    s.model_equity.length,
-    s.actual_equity.length,
-  ];
+  const lens = [s.dates.length, s.model_equity.length, s.actual_equity.length];
   const min = Math.min(...lens);
-  if (lens.some((l) => l !== min)) {
+  if (lens.some(l => l !== min)) {
     console.warn('[chart] equity series length mismatch:', lens);
   }
   return min;
@@ -76,25 +72,25 @@ export const mergeChartSeries = (
   const sortedDates = Array.from(map.keys()).sort();
   return {
     dates: sortedDates,
-    close: sortedDates.map((d) => map.get(d)!.close),
-    ma_value: sortedDates.map((d) => map.get(d)!.ma_value),
-    upper_band: sortedDates.map((d) => map.get(d)!.upper_band),
-    lower_band: sortedDates.map((d) => map.get(d)!.lower_band),
+    close: sortedDates.map(d => map.get(d)!.close),
+    ma_value: sortedDates.map(d => map.get(d)!.ma_value),
+    upper_band: sortedDates.map(d => map.get(d)!.upper_band),
+    lower_band: sortedDates.map(d => map.get(d)!.lower_band),
     buy_signals: dedupMarkers([
       ...(recent.buy_signals ?? []),
-      ...archives.flatMap((a) => a.buy_signals ?? []),
+      ...archives.flatMap(a => a.buy_signals ?? []),
     ]),
     sell_signals: dedupMarkers([
       ...(recent.sell_signals ?? []),
-      ...archives.flatMap((a) => a.sell_signals ?? []),
+      ...archives.flatMap(a => a.sell_signals ?? []),
     ]),
     user_buys: dedupMarkers([
       ...(recent.user_buys ?? []),
-      ...archives.flatMap((a) => a.user_buys ?? []),
+      ...archives.flatMap(a => a.user_buys ?? []),
     ]),
     user_sells: dedupMarkers([
       ...(recent.user_sells ?? []),
-      ...archives.flatMap((a) => a.user_sells ?? []),
+      ...archives.flatMap(a => a.user_sells ?? []),
     ]),
   };
 };
@@ -111,11 +107,8 @@ export const mergeEquitySeries = (
       const date = s.dates[i];
       const model = s.model_equity[i];
       const actual = s.actual_equity[i];
-      if (
-        date === undefined ||
-        model === undefined ||
-        actual === undefined
-      ) continue;
+      if (date === undefined || model === undefined || actual === undefined)
+        continue;
       map.set(date, {
         model_equity: model,
         actual_equity: actual,
@@ -129,7 +122,7 @@ export const mergeEquitySeries = (
   const sortedDates = Array.from(map.keys()).sort();
   return {
     dates: sortedDates,
-    model_equity: sortedDates.map((d) => map.get(d)!.model_equity),
-    actual_equity: sortedDates.map((d) => map.get(d)!.actual_equity),
+    model_equity: sortedDates.map(d => map.get(d)!.model_equity),
+    actual_equity: sortedDates.map(d => map.get(d)!.actual_equity),
   };
 };

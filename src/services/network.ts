@@ -9,13 +9,13 @@ const isOnline = (state: NetInfoState): boolean =>
 export const setupNetworkListener = (
   onChange: (online: boolean) => void,
 ): (() => void) => {
-  const unsubscribe = NetInfo.addEventListener((state) => {
+  const unsubscribe = NetInfo.addEventListener(state => {
     onChange(isOnline(state));
   });
   // addEventListener 가 초기 이벤트를 보장하지 않는 경우가 있어 명시적 fetch 로 초기 상태 확정.
   NetInfo.fetch()
-    .then((state) => onChange(isOnline(state)))
-    .catch((e) => console.error('[network] initial fetch failed:', e));
+    .then(state => onChange(isOnline(state)))
+    .catch(e => console.error('[network] initial fetch failed:', e));
   return unsubscribe;
 };
 

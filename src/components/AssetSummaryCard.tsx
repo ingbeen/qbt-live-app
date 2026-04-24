@@ -56,14 +56,15 @@ export const AssetSummaryCard: React.FC<Props> = ({
 
       <View style={styles.divider} />
 
-      {ASSETS.map((id) => {
+      {ASSETS.map(id => {
         const snap = portfolio.assets[id];
         const pending = pendingOrders?.[id];
         const badge = getAssetBadge(snap, pending);
         const close = signals?.[id]?.close;
         const hasPrice = close !== undefined && close > 0;
         const valueUSD = hasPrice ? snap.actual_shares * close : 0;
-        const weight = hasPrice && totalEquity > 0 ? valueUSD / totalEquity : null;
+        const weight =
+          hasPrice && totalEquity > 0 ? valueUSD / totalEquity : null;
 
         return (
           <View key={id} style={styles.row}>

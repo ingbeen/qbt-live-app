@@ -11,9 +11,10 @@ import { ChartWebView } from '../components/ChartWebView';
 import { ChartLegend } from '../components/ChartLegend';
 import { Toast } from '../components/Toast';
 import { chartLoadingKey } from '../utils/loadingKeys';
+import { computeNextArchiveYear } from '../utils/chartArchive';
 
-// recent.dates 의 가장 이른 연도와 archive 로드 연도들 중 최소값을 기준으로 직전 연도를 계산.
-// archive_years 에 포함되지 않으면 null (더 로드할 데이터 없음).
+// 좌측 스크롤 로드 시 필요한 연도 1개를 결정.
+// 판정 규칙은 `computeNextArchiveYear` 에 통일 (초기 로드와 동일 규칙 공유).
 // firstDate 빈 배열은 RTDB 계약 위반이므로 null + 호출부에서 사용자 에러 토스트.
 const computeYearToLoad = (
   meta: { archive_years: number[] },
@@ -27,10 +28,7 @@ const computeYearToLoad = (
     return null;
   }
   const loadedYears = Object.keys(archiveMap).map(Number);
-  const recentEarliestYear = parseInt(firstDate.slice(0, 4), 10);
-  const earliestLoaded = Math.min(recentEarliestYear, ...loadedYears);
-  const yearToLoad = earliestLoaded - 1;
-  return meta.archive_years.includes(yearToLoad) ? yearToLoad : null;
+  return computeNextArchiveYear(firstDate, meta.archive_years, loadedYears);
 };
 
 export const ChartScreen: React.FC = () => {

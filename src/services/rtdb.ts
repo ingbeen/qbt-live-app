@@ -25,6 +25,10 @@ import type {
 export type { InboxItem, SignalHistoryEntry };
 import { RTDB_PATHS, RTDB_TIMEOUT_MS } from '../utils/constants';
 import { kstNow } from '../utils/format';
+import {
+  normalizePriceSeries,
+  type RawPriceChartSeries,
+} from '../utils/chartNormalize';
 
 const withTimeout = <T>(p: Promise<T>, ms: number): Promise<T> =>
   Promise.race([
@@ -158,18 +162,27 @@ export const readPriceChartMeta = (
 ): Promise<PriceChartMeta | null> =>
   readOnce<PriceChartMeta>(`${RTDB_PATHS.CHARTS_PRICES}/${assetId}/meta`);
 
-export const readPriceChartRecent = (
+// RTDB 는 null-only 배열을 저장하지 않아 워밍업 구간(예: first_date 에 가까운 초기
+// archive) 에서 ma_value / upper_band / lower_band 가 통째로 부재할 수 있다.
+// 서비스 계층에서 한 번 정규화하여 내부 로직의 접근을 안전하게 한다.
+export const readPriceChartRecent = async (
   assetId: AssetId,
-): Promise<PriceChartSeries | null> =>
-  readOnce<PriceChartSeries>(`${RTDB_PATHS.CHARTS_PRICES}/${assetId}/recent`);
+): Promise<PriceChartSeries | null> => {
+  const raw = await readOnce<RawPriceChartSeries>(
+    `${RTDB_PATHS.CHARTS_PRICES}/${assetId}/recent`,
+  );
+  return raw ? normalizePriceSeries(raw) : null;
+};
 
-export const readPriceChartArchive = (
+export const readPriceChartArchive = async (
   assetId: AssetId,
   year: number,
-): Promise<PriceChartSeries | null> =>
-  readOnce<PriceChartSeries>(
+): Promise<PriceChartSeries | null> => {
+  const raw = await readOnce<RawPriceChartSeries>(
     `${RTDB_PATHS.CHARTS_PRICES}/${assetId}/archive/${year}`,
   );
+  return raw ? normalizePriceSeries(raw) : null;
+};
 
 export const readEquityChartMeta = (): Promise<EquityChartMeta | null> =>
   readOnce<EquityChartMeta>(`${RTDB_PATHS.CHARTS_EQUITY}/meta`);

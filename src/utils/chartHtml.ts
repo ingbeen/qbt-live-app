@@ -43,10 +43,9 @@ export const generateChartHtml = (): string => `<!DOCTYPE html>
   </div>
   <script>
     (function () {
-      // 차트 좌우 경계에 둘 여유 (bars). rightOffset 은 여유 공간 생성에,
-      // 좌우 모두의 "그 이상 스크롤 불가" 는 subscribeVisibleLogicalRangeChange
-      // 에서 재조정한다 (fixRightEdge 는 rightOffset 을 무효화하는 공식 이슈로 미사용).
-      var CHART_EDGE_MARGIN_BARS = 60;
+      // 좌/우 경계는 데이터 끝선에 정확히 고정 (margin 0). 그 이상 스크롤 불가는
+      // subscribeVisibleLogicalRangeChange 에서 재조정 (fixRightEdge 는 공식 이슈로 미사용).
+      var CHART_EDGE_MARGIN_BARS = 0;
       // 현재 차트에 로드된 데이터 봉 수. 우측 경계 재조정에 사용. setPriceChart /
       // setEquityChart 호출마다 data.dates.length 로 갱신.
       var currentBarCount = 0;
@@ -55,6 +54,12 @@ export const generateChartHtml = (): string => `<!DOCTYPE html>
       // Lightweight Charts 가 Time 을 문자열로 받으면 그대로 통과시키는 formatter.
       var identityDateFormatter = function (time) {
         return typeof time === 'string' ? time : '';
+      };
+
+      // 우측 가격축 값 포맷: 천단위 콤마 + 소수점 2자리. 주가/Equity 공통 적용.
+      var priceAxisFormatter = function (p) {
+        if (typeof p !== 'number' || !isFinite(p)) return '';
+        return p.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       };
 
       var chart = LightweightCharts.createChart(document.getElementById('chart'), {
@@ -69,7 +74,8 @@ export const generateChartHtml = (): string => `<!DOCTYPE html>
         crosshair: { mode: 1 },
         localization: {
           dateFormat: 'yyyy-MM-dd',
-          timeFormatter: identityDateFormatter
+          timeFormatter: identityDateFormatter,
+          priceFormatter: priceAxisFormatter
         },
         // Y축 수동 드래그를 차단하여 가격 오토스케일이 깨지지 않도록 고정.
         // X축(time) 조작은 스크롤/핀치에 그대로 필요하므로 true 유지.
@@ -101,10 +107,12 @@ export const generateChartHtml = (): string => `<!DOCTYPE html>
       window.setPriceChart = function (data) {
         clearAllSeries();
 
-        closeSeries = chart.addSeries(LightweightCharts.LineSeries, { color: '${CHART_COLORS.accent}', lineWidth: 2 });
-        maSeries = chart.addSeries(LightweightCharts.LineSeries, { color: '${CHART_COLORS.yellow}', lineWidth: 1, lineStyle: 2 });
-        upperSeries = chart.addSeries(LightweightCharts.LineSeries, { color: '${CHART_COLORS.red}aa', lineWidth: 1, lineStyle: 2 });
-        lowerSeries = chart.addSeries(LightweightCharts.LineSeries, { color: '${CHART_COLORS.green}aa', lineWidth: 1, lineStyle: 2 });
+        // lastValueVisible / priceLineVisible: 우측 마지막 값 강조 라벨과 수평 가격선 제거 (주가/Equity 공통).
+        // EMA 는 실선(lineStyle 생략 → 기본 Solid), 상/하단 밴드는 점선(Dashed = 2) 유지.
+        closeSeries = chart.addSeries(LightweightCharts.LineSeries, { color: '${CHART_COLORS.accent}', lineWidth: 2, lastValueVisible: false, priceLineVisible: false });
+        maSeries = chart.addSeries(LightweightCharts.LineSeries, { color: '${CHART_COLORS.yellow}', lineWidth: 1, lastValueVisible: false, priceLineVisible: false });
+        upperSeries = chart.addSeries(LightweightCharts.LineSeries, { color: '${CHART_COLORS.red}aa', lineWidth: 1, lineStyle: 2, lastValueVisible: false, priceLineVisible: false });
+        lowerSeries = chart.addSeries(LightweightCharts.LineSeries, { color: '${CHART_COLORS.green}aa', lineWidth: 1, lineStyle: 2, lastValueVisible: false, priceLineVisible: false });
 
         closeSeries.setData(data.dates.map(function (d, i) { return { time: d, value: data.close[i] }; }));
         maSeries.setData(
@@ -149,8 +157,8 @@ export const generateChartHtml = (): string => `<!DOCTYPE html>
       window.setEquityChart = function (data) {
         clearAllSeries();
 
-        modelSeries = chart.addSeries(LightweightCharts.LineSeries, { color: '${CHART_COLORS.accent}', lineWidth: 2, title: 'Model' });
-        actualSeries = chart.addSeries(LightweightCharts.LineSeries, { color: '${CHART_COLORS.green}', lineWidth: 2, lineStyle: 2, title: 'Actual' });
+        modelSeries = chart.addSeries(LightweightCharts.LineSeries, { color: '${CHART_COLORS.accent}', lineWidth: 2, title: 'Model', lastValueVisible: false, priceLineVisible: false });
+        actualSeries = chart.addSeries(LightweightCharts.LineSeries, { color: '${CHART_COLORS.green}', lineWidth: 2, lineStyle: 2, title: 'Actual', lastValueVisible: false, priceLineVisible: false });
         modelSeries.setData(data.dates.map(function (d, i) { return { time: d, value: data.model_equity[i] }; }));
         actualSeries.setData(data.dates.map(function (d, i) { return { time: d, value: data.actual_equity[i] }; }));
 

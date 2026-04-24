@@ -102,7 +102,7 @@ scrcpy --tcpip                      # 무선 (USB 1회 연결 후 분리 가능)
 scrcpy --tcpip=192.168.0.123:5555   # IP 직접 지정 (tcpip 모드 활성 후)
 
 # 무선에서는 기기의 화면 꺼짐 타임아웃을 일시적으로 키운다 (scrcpy 종료 시 원래 값으로 자동 복원, scrcpy 2.7+)
-scrcpy --tcpip --screen-off-timeout=86400   # 24시간
+scrcpy --screen-off-timeout=86400 --tcpip    # 24시간
 ```
 
 ### 6.2 자주 쓰는 옵션

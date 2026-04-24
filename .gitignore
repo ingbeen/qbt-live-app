@@ -54,6 +54,7 @@ metro-cache/
 android/app/build/
 android/build/
 android/.gradle/
+android/.kotlin/
 android/.cxx/
 android/app/.cxx/
 android/captures/

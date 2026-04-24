@@ -6,7 +6,21 @@
 
 ---
 
-## 1. 일상 개발 워크플로우
+## 1. 자주 쓰는 명령어 (Quick Reference)
+
+```sh
+npm run android                              # 빌드/설치
+adb devices                                  # 연결된 기기/에뮬레이터 확인
+adb logcat -s ReactNativeJS:V chromium:V     # RN 로그
+scrcpy                                       # 화면 미러링 (USB)
+scrcpy --tcpip                               # 화면 미러링 (무선)
+```
+
+상세 워크플로우 / 옵션은 아래 섹션 참고.
+
+---
+
+## 2. 일상 개발 워크플로우
 
 프로젝트 루트 기준. Git Bash(VSCode 통합 터미널) 사용.
 
@@ -26,7 +40,7 @@ adb logcat -s ReactNativeJS:V chromium:V
 
 ---
 
-## 2. 주요 npm 스크립트
+## 3. 주요 npm 스크립트
 
 ```sh
 npm install               # 의존성 설치 (package-lock.json 기준)
@@ -36,7 +50,7 @@ npm run lint              # ESLint
 
 ---
 
-## 3. 앱 상태 초기화
+## 4. 앱 상태 초기화
 
 앱의 AsyncStorage(`device_id`), 캐시, 권한 상태까지 전부 초기화하려면:
 
@@ -48,21 +62,21 @@ adb shell pm clear com.ingbeen.qbtlive
 
 ---
 
-## 4. 디버깅
+## 5. 디버깅
 
-### 4.1 RN 로그만 필터링
+### 5.1 RN 로그만 필터링
 
 ```sh
 adb logcat -s ReactNativeJS:V chromium:V
 ```
 
-### 4.2 전체 로그에서 앱 PID 로 필터링
+### 5.2 전체 로그에서 앱 PID 로 필터링
 
 ```sh
 adb logcat --pid=$(adb shell pidof com.ingbeen.qbtlive)
 ```
 
-### 4.3 연결된 기기/에뮬레이터 확인
+### 5.3 연결된 기기/에뮬레이터 확인
 
 ```sh
 adb devices
@@ -70,7 +84,50 @@ adb devices
 
 ---
 
-## 5. 초기 셋업 / 새 머신 구성
+## 6. 화면 미러링 (scrcpy)
+
+설치 (winget):
+
+```sh
+winget install --exact Genymobile.scrcpy
+```
+
+git bash 에서 호출하려면 `~/bin/scrcpy` wrapper 사용 (winget 패키지 폴더의 최신 버전 자동 탐색).
+
+### 6.1 기본 사용
+
+```sh
+scrcpy                              # USB 연결
+scrcpy --tcpip                      # 무선 (USB 1회 연결 후 분리 가능)
+scrcpy --tcpip=192.168.0.123:5555   # IP 직접 지정 (tcpip 모드 활성 후)
+
+# 무선에서는 기기의 화면 꺼짐 타임아웃을 일시적으로 키운다 (scrcpy 종료 시 원래 값으로 자동 복원, scrcpy 2.7+)
+scrcpy --tcpip --screen-off-timeout=86400   # 24시간
+```
+
+### 6.2 자주 쓰는 옵션
+
+```sh
+scrcpy --max-size 1280              # 해상도 제한 (성능/지연 개선)
+scrcpy --max-fps 30                 # FPS 제한
+scrcpy --video-bit-rate 2M          # 비트레이트 낮춤 (무선 약할 때)
+```
+
+### 6.3 기기 IP 확인
+
+```sh
+adb shell ip route | awk '{print $9}'        # USB 연결 시 기기 IP 출력
+```
+
+### 6.4 무선 모드 종료 / USB 모드 복귀
+
+```sh
+adb usb
+```
+
+---
+
+## 7. 초기 셋업 / 새 머신 구성
 
 새로운 개발 머신에서 프로젝트를 처음 구동할 때.
 
@@ -101,7 +158,7 @@ npm run android
 
 ---
 
-## 6. 환경변수 (Windows)
+## 8. 환경변수 (Windows)
 
 새 머신 셋업 시 아래 환경변수가 설정되어 있어야 한다.
 

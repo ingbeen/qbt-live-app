@@ -70,8 +70,11 @@ export const generateChartHtml = (): string => `<!DOCTYPE html>
       var lowerSeries = null;
       var modelSeries = null;
       var actualSeries = null;
+      // v5 에서 markers 는 별도 primitive. series 제거 전 detach 필요.
+      var closeMarkers = null;
 
       function clearAllSeries() {
+        if (closeMarkers) { closeMarkers.detach(); closeMarkers = null; }
         if (closeSeries) { chart.removeSeries(closeSeries); closeSeries = null; }
         if (maSeries) { chart.removeSeries(maSeries); maSeries = null; }
         if (upperSeries) { chart.removeSeries(upperSeries); upperSeries = null; }
@@ -84,10 +87,10 @@ export const generateChartHtml = (): string => `<!DOCTYPE html>
       window.setPriceChart = function (data) {
         clearAllSeries();
 
-        closeSeries = chart.addLineSeries({ color: '${CHART_COLORS.accent}', lineWidth: 2 });
-        maSeries = chart.addLineSeries({ color: '${CHART_COLORS.yellow}', lineWidth: 1, lineStyle: 2 });
-        upperSeries = chart.addLineSeries({ color: '${CHART_COLORS.red}aa', lineWidth: 1, lineStyle: 2 });
-        lowerSeries = chart.addLineSeries({ color: '${CHART_COLORS.green}aa', lineWidth: 1, lineStyle: 2 });
+        closeSeries = chart.addSeries(LightweightCharts.LineSeries, { color: '${CHART_COLORS.accent}', lineWidth: 2 });
+        maSeries = chart.addSeries(LightweightCharts.LineSeries, { color: '${CHART_COLORS.yellow}', lineWidth: 1, lineStyle: 2 });
+        upperSeries = chart.addSeries(LightweightCharts.LineSeries, { color: '${CHART_COLORS.red}aa', lineWidth: 1, lineStyle: 2 });
+        lowerSeries = chart.addSeries(LightweightCharts.LineSeries, { color: '${CHART_COLORS.green}aa', lineWidth: 1, lineStyle: 2 });
 
         closeSeries.setData(data.dates.map(function (d, i) { return { time: d, value: data.close[i] }; }));
         maSeries.setData(
@@ -121,15 +124,17 @@ export const generateChartHtml = (): string => `<!DOCTYPE html>
           markers.push({ time: d, position: 'aboveBar', color: '${CHART_COLORS.red}', shape: 'circle', text: '' });
         });
         markers.sort(function (a, b) { return a.time.localeCompare(b.time); });
-        closeSeries.setMarkers(markers);
+        // v5: setMarkers 대신 createSeriesMarkers primitive 를 closeSeries 에 attach.
+        // clearAllSeries 에서 detach 하므로 여기서는 매 호출 새로 생성.
+        closeMarkers = LightweightCharts.createSeriesMarkers(closeSeries, markers);
       };
 
       // Equity 차트 모드
       window.setEquityChart = function (data) {
         clearAllSeries();
 
-        modelSeries = chart.addLineSeries({ color: '${CHART_COLORS.accent}', lineWidth: 2, title: 'Model' });
-        actualSeries = chart.addLineSeries({ color: '${CHART_COLORS.green}', lineWidth: 2, lineStyle: 2, title: 'Actual' });
+        modelSeries = chart.addSeries(LightweightCharts.LineSeries, { color: '${CHART_COLORS.accent}', lineWidth: 2, title: 'Model' });
+        actualSeries = chart.addSeries(LightweightCharts.LineSeries, { color: '${CHART_COLORS.green}', lineWidth: 2, lineStyle: 2, title: 'Actual' });
         modelSeries.setData(data.dates.map(function (d, i) { return { time: d, value: data.model_equity[i] }; }));
         actualSeries.setData(data.dates.map(function (d, i) { return { time: d, value: data.actual_equity[i] }; }));
       };

@@ -41,7 +41,7 @@ export const CASH_DIFF_THRESHOLD_USD = 1;
 
 // ─── 외부 라이브러리 버전 ───
 
-export const CHART_LIB_VERSION = '4.2.0';
+export const CHART_LIB_VERSION = '5.1.0';
 
 // ─── RTDB 경로 ───
 

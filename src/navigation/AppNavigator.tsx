@@ -22,6 +22,7 @@ export const AppNavigator: React.FC = () => (
       tabBarStyle: {
         backgroundColor: COLORS.card,
         borderTopColor: COLORS.border,
+        height: 64,
       },
       tabBarActiveTintColor: COLORS.accent,
       tabBarInactiveTintColor: COLORS.sub,

@@ -15,10 +15,41 @@ import { COLORS } from '../utils/colors';
 
 const Tab = createBottomTabNavigator();
 
+// 모듈 스코프 정의: 매 렌더마다 새 컴포넌트 타입이 생성되지 않도록
+// (react/no-unstable-nested-components 회피, CLAUDE.md §5.4).
+interface TabBarIconProps {
+  color: string;
+  size: number;
+}
+
+const renderHeader = (): React.ReactElement => <HomeHeader />;
+const renderHomeIcon = ({
+  color,
+  size,
+}: TabBarIconProps): React.ReactElement => <HomeIcon color={color} size={size} />;
+const renderChartIcon = ({
+  color,
+  size,
+}: TabBarIconProps): React.ReactElement => (
+  <ChartIcon color={color} size={size} />
+);
+const renderTradeIcon = ({
+  color,
+  size,
+}: TabBarIconProps): React.ReactElement => (
+  <TradeIcon color={color} size={size} />
+);
+const renderSettingsIcon = ({
+  color,
+  size,
+}: TabBarIconProps): React.ReactElement => (
+  <SettingsIcon color={color} size={size} />
+);
+
 export const AppNavigator: React.FC = () => (
   <Tab.Navigator
     screenOptions={{
-      header: () => <HomeHeader />,
+      header: renderHeader,
       tabBarStyle: {
         backgroundColor: COLORS.card,
         borderTopColor: COLORS.border,
@@ -31,36 +62,22 @@ export const AppNavigator: React.FC = () => (
     <Tab.Screen
       name="홈"
       component={HomeScreen}
-      options={{
-        tabBarIcon: ({ color, size }) => <HomeIcon color={color} size={size} />,
-      }}
+      options={{ tabBarIcon: renderHomeIcon }}
     />
     <Tab.Screen
       name="차트"
       component={ChartScreen}
-      options={{
-        tabBarIcon: ({ color, size }) => (
-          <ChartIcon color={color} size={size} />
-        ),
-      }}
+      options={{ tabBarIcon: renderChartIcon }}
     />
     <Tab.Screen
       name="거래"
       component={TradeScreen}
-      options={{
-        tabBarIcon: ({ color, size }) => (
-          <TradeIcon color={color} size={size} />
-        ),
-      }}
+      options={{ tabBarIcon: renderTradeIcon }}
     />
     <Tab.Screen
       name="설정"
       component={SettingsScreen}
-      options={{
-        tabBarIcon: ({ color, size }) => (
-          <SettingsIcon color={color} size={size} />
-        ),
-      }}
+      options={{ tabBarIcon: renderSettingsIcon }}
     />
   </Tab.Navigator>
 );

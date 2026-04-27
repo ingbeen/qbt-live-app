@@ -78,7 +78,7 @@ const readInbox = async <T = unknown>(
   if (!tree) return [];
   return Object.entries(tree)
     .filter(([, v]) => v.processed !== true)
-    .map(([uuid, data]) => ({ uuid, data: data as T }));
+    .map(([key, data]) => ({ uuid: key, data: data as T }));
 };
 
 export const readInboxFills = (): Promise<InboxItem<FillPayload>[]> =>

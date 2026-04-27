@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { AppState, StatusBar } from 'react-native';
+import { AppState, StatusBar, StyleSheet } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import {
@@ -103,7 +103,7 @@ export default function App() {
   // 오프라인 상태면 전체 차단 (§6.6). 로그인/앱 화면 모두 숨김.
   if (!isOnline) {
     return (
-      <GestureHandlerRootView style={{ flex: 1 }}>
+      <GestureHandlerRootView style={styles.root}>
         <SafeAreaProvider>
           <StatusBar barStyle="light-content" backgroundColor={COLORS.bg} />
           <OfflineScreen />
@@ -113,7 +113,7 @@ export default function App() {
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={styles.root}>
       <SafeAreaProvider>
         <StatusBar barStyle="light-content" backgroundColor={COLORS.bg} />
         <NavigationContainer ref={navigationRef}>
@@ -123,3 +123,7 @@ export default function App() {
     </GestureHandlerRootView>
   );
 }
+
+const styles = StyleSheet.create({
+  root: { flex: 1 },
+});

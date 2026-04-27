@@ -6,66 +6,81 @@
 
 ---
 
-## 1. 일상 개발 워크플로우
-
-프로젝트 루트 기준. Git Bash(VSCode 통합 터미널) 사용.
-
-### 빌드/설치/실행
+## 1. 자주 쓰는 명령어 (Quick Reference)
 
 ```sh
-npm run android
+adb devices                                       # 연결된 기기/에뮬레이터 확인
+adb logcat -s ReactNativeJS:V chromium:V          # RN 로그
+npx react-native start                            # Metro 켜기
+npm run android                                   # 빌드/설치 (Metro 자동 실행)
+npx react-native run-android --no-packager        # 빌드/설치 (Metro 이미 켜진 경우)
+adb shell pm clear com.ingbeen.qbtlive            # 앱 상태 초기화 (재설치 동등)
+scrcpy                                            # 화면 미러링 (USB)
+scrcpy --tcpip                                    # 화면 미러링 (무선)
+scrcpy --screen-off-timeout=86400 --tcpip         # 24시간
 ```
 
-> `npm run android` 는 Metro 번들러를 포함해 자동으로 띄우고, 빌드/설치까지 수행한다.
-
-### 로그 관찰 (필요 시, 별도 터미널)
-
-```sh
-adb logcat -s ReactNativeJS:V chromium:V
-```
+상세 옵션 / 셋업은 아래 섹션 참고.
 
 ---
 
-## 2. 주요 npm 스크립트
+## 2. 기타 npm 스크립트
 
 ```sh
 npm install               # 의존성 설치 (package-lock.json 기준)
-npm run android           # Metro 포함 빌드/설치/실행
 npm run lint              # ESLint
 ```
 
 ---
 
-## 3. 앱 상태 초기화
+## 3. 디버깅 (고급)
 
-앱의 AsyncStorage(`device_id`), 캐시, 권한 상태까지 전부 초기화하려면:
+§1 의 RN 로그 필터로 부족할 때 사용.
 
-```sh
-adb shell pm clear com.ingbeen.qbtlive
-```
-
-> 앱 재설치와 동등한 상태. 다음 실행 시 FCM 토큰/권한 다이얼로그가 처음부터 다시 진행된다.
-
----
-
-## 4. 디버깅
-
-### 4.1 RN 로그만 필터링
-
-```sh
-adb logcat -s ReactNativeJS:V chromium:V
-```
-
-### 4.2 전체 로그에서 앱 PID 로 필터링
+### 3.1 앱 PID 로 전체 로그 필터링
 
 ```sh
 adb logcat --pid=$(adb shell pidof com.ingbeen.qbtlive)
 ```
 
-### 4.3 연결된 기기/에뮬레이터 확인
+---
+
+## 4. 화면 미러링 (scrcpy) 옵션
+
+설치 (winget):
 
 ```sh
-adb devices
+winget install --exact Genymobile.scrcpy
+```
+
+git bash 에서 호출하려면 `~/bin/scrcpy` wrapper 사용 (winget 패키지 폴더의 최신 버전 자동 탐색).
+
+기본 명령은 §1 참고. 아래는 추가 옵션.
+
+### 4.1 IP 직접 지정
+
+```sh
+scrcpy --tcpip=192.168.0.123:5555   # tcpip 모드 활성 후
+```
+
+### 4.2 자주 쓰는 옵션
+
+```sh
+scrcpy --max-size 1280              # 해상도 제한 (성능/지연 개선)
+scrcpy --max-fps 30                 # FPS 제한
+scrcpy --video-bit-rate 2M          # 비트레이트 낮춤 (무선 약할 때)
+```
+
+### 4.3 기기 IP 확인
+
+```sh
+adb shell ip route | awk '{print $9}'        # USB 연결 시 기기 IP 출력
+```
+
+### 4.4 무선 모드 종료 / USB 모드 복귀
+
+```sh
+adb usb
 ```
 
 ---

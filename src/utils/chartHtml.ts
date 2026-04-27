@@ -43,18 +43,16 @@ export const generateChartHtml = (): string => `<!DOCTYPE html>
   </div>
   <script>
     (function () {
-      // 차트 좌우 경계에 둘 여유 (bars). rightOffset 은 여유 공간 생성에,
-      // 좌우 모두의 "그 이상 스크롤 불가" 는 subscribeVisibleLogicalRangeChange
-      // 에서 재조정한다 (fixRightEdge 는 rightOffset 을 무효화하는 공식 이슈로 미사용).
-      var CHART_EDGE_MARGIN_BARS = 60;
-      // 현재 차트에 로드된 데이터 봉 수. 우측 경계 재조정에 사용. setPriceChart /
-      // setEquityChart 호출마다 data.dates.length 로 갱신.
-      var currentBarCount = 0;
-
       // 날짜 포맷: 축 tickMark 와 크로스헤어 수직 라벨 모두 YYYY-MM-DD 로 통일.
       // Lightweight Charts 가 Time 을 문자열로 받으면 그대로 통과시키는 formatter.
       var identityDateFormatter = function (time) {
         return typeof time === 'string' ? time : '';
+      };
+
+      // 우측 가격축 값 포맷: 천단위 콤마 + 소수점 2자리. 주가/Equity 공통 적용.
+      var priceAxisFormatter = function (p) {
+        if (typeof p !== 'number' || !isFinite(p)) return '';
+        return p.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       };
 
       var chart = LightweightCharts.createChart(document.getElementById('chart'), {
@@ -63,13 +61,20 @@ export const generateChartHtml = (): string => `<!DOCTYPE html>
         timeScale: {
           borderColor: '${CHART_COLORS.border}',
           tickMarkFormatter: identityDateFormatter,
-          rightOffset: CHART_EDGE_MARGIN_BARS
+          // 우측만 고정 (마지막 봉 밖으로 스크롤 차단, 튕김 없음).
+          // 좌측은 자유: subscribeVisibleLogicalRangeChange 에서 range.from<30 일 때
+          // load_earlier 를 트리거해 archive 를 자동 prepend 한다. fixLeftEdge: true 로
+          // 막으면 좌측 제스처가 원천 차단되어 load_earlier 트리거가 이어지지 않으므로 false 유지.
+          rightOffset: 0,
+          fixLeftEdge: false,
+          fixRightEdge: true
         },
         rightPriceScale: { borderColor: '${CHART_COLORS.border}', autoScale: true },
         crosshair: { mode: 1 },
         localization: {
           dateFormat: 'yyyy-MM-dd',
-          timeFormatter: identityDateFormatter
+          timeFormatter: identityDateFormatter,
+          priceFormatter: priceAxisFormatter
         },
         // Y축 수동 드래그를 차단하여 가격 오토스케일이 깨지지 않도록 고정.
         // X축(time) 조작은 스크롤/핀치에 그대로 필요하므로 true 유지.
@@ -101,10 +106,12 @@ export const generateChartHtml = (): string => `<!DOCTYPE html>
       window.setPriceChart = function (data) {
         clearAllSeries();
 
-        closeSeries = chart.addSeries(LightweightCharts.LineSeries, { color: '${CHART_COLORS.accent}', lineWidth: 2 });
-        maSeries = chart.addSeries(LightweightCharts.LineSeries, { color: '${CHART_COLORS.yellow}', lineWidth: 1, lineStyle: 2 });
-        upperSeries = chart.addSeries(LightweightCharts.LineSeries, { color: '${CHART_COLORS.red}aa', lineWidth: 1, lineStyle: 2 });
-        lowerSeries = chart.addSeries(LightweightCharts.LineSeries, { color: '${CHART_COLORS.green}aa', lineWidth: 1, lineStyle: 2 });
+        // lastValueVisible / priceLineVisible: 우측 마지막 값 강조 라벨과 수평 가격선 제거 (주가/Equity 공통).
+        // EMA 는 실선(lineStyle 생략 → 기본 Solid), 상/하단 밴드는 점선(Dashed = 2) 유지.
+        closeSeries = chart.addSeries(LightweightCharts.LineSeries, { color: '${CHART_COLORS.accent}', lineWidth: 2, lastValueVisible: false, priceLineVisible: false });
+        maSeries = chart.addSeries(LightweightCharts.LineSeries, { color: '${CHART_COLORS.yellow}', lineWidth: 1, lastValueVisible: false, priceLineVisible: false });
+        upperSeries = chart.addSeries(LightweightCharts.LineSeries, { color: '${CHART_COLORS.red}aa', lineWidth: 1, lineStyle: 2, lastValueVisible: false, priceLineVisible: false });
+        lowerSeries = chart.addSeries(LightweightCharts.LineSeries, { color: '${CHART_COLORS.green}aa', lineWidth: 1, lineStyle: 2, lastValueVisible: false, priceLineVisible: false });
 
         closeSeries.setData(data.dates.map(function (d, i) { return { time: d, value: data.close[i] }; }));
         maSeries.setData(
@@ -141,47 +148,23 @@ export const generateChartHtml = (): string => `<!DOCTYPE html>
         // v5: setMarkers 대신 createSeriesMarkers primitive 를 closeSeries 에 attach.
         // clearAllSeries 에서 detach 하므로 여기서는 매 호출 새로 생성.
         closeMarkers = LightweightCharts.createSeriesMarkers(closeSeries, markers);
-
-        currentBarCount = data.dates.length;
       };
 
       // Equity 차트 모드
       window.setEquityChart = function (data) {
         clearAllSeries();
 
-        modelSeries = chart.addSeries(LightweightCharts.LineSeries, { color: '${CHART_COLORS.accent}', lineWidth: 2, title: 'Model' });
-        actualSeries = chart.addSeries(LightweightCharts.LineSeries, { color: '${CHART_COLORS.green}', lineWidth: 2, lineStyle: 2, title: 'Actual' });
+        modelSeries = chart.addSeries(LightweightCharts.LineSeries, { color: '${CHART_COLORS.accent}', lineWidth: 2, title: 'Model', lastValueVisible: false, priceLineVisible: false });
+        actualSeries = chart.addSeries(LightweightCharts.LineSeries, { color: '${CHART_COLORS.green}', lineWidth: 2, lineStyle: 2, title: 'Actual', lastValueVisible: false, priceLineVisible: false });
         modelSeries.setData(data.dates.map(function (d, i) { return { time: d, value: data.model_equity[i] }; }));
         actualSeries.setData(data.dates.map(function (d, i) { return { time: d, value: data.actual_equity[i] }; }));
-
-        currentBarCount = data.dates.length;
       };
 
-      // 좌우 경계 재조정 + 좌측 끝 감지 → RN 에 archive 로드 요청.
-      // 양쪽 모두 CHART_EDGE_MARGIN_BARS 를 넘어가면 현재 span(to-from) 을
-      // 유지한 채 경계에 밀착시킨다. 단순 from/to 치환은 관성 스크롤로 둘 다
-      // 경계 바깥에 있을 때 from>to assertion 실패를 유발하므로 span 방식 사용.
-      // threshold 30 은 관성 스크롤 대응을 위해 조기 선제 로드 트리거.
+      // 좌측 끝 감지 → RN 에 archive 로드 요청. 경계 차단 자체는 fix*Edge 옵션이 처리.
+      // threshold 30 은 관성 스크롤 대응을 위해 좌측 근접 시 조기 선제 로드 트리거.
       var lastEarlierRequest = 0;
       chart.timeScale().subscribeVisibleLogicalRangeChange(function (range) {
         if (!range) return;
-        var span = range.to - range.from;
-        if (range.from < -CHART_EDGE_MARGIN_BARS) {
-          chart.timeScale().setVisibleLogicalRange({
-            from: -CHART_EDGE_MARGIN_BARS,
-            to: -CHART_EDGE_MARGIN_BARS + span
-          });
-          return;
-        }
-        // 우측 경계: 마지막 봉 + margin 초과 시 재조정
-        var maxTo = currentBarCount - 1 + CHART_EDGE_MARGIN_BARS;
-        if (currentBarCount > 0 && range.to > maxTo) {
-          chart.timeScale().setVisibleLogicalRange({
-            from: maxTo - span,
-            to: maxTo
-          });
-          return;
-        }
         if (range.from < 30) {
           var now = Date.now();
           if (now - lastEarlierRequest < 1500) return;

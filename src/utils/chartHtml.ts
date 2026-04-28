@@ -162,14 +162,45 @@ export const generateChartHtml = (): string => `<!DOCTYPE html>
 
       // 좌측 끝 감지 → RN 에 archive 로드 요청. 경계 차단 자체는 fix*Edge 옵션이 처리.
       // threshold 30 은 관성 스크롤 대응을 위해 좌측 근접 시 조기 선제 로드 트리거.
+      // debounce 400ms: RTDB 응답이 약 150ms 라 짧게 잡아도 안전. 같은 연도 in-flight
+      // 가드는 store 측 archive 캐시로 자연 수렴.
+      // trailing 재시도: debounce 차단 도중 사용자가 손을 떼면 콜백 자체가 더 이상
+      // 호출되지 않아 마지막 차단 요청이 영구 누락된다. 따라서 차단 시점에 setTimeout
+      // 으로 잔여 ms 후 재평가를 예약하고, 만료 시점에 여전히 from<30 이면 emit 한다.
+      var EARLIER_DEBOUNCE_MS = 400;
       var lastEarlierRequest = 0;
+      var pendingEarlierTimer = null;
+
+      function emitLoadEarlier() {
+        lastEarlierRequest = Date.now();
+        if (pendingEarlierTimer) {
+          clearTimeout(pendingEarlierTimer);
+          pendingEarlierTimer = null;
+        }
+        window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'load_earlier' }));
+      }
+
+      function scheduleTrailingEmit(remainingMs) {
+        if (pendingEarlierTimer) return;
+        pendingEarlierTimer = setTimeout(function () {
+          pendingEarlierTimer = null;
+          var current = chart.timeScale().getVisibleLogicalRange();
+          if (!current) return;
+          if (current.from >= 30) return;
+          emitLoadEarlier();
+        }, remainingMs);
+      }
+
       chart.timeScale().subscribeVisibleLogicalRangeChange(function (range) {
         if (!range) return;
         if (range.from < 30) {
           var now = Date.now();
-          if (now - lastEarlierRequest < 1500) return;
-          lastEarlierRequest = now;
-          window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'load_earlier' }));
+          var elapsed = now - lastEarlierRequest;
+          if (elapsed < EARLIER_DEBOUNCE_MS) {
+            scheduleTrailingEmit(EARLIER_DEBOUNCE_MS - elapsed);
+            return;
+          }
+          emitLoadEarlier();
         }
       });
 

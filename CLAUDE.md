@@ -54,9 +54,9 @@
 
 신규 계획서 템플릿: [docs/plans/\_template.md](docs/plans/_template.md)
 
-### 1.3 Phase 단위 승인
+### 1.3 Plan 단위 승인
 
-여러 Phase 를 묶은 작업이라도 **각 Phase 완료 직후 멈추고 사용자가 직접 commit 하도록 대기한다**. AI 가 연속적으로 여러 Phase 를 자동 진행하지 않는다.
+Plan 전체가 완료된 시점에 멈추고 **사용자가 직접 commit 하도록 대기한다**. 중간 Phase 사이에는 멈추지 않고 plan 의 모든 Phase 를 연속 진행한다.
 
 ---
 

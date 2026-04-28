@@ -27,7 +27,9 @@ const renderHeader = (): React.ReactElement => <HomeHeader />;
 const renderHomeIcon = ({
   color,
   size,
-}: TabBarIconProps): React.ReactElement => <HomeIcon color={color} size={size} />;
+}: TabBarIconProps): React.ReactElement => (
+  <HomeIcon color={color} size={size} />
+);
 const renderChartIcon = ({
   color,
   size,

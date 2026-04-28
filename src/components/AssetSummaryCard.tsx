@@ -84,8 +84,6 @@ export const AssetSummaryCard: React.FC<Props> = ({
         );
       })}
 
-      <View style={styles.divider} />
-
       <View style={styles.row}>
         <View style={styles.rowLeft}>
           <Text style={styles.ticker}>현금</Text>

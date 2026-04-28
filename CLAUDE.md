@@ -569,6 +569,7 @@ database().ref('/latest/portfolio').on('value', handler);
 - RN → WebView 주입 함수:
   - `window.setPriceChart(data)` / `window.setEquityChart(data)` — 차트 데이터 갱신
   - `window.setLoadingOverlay(on: boolean)` — archive 선제 로드 중 좌측 영역 마스킹
+  - `window.setLeftEdgeFixed(on: boolean)` — 모든 archive 로드 완료 시 좌측 끝 고정(빈 여백 차단)
 
 ### 9.3 WebView 설정
 

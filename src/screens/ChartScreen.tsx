@@ -17,6 +17,22 @@ import { Toast } from '../components/Toast';
 import { chartLoadingKey } from '../utils/loadingKeys';
 import { computeNextArchiveYear } from '../utils/chartArchive';
 
+// 모든 archive 가 로드 완료되었는지 판단. computeNextArchiveYear 가 null 을 반환하면
+// 더 이상 받을 데이터가 없는 상태(좌측 끝)로 간주. RN→WebView 신호로 fixLeftEdge 동적 전환.
+const computeIsFullyLoaded = (
+  meta: { archive_years: number[] } | null | undefined,
+  recent: { dates: string[] } | null | undefined,
+  archiveMap: Record<number, unknown> | null | undefined,
+): boolean => {
+  if (!meta || !recent || !archiveMap) return false;
+  const firstDate = recent.dates[0];
+  if (!firstDate) return false;
+  const loadedYears = Object.keys(archiveMap).map(Number);
+  return (
+    computeNextArchiveYear(firstDate, meta.archive_years, loadedYears) === null
+  );
+};
+
 // loading 맵의 키 접두사. useStore 의 loadingKeys 헬퍼 생성 규칙과 동일하게 맞춤.
 // (chart_archive_{assetId}_{year} / chart_archive_equity_{year})
 const PRICE_ARCHIVE_PREFIX = (assetId: AssetId): string =>
@@ -81,6 +97,23 @@ export const ChartScreen: React.FC = () => {
     return Object.entries(loading).some(([k, v]) => v && k.startsWith(prefix));
   }, [loading, chartType, assetId]);
 
+  // 모든 archive 로드 완료 여부. true 가 되면 WebView 가 fixLeftEdge 를 켜서
+  // 좌측 끝 추가 스크롤(빈 여백) 을 차단한다. 자산/차트 타입 전환 시 재평가됨.
+  const isFullyLoaded = React.useMemo(() => {
+    if (chartType === 'price') {
+      return computeIsFullyLoaded(
+        priceCache?.meta,
+        priceCache?.recent,
+        priceCache?.archive,
+      );
+    }
+    return computeIsFullyLoaded(
+      equityCache.meta,
+      equityCache.recent,
+      equityCache.archive,
+    );
+  }, [chartType, priceCache, equityCache]);
+
   // Effect 1: 캐시 없으면 recent + meta 로드. 이미 있으면 skip (재진입 캐시 활용).
   useEffect(() => {
     if (chartType === 'price') {
@@ -130,6 +163,15 @@ export const ChartScreen: React.FC = () => {
       `window.setLoadingOverlay(${isArchiveLoading}); true;`,
     );
   }, [webviewReady, isArchiveLoading]);
+
+  // Effect 3-2: 모든 archive 로드 완료 시 WebView 의 fixLeftEdge 를 동적으로 켠다.
+  // archive 가 남아있는 동안에는 false 유지(좌측 자유 스크롤 + load_earlier 트리거 보존).
+  useEffect(() => {
+    if (!webviewReady) return;
+    webviewRef.current?.injectJavaScript(
+      `window.setLeftEdgeFixed(${isFullyLoaded}); true;`,
+    );
+  }, [webviewReady, isFullyLoaded]);
 
   // Effect 4: 차트 타입/자산 전환 또는 캐시 로드 시 상단 헤더를 최신 봉 값으로 리셋.
   // 이후 사용자가 크로스헤어를 움직이면 handleCrosshair 가 값을 덮어씀.

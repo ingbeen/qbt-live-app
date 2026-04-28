@@ -211,6 +211,13 @@ export const generateChartHtml = (): string => `<!DOCTYPE html>
         el.style.display = on ? 'flex' : 'none';
       };
 
+      // RN 이 "더 이상 받을 archive 가 없음" 을 알려올 때 fixLeftEdge 를 true 로 동적 전환.
+      // archive 가 남아있는 동안에는 false 유지(좌측 자유 스크롤 + load_earlier 트리거).
+      // applyOptions 는 v5.0 공식 동적 옵션 변경 API.
+      window.setLeftEdgeFixed = function (on) {
+        chart.timeScale().applyOptions({ fixLeftEdge: !!on });
+      };
+
       // 크로스헤어 이동 시 각 시리즈 값을 RN 상단 헤더로 전송. series 교체 후에도
       // 모듈 scope 의 *Series 참조가 최신이라 별도 재구독 불필요.
       chart.subscribeCrosshairMove(function (param) {

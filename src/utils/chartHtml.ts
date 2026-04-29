@@ -157,14 +157,18 @@ export const generateChartHtml = (): string => `<!DOCTYPE html>
       window.setEquityChart = function (data) {
         clearAllSeries();
 
-        modelSeries = chart.addSeries(LightweightCharts.LineSeries, { color: '${CHART_COLORS.accent}', lineWidth: 2, title: 'Model', lastValueVisible: false, priceLineVisible: false });
-        actualSeries = chart.addSeries(LightweightCharts.LineSeries, { color: '${CHART_COLORS.green}', lineWidth: 2, lineStyle: 2, title: 'Actual', lastValueVisible: false, priceLineVisible: false });
+        // 시리즈 식별은 하단 ChartLegend 가 담당. title 을 두면 Lightweight Charts 가
+        // lastValueVisible:false 와 무관하게 우측 가격축에 시리즈 이름 라벨을 띄우므로 생략.
+        modelSeries = chart.addSeries(LightweightCharts.LineSeries, { color: '${CHART_COLORS.accent}', lineWidth: 2, lastValueVisible: false, priceLineVisible: false });
+        actualSeries = chart.addSeries(LightweightCharts.LineSeries, { color: '${CHART_COLORS.green}', lineWidth: 2, lineStyle: 2, lastValueVisible: false, priceLineVisible: false });
         modelSeries.setData(data.dates.map(function (d, i) { return { time: d, value: data.model_equity[i] }; }));
         actualSeries.setData(data.dates.map(function (d, i) { return { time: d, value: data.actual_equity[i] }; }));
       };
 
-      // 좌측 끝 감지 → RN 에 연도 슬라이스 로드 요청. 경계 차단 자체는 fix*Edge 옵션이 처리.
-      // threshold 30 은 관성 스크롤 대응을 위해 좌측 근접 시 조기 선제 로드 트리거.
+      // 가시 영역의 좌측이 데이터 시작점에 근접하면 RN 에 연도 슬라이스 로드 요청.
+      // 좌측 스와이프 / 핀치 줌아웃 모두 from 이 작아지므로 동일 트리거를 공유한다.
+      // 경계 차단 자체는 fix*Edge 옵션이 처리.
+      // threshold 30 은 관성 스크롤 / 줌아웃 도중 좌측 근접 시 조기 선제 로드 트리거.
       // debounce 400ms: RTDB 응답이 약 150ms 라 짧게 잡아도 안전. 같은 연도 in-flight
       // 가드는 store 측 years 캐시로 자연 수렴.
       // trailing 재시도: debounce 차단 도중 사용자가 손을 떼면 콜백 자체가 더 이상

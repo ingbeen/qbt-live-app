@@ -20,7 +20,7 @@
 ---
 
 **작성일**: 2026-04-29 05:38
-**마지막 업데이트**: 2026-04-29 05:42
+**마지막 업데이트**: 2026-04-29 06:04
 **관련 범위**: utils (chart WebView HTML)
 **관련 문서**: CLAUDE.md, docs/CLAUDE.md
 
@@ -147,10 +147,14 @@
 - 라이브러리 옵션 근거: Lightweight Charts v5 `TimeScaleOptions.minBarSpacing` (한 봉의 최소 픽셀 너비). 핀치 줌은 `barSpacing` 을 줄이는 방식인데, 이 옵션 미만으로는 줄지 못해 가시 봉 수의 상한을 만든다.
 - 본 plan 은 진단(가설) 검증 이전에 변경을 적용한다. 사용자 실기 확인 시 가설 부합/부적합을 함께 판정한다.
 - §7 Risks 의 자동 prepend 회귀 우려는 별도 후속 plan 후보로 메모.
+- **Goal §3 폐기 (2026-04-29 06:00 KST)**: 사용자 실기 확인 결과 "줌아웃 시 archive 자동 prepend 가 함께 일어나는 동작이 자연스럽다" 는 의사 변경. Goal §3 ("줌아웃을 통해 archive 자동 prepend 가 트리거되지 않는다는 기존 동작은 유지") 은 더 이상 추구하지 않으며, 별도 후속 plan(`PLAN_chart_zoom_trigger_split.md`) 도 작성하지 않는다. 본 plan 의 Done 평가에서 §3 은 평가 대상에서 제외한다.
+- 트리거 콜백 주석 보강 (2026-04-29 06:04 KST): `subscribeVisibleLogicalRangeChange` 위 주석을 "좌측 스와이프 / 핀치 줌아웃 모두 from 이 작아지므로 동일 트리거를 공유" 로 다듬음. CLAUDE.md §1.1 주석 수정 예외 적용.
 
 ### 진행 로그 (KST)
 
 - 2026-04-29 05:38: plan 작성 (Draft)
 - 2026-04-29 05:42: Phase 1 적용 — `src/utils/chartHtml.ts` timeScale 옵션에 `minBarSpacing: 0.001` 추가. 마지막 Phase — prettier/lint/tsc 모두 통과. 사용자 실기 검증 대기로 In Progress 유지.
+- 2026-04-29 06:00: 사용자 실기 1차 확인 — 핀치 줌아웃 시 archive 자동 prepend 동작이 사용자 의도와 부합. Goal §3 폐기 결정 (Notes 참고).
+- 2026-04-29 06:04: 트리거 콜백 주석 보강 (스와이프/줌아웃 공유 트리거 명시). prettier/lint/tsc 재검증 모두 통과. 사용자 최종 실기 검증 대기.
 
 ---

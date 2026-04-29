@@ -9,10 +9,8 @@ export const LOADING_TRADE = 'trade';
 export const chartLoadingKey = (target: ChartTarget): string =>
   `chart_${target}`;
 
-export const priceArchiveLoadingKey = (
-  assetId: AssetId,
-  year: number,
-): string => `chart_archive_${assetId}_${year}`;
+export const priceYearLoadingKey = (assetId: AssetId, year: number): string =>
+  `chart_year_${assetId}_${year}`;
 
-export const equityArchiveLoadingKey = (year: number): string =>
-  `chart_archive_equity_${year}`;
+export const equityYearLoadingKey = (year: number): string =>
+  `chart_year_equity_${year}`;

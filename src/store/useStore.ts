@@ -27,9 +27,9 @@ import {
   readHistoryBalanceAdjusts,
   readHistorySignals,
   readPriceChartMeta,
-  readPriceChartArchive,
+  readPriceChartYear,
   readEquityChartMeta,
-  readEquityChartArchive,
+  readEquityChartYear,
   submitModelSync as submitModelSyncRtdb,
   submitFill as submitFillRtdb,
   submitBalanceAdjust as submitBalanceAdjustRtdb,
@@ -42,31 +42,31 @@ import {
   LOADING_HOME,
   LOADING_TRADE,
   chartLoadingKey,
-  priceArchiveLoadingKey,
-  equityArchiveLoadingKey,
+  priceYearLoadingKey,
+  equityYearLoadingKey,
 } from '../utils/loadingKeys';
-import { computeInitialArchiveYears } from '../utils/chartArchive';
+import { computeInitialYears } from '../utils/chartYears';
 
 export type { AuthUser };
 
-// 차트 탭 로컬 캐시. meta 는 첫 로드 전 null, archive 는 연도별 지연 로드.
-// 진입 시 computeInitialArchiveYears 로 12개월 보장 연도 목록을 병렬 fetch 하고,
-// 좌측 스크롤 시 loadPriceArchive / loadEquityArchive 로 추가 연도를 점진 로드한다.
+// 차트 탭 로컬 캐시. meta 는 첫 로드 전 null, years 는 연도별 지연 로드.
+// 진입 시 computeInitialYears 로 12개월 보장 연도 목록을 병렬 fetch 하고,
+// 좌측 스크롤 시 loadPriceYear / loadEquityYear 로 추가 연도를 점진 로드한다.
 export interface PriceChartCache {
   meta: PriceChartMeta | null;
-  archive: Partial<Record<number, PriceChartSeries>>;
+  years: Partial<Record<number, PriceChartSeries>>;
 }
 
 export interface EquityChartCache {
   meta: EquityChartMeta | null;
-  archive: Partial<Record<number, EquityChartSeries>>;
+  years: Partial<Record<number, EquityChartSeries>>;
 }
 
 export type ChartTarget = AssetId | 'equity';
 
 const emptyEquityCache = (): EquityChartCache => ({
   meta: null,
-  archive: {},
+  years: {},
 });
 
 interface Store {
@@ -117,12 +117,12 @@ interface Store {
   refreshHome: () => Promise<void>;
   refreshTrade: () => Promise<void>;
   refreshChart: (target: ChartTarget) => Promise<void>;
-  loadPriceArchive: (
+  loadPriceYear: (
     assetId: AssetId,
     year: number,
     prefetchNext?: boolean,
   ) => Promise<void>;
-  loadEquityArchive: (year: number, prefetchNext?: boolean) => Promise<void>;
+  loadEquityYear: (year: number, prefetchNext?: boolean) => Promise<void>;
 
   // 액션: 쓰기
   submitModelSync: () => Promise<void>;
@@ -209,7 +209,7 @@ export const useStore = create<Store>((set, get) => {
     showToast: message => set({ lastToast: message }),
     hideToast: () => set({ lastToast: null }),
 
-    // ─── 비동기 액션 (RTDB 읽기 / 쓰기 / archive 지연 로드) ───
+    // ─── 비동기 액션 (RTDB 읽기 / 쓰기 / 연도 슬라이스 지연 로드) ───
     // 순서: refreshHome → submitModelSync → refreshTrade → submit (fill/balance/dismiss) → refreshChart → loadArchive
 
     refreshHome: async () => {
@@ -329,32 +329,32 @@ export const useStore = create<Store>((set, get) => {
     },
 
     refreshChart: async target => {
-      // 진입 시: meta 1회 fetch → computeInitialArchiveYears(12개월 보장) → 필요한
-      // archive 들을 Promise.all 로 병렬 fetch. 좌측 스크롤 추가 로드는
-      // loadPriceArchive / loadEquityArchive 가 그대로 담당.
+      // 진입 시: meta 1회 fetch → computeInitialYears(12개월 보장) → 필요한
+      // 연도 슬라이스들을 Promise.all 로 병렬 fetch. 좌측 스크롤 추가 로드는
+      // loadPriceYear / loadEquityYear 가 그대로 담당.
       const loadingKey = chartLoadingKey(target);
       setLoading(loadingKey, true);
       try {
         if (target === 'equity') {
           const meta = await readEquityChartMeta();
           if (!meta) {
-            set({ equityChart: { meta: null, archive: {} }, lastError: null });
+            set({ equityChart: { meta: null, years: {} }, lastError: null });
             return;
           }
-          const initialYears = computeInitialArchiveYears(
+          const initialYears = computeInitialYears(
             meta.last_date,
-            meta.archive_years,
+            meta.years,
             12,
           );
           const fetched = await Promise.all(
-            initialYears.map(y => readEquityChartArchive(y)),
+            initialYears.map(y => readEquityChartYear(y)),
           );
-          const archive: Partial<Record<number, EquityChartSeries>> = {};
+          const years: Partial<Record<number, EquityChartSeries>> = {};
           initialYears.forEach((y, i) => {
             const v = fetched[i];
-            if (v) archive[y] = v;
+            if (v) years[y] = v;
           });
-          set({ equityChart: { meta, archive }, lastError: null });
+          set({ equityChart: { meta, years }, lastError: null });
         } else {
           const assetId = target;
           const meta = await readPriceChartMeta(assetId);
@@ -362,29 +362,29 @@ export const useStore = create<Store>((set, get) => {
             set({
               priceCharts: {
                 ...get().priceCharts,
-                [assetId]: { meta: null, archive: {} },
+                [assetId]: { meta: null, years: {} },
               },
               lastError: null,
             });
             return;
           }
-          const initialYears = computeInitialArchiveYears(
+          const initialYears = computeInitialYears(
             meta.last_date,
-            meta.archive_years,
+            meta.years,
             12,
           );
           const fetched = await Promise.all(
-            initialYears.map(y => readPriceChartArchive(assetId, y)),
+            initialYears.map(y => readPriceChartYear(assetId, y)),
           );
-          const archive: Partial<Record<number, PriceChartSeries>> = {};
+          const years: Partial<Record<number, PriceChartSeries>> = {};
           initialYears.forEach((y, i) => {
             const v = fetched[i];
-            if (v) archive[y] = v;
+            if (v) years[y] = v;
           });
           set({
             priceCharts: {
               ...get().priceCharts,
-              [assetId]: { meta, archive },
+              [assetId]: { meta, years },
             },
             lastError: null,
           });
@@ -397,30 +397,30 @@ export const useStore = create<Store>((set, get) => {
       }
     },
 
-    loadPriceArchive: async (assetId, year, prefetchNext = true) => {
+    loadPriceYear: async (assetId, year, prefetchNext = true) => {
       const existing = get().priceCharts[assetId];
-      if (existing?.archive[year]) return;
-      const loadingKey = priceArchiveLoadingKey(assetId, year);
+      if (existing?.years[year]) return;
+      const loadingKey = priceYearLoadingKey(assetId, year);
       setLoading(loadingKey, true);
       try {
-        const archive = await readPriceChartArchive(assetId, year);
-        if (!archive) return;
+        const slice = await readPriceChartYear(assetId, year);
+        if (!slice) return;
         const current = get().priceCharts[assetId] ?? {
           meta: null,
-          archive: {},
+          years: {},
         };
         set({
           priceCharts: {
             ...get().priceCharts,
             [assetId]: {
               ...current,
-              archive: { ...current.archive, [year]: archive },
+              years: { ...current.years, [year]: slice },
             },
           },
           lastError: null,
         });
       } catch (e) {
-        console.error('[store] loadPriceArchive failed:', e);
+        console.error('[store] loadPriceYear failed:', e);
         set({ lastError: toUserMessage(e) });
       } finally {
         setLoading(loadingKey, false);
@@ -432,37 +432,37 @@ export const useStore = create<Store>((set, get) => {
         const nextYear = year - 1;
         const latest = get().priceCharts[assetId];
         const nextLoading =
-          get().loading[priceArchiveLoadingKey(assetId, nextYear)] === true;
+          get().loading[priceYearLoadingKey(assetId, nextYear)] === true;
         if (
           latest?.meta &&
-          latest.meta.archive_years.includes(nextYear) &&
-          !latest.archive[nextYear] &&
+          latest.meta.years.includes(nextYear) &&
+          !latest.years[nextYear] &&
           !nextLoading
         ) {
           get()
-            .loadPriceArchive(assetId, nextYear, false)
+            .loadPriceYear(assetId, nextYear, false)
             .catch(() => {});
         }
       }
     },
 
-    loadEquityArchive: async (year, prefetchNext = true) => {
-      if (get().equityChart.archive[year]) return;
-      const loadingKey = equityArchiveLoadingKey(year);
+    loadEquityYear: async (year, prefetchNext = true) => {
+      if (get().equityChart.years[year]) return;
+      const loadingKey = equityYearLoadingKey(year);
       setLoading(loadingKey, true);
       try {
-        const archive = await readEquityChartArchive(year);
-        if (!archive) return;
+        const slice = await readEquityChartYear(year);
+        if (!slice) return;
         const current = get().equityChart;
         set({
           equityChart: {
             ...current,
-            archive: { ...current.archive, [year]: archive },
+            years: { ...current.years, [year]: slice },
           },
           lastError: null,
         });
       } catch (e) {
-        console.error('[store] loadEquityArchive failed:', e);
+        console.error('[store] loadEquityYear failed:', e);
         set({ lastError: toUserMessage(e) });
       } finally {
         setLoading(loadingKey, false);
@@ -471,15 +471,15 @@ export const useStore = create<Store>((set, get) => {
         const nextYear = year - 1;
         const latest = get().equityChart;
         const nextLoading =
-          get().loading[equityArchiveLoadingKey(nextYear)] === true;
+          get().loading[equityYearLoadingKey(nextYear)] === true;
         if (
           latest.meta &&
-          latest.meta.archive_years.includes(nextYear) &&
-          !latest.archive[nextYear] &&
+          latest.meta.years.includes(nextYear) &&
+          !latest.years[nextYear] &&
           !nextLoading
         ) {
           get()
-            .loadEquityArchive(nextYear, false)
+            .loadEquityYear(nextYear, false)
             .catch(() => {});
         }
       }

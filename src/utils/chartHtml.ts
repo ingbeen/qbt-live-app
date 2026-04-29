@@ -63,7 +63,7 @@ export const generateChartHtml = (): string => `<!DOCTYPE html>
           tickMarkFormatter: identityDateFormatter,
           // 우측만 고정 (마지막 봉 밖으로 스크롤 차단, 튕김 없음).
           // 좌측은 자유: subscribeVisibleLogicalRangeChange 에서 range.from<30 일 때
-          // load_earlier 를 트리거해 archive 를 자동 prepend 한다. fixLeftEdge: true 로
+          // load_earlier 를 트리거해 연도 슬라이스를 자동 prepend 한다. fixLeftEdge: true 로
           // 막으면 좌측 제스처가 원천 차단되어 load_earlier 트리거가 이어지지 않으므로 false 유지.
           rightOffset: 0,
           fixLeftEdge: false,
@@ -160,10 +160,10 @@ export const generateChartHtml = (): string => `<!DOCTYPE html>
         actualSeries.setData(data.dates.map(function (d, i) { return { time: d, value: data.actual_equity[i] }; }));
       };
 
-      // 좌측 끝 감지 → RN 에 archive 로드 요청. 경계 차단 자체는 fix*Edge 옵션이 처리.
+      // 좌측 끝 감지 → RN 에 연도 슬라이스 로드 요청. 경계 차단 자체는 fix*Edge 옵션이 처리.
       // threshold 30 은 관성 스크롤 대응을 위해 좌측 근접 시 조기 선제 로드 트리거.
       // debounce 400ms: RTDB 응답이 약 150ms 라 짧게 잡아도 안전. 같은 연도 in-flight
-      // 가드는 store 측 archive 캐시로 자연 수렴.
+      // 가드는 store 측 years 캐시로 자연 수렴.
       // trailing 재시도: debounce 차단 도중 사용자가 손을 떼면 콜백 자체가 더 이상
       // 호출되지 않아 마지막 차단 요청이 영구 누락된다. 따라서 차단 시점에 setTimeout
       // 으로 잔여 ms 후 재평가를 예약하고, 만료 시점에 여전히 from<30 이면 emit 한다.
@@ -204,15 +204,15 @@ export const generateChartHtml = (): string => `<!DOCTYPE html>
         }
       });
 
-      // RN 이 archive 로드 중임을 알려올 때 좌측 영역을 반투명 마스킹. 연속 호출에 idempotent.
+      // RN 이 연도 슬라이스 로드 중임을 알려올 때 좌측 영역을 반투명 마스킹. 연속 호출에 idempotent.
       window.setLoadingOverlay = function (on) {
         var el = document.getElementById('chart-loading-overlay');
         if (!el) return;
         el.style.display = on ? 'flex' : 'none';
       };
 
-      // RN 이 "더 이상 받을 archive 가 없음" 을 알려올 때 fixLeftEdge 를 true 로 동적 전환.
-      // archive 가 남아있는 동안에는 false 유지(좌측 자유 스크롤 + load_earlier 트리거).
+      // RN 이 "더 이상 받을 연도 슬라이스가 없음" 을 알려올 때 fixLeftEdge 를 true 로 동적 전환.
+      // 슬라이스가 남아있는 동안에는 false 유지(좌측 자유 스크롤 + load_earlier 트리거).
       // applyOptions 는 v5.0 공식 동적 옵션 변경 API.
       window.setLeftEdgeFixed = function (on) {
         chart.timeScale().applyOptions({ fixLeftEdge: !!on });

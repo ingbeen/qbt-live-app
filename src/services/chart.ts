@@ -1,7 +1,7 @@
 import type { PriceChartSeries, EquityChartSeries } from '../types/rtdb';
 
-// archive 연도별 slice 들을 단일 시계열로 결합한다. 연도 간 비중첩 보장(서버 SoT) 이라
-// dedupe 는 불필요하지만, 동일 날짜가 두 archive 에 들어 있는 비정상 케이스에 대비해
+// 연도별 slice 들을 단일 시계열로 결합한다. 연도 간 비중첩 보장(서버 SoT) 이라
+// dedupe 는 불필요하지만, 동일 날짜가 두 slice 에 들어 있는 비정상 케이스에 대비해
 // Map 으로 1회 흡수한다 (silent 실패 방지).
 
 type PricePoint = {
@@ -64,13 +64,13 @@ const emptyEquitySeries = (): EquityChartSeries => ({
 });
 
 export const mergeChartSeries = (
-  archives: PriceChartSeries[],
+  slices: PriceChartSeries[],
 ): PriceChartSeries => {
-  if (archives.length === 0) return emptyPriceSeries();
+  if (slices.length === 0) return emptyPriceSeries();
 
   const map = new Map<string, PricePoint>();
 
-  archives.forEach(s => {
+  slices.forEach(s => {
     const len = priceLength(s);
     for (let i = 0; i < len; i += 1) {
       const date = s.dates[i];
@@ -92,21 +92,21 @@ export const mergeChartSeries = (
     ma_value: sortedDates.map(d => map.get(d)!.ma_value),
     upper_band: sortedDates.map(d => map.get(d)!.upper_band),
     lower_band: sortedDates.map(d => map.get(d)!.lower_band),
-    buy_signals: dedupMarkers(archives.flatMap(a => a.buy_signals ?? [])),
-    sell_signals: dedupMarkers(archives.flatMap(a => a.sell_signals ?? [])),
-    user_buys: dedupMarkers(archives.flatMap(a => a.user_buys ?? [])),
-    user_sells: dedupMarkers(archives.flatMap(a => a.user_sells ?? [])),
+    buy_signals: dedupMarkers(slices.flatMap(a => a.buy_signals ?? [])),
+    sell_signals: dedupMarkers(slices.flatMap(a => a.sell_signals ?? [])),
+    user_buys: dedupMarkers(slices.flatMap(a => a.user_buys ?? [])),
+    user_sells: dedupMarkers(slices.flatMap(a => a.user_sells ?? [])),
   };
 };
 
 export const mergeEquitySeries = (
-  archives: EquityChartSeries[],
+  slices: EquityChartSeries[],
 ): EquityChartSeries => {
-  if (archives.length === 0) return emptyEquitySeries();
+  if (slices.length === 0) return emptyEquitySeries();
 
   const map = new Map<string, EquityPoint>();
 
-  archives.forEach(s => {
+  slices.forEach(s => {
     const len = equityLength(s);
     for (let i = 0; i < len; i += 1) {
       const date = s.dates[i];

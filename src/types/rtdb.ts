@@ -73,7 +73,7 @@ export interface PriceChartMeta {
   last_date: string;
   ma_window: number;
   recent_months?: number;
-  archive_years: number[];
+  years: number[];
 }
 
 // ============================================================
@@ -85,11 +85,11 @@ export interface EquityChartMeta {
   first_date: string;
   last_date: string;
   recent_months?: number;
-  archive_years: number[];
+  years: number[];
 }
 
 // ============================================================
-// /charts/prices/{asset_id}/archive/{YYYY}
+// /charts/prices/{asset_id}/years/{YYYY}
 // ============================================================
 
 export interface PriceChartSeries {
@@ -105,7 +105,7 @@ export interface PriceChartSeries {
 }
 
 // ============================================================
-// /charts/equity/archive/{YYYY}
+// /charts/equity/years/{YYYY}
 // ============================================================
 
 export interface EquityChartSeries {

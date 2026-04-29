@@ -1,7 +1,7 @@
 import type { PriceChartSeries } from '../types/rtdb';
 
 // Firebase RTDB 는 모든 원소가 null 인 배열을 저장하지 않는 관습이 있어,
-// 예를 들어 first_date 에 가까운 초기 archive (전 구간 MA 워밍업) 는
+// 예를 들어 first_date 에 가까운 초기 연도 슬라이스 (전 구간 MA 워밍업) 는
 // ma_value / upper_band / lower_band 필드가 payload 에서 통째로 부재한다.
 // 서비스 계층에서 읽은 직후 이 함수를 한 번 통과시키면, 이후 앱 내부 로직
 // (chart.ts 병합, ChartScreen 접근 등) 은 "필수 필드가 항상 존재한다" 는

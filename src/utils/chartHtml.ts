@@ -218,6 +218,21 @@ export const generateChartHtml = (): string => `<!DOCTYPE html>
         chart.timeScale().applyOptions({ fixLeftEdge: !!on });
       };
 
+      // 진입 / 자산 전환 / 차트 타입 전환 시 visible range 를 마지막 약 1년(영업일 252봉) 으로
+      // 고정. setData 직후 호출되어야 데이터 길이가 정확하다. archive 추가 / PTR 시점에는
+      // 호출하지 않아 사용자 줌 위치를 보존한다 (호출 여부는 RN 측 ChartScreen 이 useRef 키로 결정).
+      window.applyInitialZoomLastYear = function () {
+        var series = closeSeries || modelSeries;
+        if (!series) return;
+        var data = series.data();
+        if (!data || data.length === 0) return;
+        var total = data.length;
+        chart.timeScale().setVisibleLogicalRange({
+          from: Math.max(0, total - 252),
+          to: total - 1,
+        });
+      };
+
       // 크로스헤어 이동 시 각 시리즈 값을 RN 상단 헤더로 전송. series 교체 후에도
       // 모듈 scope 의 *Series 참조가 최신이라 별도 재구독 불필요.
       chart.subscribeCrosshairMove(function (param) {

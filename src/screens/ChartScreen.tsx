@@ -105,6 +105,9 @@ export const ChartScreen: React.FC = () => {
     values: null,
   });
   const webviewRef = useRef<WebView>(null);
+  // 초기 줌(마지막 1년) 적용 키. 자산/차트 타입이 바뀔 때마다 키가 변경되어 한 번만 줌 적용.
+  // archive 추가 로드 / PTR 후에는 키가 같아 줌 적용 안 됨 → 사용자 스크롤 위치 보존.
+  const initialZoomKey = useRef<string | null>(null);
 
   const priceCache = useStore(s => s.priceCharts[assetId]);
   const equityCache = useStore(s => s.equityChart);
@@ -163,7 +166,16 @@ export const ChartScreen: React.FC = () => {
       if (Object.keys(equityCache.years).length === 0) return;
       injectEquityChart(webviewRef.current, equityCache.years);
     }
-  }, [webviewReady, chartType, priceCache, equityCache]);
+    // 자산/차트 타입 전환 시에만 초기 줌(마지막 1년) 적용. archive 추가 / PTR 시점에는
+    // 키가 동일하여 적용 안 되고 사용자 스크롤 위치 보존.
+    const currentKey = chartType === 'price' ? `price-${assetId}` : 'equity';
+    if (initialZoomKey.current !== currentKey) {
+      initialZoomKey.current = currentKey;
+      webviewRef.current?.injectJavaScript(
+        `window.applyInitialZoomLastYear(); true;`,
+      );
+    }
+  }, [webviewReady, chartType, assetId, priceCache, equityCache]);
 
   // Effect 2: 캐시/WebView 준비/연도 변경 시 재주입.
   useEffect(() => {

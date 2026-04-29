@@ -568,8 +568,9 @@ database().ref('/latest/portfolio').on('value', handler);
   - `crosshair` — 크로스헤어 이동 시 각 시리즈 값 전송 (payload: `{ date, values }`)
 - RN → WebView 주입 함수:
   - `window.setPriceChart(data)` / `window.setEquityChart(data)` — 차트 데이터 갱신
-  - `window.setLoadingOverlay(on: boolean)` — archive 선제 로드 중 좌측 영역 마스킹
-  - `window.setLeftEdgeFixed(on: boolean)` — 모든 archive 로드 완료 시 좌측 끝 고정(빈 여백 차단)
+  - `window.setLoadingOverlay(on: boolean)` — 연도 슬라이스 선제 로드 중 좌측 영역 마스킹
+  - `window.setLeftEdgeFixed(on: boolean)` — 모든 연도 슬라이스 로드 완료 시 좌측 끝 고정(빈 여백 차단)
+  - `window.applyInitialZoomLastYear()` — 진입/자산 전환/타입 전환 시 visible range 를 마지막 약 1년(252봉) 으로 고정
 
 ### 9.3 WebView 설정
 

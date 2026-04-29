@@ -298,6 +298,7 @@ export const ChartScreen: React.FC = () => {
       <PullToRefreshScrollView
         refreshing={chartType === 'price' ? isPriceLoading : isEquityLoading}
         onRefresh={onPullRefresh}
+        style={styles.ptrWrap}
       >
         <View style={styles.controls}>
           <ChartTypeToggle value={chartType} onChange={setChartType} />
@@ -342,6 +343,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.bg,
+  },
+  // PTR ScrollView 가 flex:1 처럼 부모 영역을 채우지 못하도록 flexGrow:0 으로 고정.
+  // 내부 컨트롤(주가/Equity 토글 + AssetSelector + ChartValueHeader) 의 자체 height
+  // 만큼만 차지하고, 나머지 영역은 chartArea(flex:1) 가 차지하여 차트가 정상 크기로 그려진다.
+  ptrWrap: {
+    flexGrow: 0,
   },
   controls: {
     paddingHorizontal: 12,

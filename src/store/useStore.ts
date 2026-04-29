@@ -27,10 +27,8 @@ import {
   readHistoryBalanceAdjusts,
   readHistorySignals,
   readPriceChartMeta,
-  readPriceChartRecent,
   readPriceChartArchive,
   readEquityChartMeta,
-  readEquityChartRecent,
   readEquityChartArchive,
   submitModelSync as submitModelSyncRtdb,
   submitFill as submitFillRtdb,
@@ -47,20 +45,20 @@ import {
   priceArchiveLoadingKey,
   equityArchiveLoadingKey,
 } from '../utils/loadingKeys';
-import { computeNextArchiveYear } from '../utils/chartArchive';
+import { computeInitialArchiveYears } from '../utils/chartArchive';
 
 export type { AuthUser };
 
-// 차트 탭 로컬 캐시. meta/recent 는 첫 로드 전 null, archive 는 연도별 지연 로드.
+// 차트 탭 로컬 캐시. meta 는 첫 로드 전 null, archive 는 연도별 지연 로드.
+// 진입 시 computeInitialArchiveYears 로 12개월 보장 연도 목록을 병렬 fetch 하고,
+// 좌측 스크롤 시 loadPriceArchive / loadEquityArchive 로 추가 연도를 점진 로드한다.
 export interface PriceChartCache {
   meta: PriceChartMeta | null;
-  recent: PriceChartSeries | null;
   archive: Partial<Record<number, PriceChartSeries>>;
 }
 
 export interface EquityChartCache {
   meta: EquityChartMeta | null;
-  recent: EquityChartSeries | null;
   archive: Partial<Record<number, EquityChartSeries>>;
 }
 
@@ -68,7 +66,6 @@ export type ChartTarget = AssetId | 'equity';
 
 const emptyEquityCache = (): EquityChartCache => ({
   meta: null,
-  recent: null,
   archive: {},
 });
 
@@ -332,98 +329,62 @@ export const useStore = create<Store>((set, get) => {
     },
 
     refreshChart: async target => {
+      // 진입 시: meta 1회 fetch → computeInitialArchiveYears(12개월 보장) → 필요한
+      // archive 들을 Promise.all 로 병렬 fetch. 좌측 스크롤 추가 로드는
+      // loadPriceArchive / loadEquityArchive 가 그대로 담당.
       const loadingKey = chartLoadingKey(target);
       setLoading(loadingKey, true);
       try {
         if (target === 'equity') {
-          const [meta, recent] = await Promise.all([
-            readEquityChartMeta(),
-            readEquityChartRecent(),
-          ]);
-          // recent 가 해당 연도 1/1 부터 시작하지 않으면 recent 앞쪽을 채우기
-          // 위해 첫 연도 archive 를 함께 로드. 실패해도 recent 는 세팅한다
-          // (좌측 스크롤로 재시도 가능).
-          const existingEquity = get().equityChart;
-          const loadedYears = Object.keys(existingEquity.archive).map(Number);
-          const firstYearToLoad =
-            meta && recent
-              ? computeNextArchiveYear(
-                  recent.dates[0],
-                  meta.archive_years,
-                  loadedYears,
-                )
-              : null;
-          let firstArchive: EquityChartSeries | null = null;
-          if (firstYearToLoad !== null) {
-            try {
-              firstArchive = await readEquityChartArchive(firstYearToLoad);
-            } catch (archErr) {
-              console.error(
-                '[store] refreshChart equity initial archive load failed:',
-                archErr,
-              );
-            }
+          const meta = await readEquityChartMeta();
+          if (!meta) {
+            set({ equityChart: { meta: null, archive: {} }, lastError: null });
+            return;
           }
-          const mergedArchive: Partial<Record<number, EquityChartSeries>> = {
-            ...existingEquity.archive,
-          };
-          if (firstYearToLoad !== null && firstArchive) {
-            mergedArchive[firstYearToLoad] = firstArchive;
-          }
-          set({
-            equityChart: {
-              meta,
-              recent,
-              archive: mergedArchive,
-            },
-            lastError: null,
+          const initialYears = computeInitialArchiveYears(
+            meta.last_date,
+            meta.archive_years,
+            12,
+          );
+          const fetched = await Promise.all(
+            initialYears.map(y => readEquityChartArchive(y)),
+          );
+          const archive: Partial<Record<number, EquityChartSeries>> = {};
+          initialYears.forEach((y, i) => {
+            const v = fetched[i];
+            if (v) archive[y] = v;
           });
+          set({ equityChart: { meta, archive }, lastError: null });
         } else {
           const assetId = target;
-          const [meta, recent] = await Promise.all([
-            readPriceChartMeta(assetId),
-            readPriceChartRecent(assetId),
-          ]);
-          const existing = get().priceCharts[assetId];
-          const loadedYears = existing
-            ? Object.keys(existing.archive).map(Number)
-            : [];
-          const firstYearToLoad =
-            meta && recent
-              ? computeNextArchiveYear(
-                  recent.dates[0],
-                  meta.archive_years,
-                  loadedYears,
-                )
-              : null;
-          let firstArchive: PriceChartSeries | null = null;
-          if (firstYearToLoad !== null) {
-            try {
-              firstArchive = await readPriceChartArchive(
-                assetId,
-                firstYearToLoad,
-              );
-            } catch (archErr) {
-              console.error(
-                '[store] refreshChart price initial archive load failed:',
-                archErr,
-              );
-            }
+          const meta = await readPriceChartMeta(assetId);
+          if (!meta) {
+            set({
+              priceCharts: {
+                ...get().priceCharts,
+                [assetId]: { meta: null, archive: {} },
+              },
+              lastError: null,
+            });
+            return;
           }
-          const mergedArchive: Partial<Record<number, PriceChartSeries>> = {
-            ...(existing?.archive ?? {}),
-          };
-          if (firstYearToLoad !== null && firstArchive) {
-            mergedArchive[firstYearToLoad] = firstArchive;
-          }
+          const initialYears = computeInitialArchiveYears(
+            meta.last_date,
+            meta.archive_years,
+            12,
+          );
+          const fetched = await Promise.all(
+            initialYears.map(y => readPriceChartArchive(assetId, y)),
+          );
+          const archive: Partial<Record<number, PriceChartSeries>> = {};
+          initialYears.forEach((y, i) => {
+            const v = fetched[i];
+            if (v) archive[y] = v;
+          });
           set({
             priceCharts: {
               ...get().priceCharts,
-              [assetId]: {
-                meta,
-                recent,
-                archive: mergedArchive,
-              },
+              [assetId]: { meta, archive },
             },
             lastError: null,
           });
@@ -446,7 +407,6 @@ export const useStore = create<Store>((set, get) => {
         if (!archive) return;
         const current = get().priceCharts[assetId] ?? {
           meta: null,
-          recent: null,
           archive: {},
         };
         set({

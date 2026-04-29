@@ -165,15 +165,6 @@ export const readPriceChartMeta = (
 // RTDB 는 null-only 배열을 저장하지 않아 워밍업 구간(예: first_date 에 가까운 초기
 // archive) 에서 ma_value / upper_band / lower_band 가 통째로 부재할 수 있다.
 // 서비스 계층에서 한 번 정규화하여 내부 로직의 접근을 안전하게 한다.
-export const readPriceChartRecent = async (
-  assetId: AssetId,
-): Promise<PriceChartSeries | null> => {
-  const raw = await readOnce<RawPriceChartSeries>(
-    `${RTDB_PATHS.CHARTS_PRICES}/${assetId}/recent`,
-  );
-  return raw ? normalizePriceSeries(raw) : null;
-};
-
 export const readPriceChartArchive = async (
   assetId: AssetId,
   year: number,
@@ -186,9 +177,6 @@ export const readPriceChartArchive = async (
 
 export const readEquityChartMeta = (): Promise<EquityChartMeta | null> =>
   readOnce<EquityChartMeta>(`${RTDB_PATHS.CHARTS_EQUITY}/meta`);
-
-export const readEquityChartRecent = (): Promise<EquityChartSeries | null> =>
-  readOnce<EquityChartSeries>(`${RTDB_PATHS.CHARTS_EQUITY}/recent`);
 
 export const readEquityChartArchive = (
   year: number,

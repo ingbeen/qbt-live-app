@@ -4,12 +4,12 @@ import {
   Text,
   StyleSheet,
   Pressable,
-  ScrollView,
   ActivityIndicator,
 } from 'react-native';
 import { useStore } from '../store/useStore';
 import { signOut } from '../services/auth';
 import { Badge } from '../components/Badge';
+import { PullToRefreshScrollView } from '../components/PullToRefreshScrollView';
 import { COLORS, COLOR_PRESETS } from '../utils/colors';
 import { APP_VERSION, PADDING_MD, RADIUS_MD } from '../utils/constants';
 
@@ -33,7 +33,13 @@ export const SettingsScreen: React.FC = () => {
   const user = useStore(s => s.user);
   const portfolio = useStore(s => s.portfolio);
   const fcmRegistered = useStore(s => s.fcmRegistered);
+  const refreshHome = useStore(s => s.refreshHome);
+  const isLoadingHome = useStore(s => s.loading.home === true);
   const [signingOut, setSigningOut] = useState(false);
+
+  const onRefresh = useCallback(() => {
+    refreshHome();
+  }, [refreshHome]);
 
   // portfolio 가 로드된 상태면 RTDB 연결 정상. lastError 는 체결 저장 실패 등 다른 경로에서도
   // 세팅되므로 연결 상태 판정에서 제외.
@@ -61,7 +67,11 @@ export const SettingsScreen: React.FC = () => {
   }, [signingOut]);
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <PullToRefreshScrollView
+      refreshing={isLoadingHome}
+      onRefresh={onRefresh}
+      contentContainerStyle={styles.content}
+    >
       <View style={styles.card}>
         <Row label="계정" value={user?.email ?? '-'} />
         <Row label="Firebase" value="qbt-live (Spark)" />
@@ -86,15 +96,11 @@ export const SettingsScreen: React.FC = () => {
           <Text style={styles.signOutText}>로그아웃</Text>
         )}
       </Pressable>
-    </ScrollView>
+    </PullToRefreshScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.bg,
-  },
   content: {
     padding: PADDING_MD,
   },

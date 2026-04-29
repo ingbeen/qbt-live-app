@@ -1,8 +1,8 @@
 import type { PriceChartSeries, EquityChartSeries } from '../types/rtdb';
 
-// RTDB recent 와 archive/{현재_연도} 는 경계 날짜가 겹치므로 Map 으로 dedupe.
-// 구현 순서: archives 먼저 ingest → recent 로 마지막 덮어쓰기. Map.set 은 키가 같으면
-// 값을 덮어쓰므로 동일 날짜에 대해 recent 값이 우선 적용된다 (서버 최신 기준).
+// archive 연도별 slice 들을 단일 시계열로 결합한다. 연도 간 비중첩 보장(서버 SoT) 이라
+// dedupe 는 불필요하지만, 동일 날짜가 두 archive 에 들어 있는 비정상 케이스에 대비해
+// Map 으로 1회 흡수한다 (silent 실패 방지).
 
 type PricePoint = {
   close: number;
@@ -45,13 +45,32 @@ const equityLength = (s: EquityChartSeries): number => {
   return min;
 };
 
+const emptyPriceSeries = (): PriceChartSeries => ({
+  dates: [],
+  close: [],
+  ma_value: [],
+  upper_band: [],
+  lower_band: [],
+  buy_signals: [],
+  sell_signals: [],
+  user_buys: [],
+  user_sells: [],
+});
+
+const emptyEquitySeries = (): EquityChartSeries => ({
+  dates: [],
+  model_equity: [],
+  actual_equity: [],
+});
+
 export const mergeChartSeries = (
-  recent: PriceChartSeries,
   archives: PriceChartSeries[],
 ): PriceChartSeries => {
+  if (archives.length === 0) return emptyPriceSeries();
+
   const map = new Map<string, PricePoint>();
 
-  const ingest = (s: PriceChartSeries): void => {
+  archives.forEach(s => {
     const len = priceLength(s);
     for (let i = 0; i < len; i += 1) {
       const date = s.dates[i];
@@ -64,10 +83,7 @@ export const mergeChartSeries = (
         lower_band: s.lower_band[i] ?? null,
       });
     }
-  };
-
-  archives.forEach(ingest);
-  ingest(recent);
+  });
 
   const sortedDates = Array.from(map.keys()).sort();
   return {
@@ -76,32 +92,21 @@ export const mergeChartSeries = (
     ma_value: sortedDates.map(d => map.get(d)!.ma_value),
     upper_band: sortedDates.map(d => map.get(d)!.upper_band),
     lower_band: sortedDates.map(d => map.get(d)!.lower_band),
-    buy_signals: dedupMarkers([
-      ...(recent.buy_signals ?? []),
-      ...archives.flatMap(a => a.buy_signals ?? []),
-    ]),
-    sell_signals: dedupMarkers([
-      ...(recent.sell_signals ?? []),
-      ...archives.flatMap(a => a.sell_signals ?? []),
-    ]),
-    user_buys: dedupMarkers([
-      ...(recent.user_buys ?? []),
-      ...archives.flatMap(a => a.user_buys ?? []),
-    ]),
-    user_sells: dedupMarkers([
-      ...(recent.user_sells ?? []),
-      ...archives.flatMap(a => a.user_sells ?? []),
-    ]),
+    buy_signals: dedupMarkers(archives.flatMap(a => a.buy_signals ?? [])),
+    sell_signals: dedupMarkers(archives.flatMap(a => a.sell_signals ?? [])),
+    user_buys: dedupMarkers(archives.flatMap(a => a.user_buys ?? [])),
+    user_sells: dedupMarkers(archives.flatMap(a => a.user_sells ?? [])),
   };
 };
 
 export const mergeEquitySeries = (
-  recent: EquityChartSeries,
   archives: EquityChartSeries[],
 ): EquityChartSeries => {
+  if (archives.length === 0) return emptyEquitySeries();
+
   const map = new Map<string, EquityPoint>();
 
-  const ingest = (s: EquityChartSeries): void => {
+  archives.forEach(s => {
     const len = equityLength(s);
     for (let i = 0; i < len; i += 1) {
       const date = s.dates[i];
@@ -114,10 +119,7 @@ export const mergeEquitySeries = (
         actual_equity: actual,
       });
     }
-  };
-
-  archives.forEach(ingest);
-  ingest(recent);
+  });
 
   const sortedDates = Array.from(map.keys()).sort();
   return {

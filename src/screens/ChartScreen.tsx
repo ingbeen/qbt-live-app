@@ -14,18 +14,38 @@ import {
   type CrosshairValues,
 } from '../components/ChartValueHeader';
 import { Toast } from '../components/Toast';
+import { PullToRefreshScrollView } from '../components/PullToRefreshScrollView';
 import { chartLoadingKey } from '../utils/loadingKeys';
 import { computeNextArchiveYear } from '../utils/chartArchive';
+
+type ArchiveMapLike = Partial<Record<number, { dates: string[] }>>;
+
+// archive 단일 모델 — 가장 오래된 archive 의 첫 날짜가 firstDate.
+// 좌측 끝 더 받을 게 없는지 판단할 때 사용.
+const earliestArchiveFirstDate = (
+  archiveMap: ArchiveMapLike | null | undefined,
+): string | undefined => {
+  if (!archiveMap) return undefined;
+  const years = Object.keys(archiveMap)
+    .map(Number)
+    .filter(y => !Number.isNaN(y))
+    .sort((a, b) => a - b);
+  for (const y of years) {
+    const s = archiveMap[y];
+    const d = s?.dates[0];
+    if (d) return d;
+  }
+  return undefined;
+};
 
 // 모든 archive 가 로드 완료되었는지 판단. computeNextArchiveYear 가 null 을 반환하면
 // 더 이상 받을 데이터가 없는 상태(좌측 끝)로 간주. RN→WebView 신호로 fixLeftEdge 동적 전환.
 const computeIsFullyLoaded = (
   meta: { archive_years: number[] } | null | undefined,
-  recent: { dates: string[] } | null | undefined,
-  archiveMap: Record<number, unknown> | null | undefined,
+  archiveMap: ArchiveMapLike | null | undefined,
 ): boolean => {
-  if (!meta || !recent || !archiveMap) return false;
-  const firstDate = recent.dates[0];
+  if (!meta || !archiveMap) return false;
+  const firstDate = earliestArchiveFirstDate(archiveMap);
   if (!firstDate) return false;
   const loadedYears = Object.keys(archiveMap).map(Number);
   return (
@@ -41,20 +61,37 @@ const EQUITY_ARCHIVE_PREFIX = 'chart_archive_equity_';
 
 // 좌측 스크롤 로드 시 필요한 연도 1개를 결정.
 // 판정 규칙은 `computeNextArchiveYear` 에 통일 (초기 로드와 동일 규칙 공유).
-// firstDate 빈 배열은 RTDB 계약 위반이므로 null + 호출부에서 사용자 에러 토스트.
+// firstDate 빈 배열/부재는 archive 미로드 상태이므로 사용자 에러 토스트.
 const computeYearToLoad = (
   meta: { archive_years: number[] },
-  recent: { dates: string[] },
-  archiveMap: Record<number, unknown>,
+  archiveMap: ArchiveMapLike,
   target: 'price' | 'equity',
 ): number | null => {
-  const firstDate = recent.dates[0];
+  const firstDate = earliestArchiveFirstDate(archiveMap);
   if (!firstDate) {
-    console.warn(`[chart] empty ${target} recent series, cannot load earlier`);
+    console.warn(`[chart] empty ${target} archive, cannot load earlier`);
     return null;
   }
   const loadedYears = Object.keys(archiveMap).map(Number);
   return computeNextArchiveYear(firstDate, meta.archive_years, loadedYears);
+};
+
+// 차트 마지막 봉(=가장 최신 날짜의 archive 의 마지막 인덱스) 값 추출. 헤더 초기값에 사용.
+const lastArchivePoint = <T extends { dates: string[] }>(
+  archiveMap: Partial<Record<number, T>> | null | undefined,
+): { series: T; idx: number } | null => {
+  if (!archiveMap) return null;
+  const years = Object.keys(archiveMap)
+    .map(Number)
+    .filter(y => !Number.isNaN(y))
+    .sort((a, b) => b - a);
+  for (const y of years) {
+    const s = archiveMap[y];
+    if (s && s.dates.length > 0) {
+      return { series: s, idx: s.dates.length - 1 };
+    }
+  }
+  return null;
 };
 
 interface CrosshairState {
@@ -83,9 +120,13 @@ export const ChartScreen: React.FC = () => {
 
   const isPriceLoading = loading[chartLoadingKey(assetId)] === true;
   const isEquityLoading = loading[chartLoadingKey('equity')] === true;
+  // 진입 직후 archive 가 비어있을 때 스피너. archive 가 1개라도 채워지면 차트 표시 가능.
+  const priceArchiveEmpty =
+    !priceCache || Object.keys(priceCache.archive).length === 0;
+  const equityArchiveEmpty = Object.keys(equityCache.archive).length === 0;
   const showSpinner =
-    (chartType === 'price' && isPriceLoading && !priceCache?.recent) ||
-    (chartType === 'equity' && isEquityLoading && !equityCache.recent);
+    (chartType === 'price' && isPriceLoading && priceArchiveEmpty) ||
+    (chartType === 'equity' && isEquityLoading && equityArchiveEmpty);
 
   // 좌측 archive 선제 로드 중인지 판단. 해당 차트 타입의 archive 키 중 하나라도
   // true 이면 WebView 좌측에 마스킹 오버레이 표시.
@@ -101,53 +142,31 @@ export const ChartScreen: React.FC = () => {
   // 좌측 끝 추가 스크롤(빈 여백) 을 차단한다. 자산/차트 타입 전환 시 재평가됨.
   const isFullyLoaded = React.useMemo(() => {
     if (chartType === 'price') {
-      return computeIsFullyLoaded(
-        priceCache?.meta,
-        priceCache?.recent,
-        priceCache?.archive,
-      );
+      return computeIsFullyLoaded(priceCache?.meta, priceCache?.archive);
     }
-    return computeIsFullyLoaded(
-      equityCache.meta,
-      equityCache.recent,
-      equityCache.archive,
-    );
+    return computeIsFullyLoaded(equityCache.meta, equityCache.archive);
   }, [chartType, priceCache, equityCache]);
 
-  // Effect 1: 캐시 없으면 recent + meta 로드. 이미 있으면 skip (재진입 캐시 활용).
+  // Effect 1: meta 가 없으면 진입 시 차트 로드. 재진입 시 캐시 활용.
   useEffect(() => {
     if (chartType === 'price') {
-      if (!priceCache?.recent) {
+      if (!priceCache?.meta) {
         refreshChart(assetId);
       }
-    } else if (!equityCache.recent) {
+    } else if (!equityCache.meta) {
       refreshChart('equity');
     }
-  }, [
-    chartType,
-    assetId,
-    priceCache?.recent,
-    equityCache.recent,
-    refreshChart,
-  ]);
+  }, [chartType, assetId, priceCache?.meta, equityCache.meta, refreshChart]);
 
-  // 주입 헬퍼: WebView 준비 + 캐시 존재 시에만 실행.
+  // 주입 헬퍼: WebView 준비 + archive 1개 이상 시 실행.
   const injectChartData = useCallback(() => {
     if (!webviewReady) return;
     if (chartType === 'price') {
-      if (!priceCache?.recent) return;
-      injectPriceChart(
-        webviewRef.current,
-        priceCache.recent,
-        priceCache.archive,
-      );
+      if (!priceCache || Object.keys(priceCache.archive).length === 0) return;
+      injectPriceChart(webviewRef.current, priceCache.archive);
     } else {
-      if (!equityCache.recent) return;
-      injectEquityChart(
-        webviewRef.current,
-        equityCache.recent,
-        equityCache.archive,
-      );
+      if (Object.keys(equityCache.archive).length === 0) return;
+      injectEquityChart(webviewRef.current, equityCache.archive);
     }
   }, [webviewReady, chartType, priceCache, equityCache]);
 
@@ -175,48 +194,38 @@ export const ChartScreen: React.FC = () => {
 
   // Effect 4: 차트 타입/자산 전환 또는 캐시 로드 시 상단 헤더를 최신 봉 값으로 리셋.
   // 이후 사용자가 크로스헤어를 움직이면 handleCrosshair 가 값을 덮어씀.
-  // recent 의 마지막 인덱스 기준 (병합 시리즈 최종 값과 동일).
+  // 가장 최신 archive 의 마지막 인덱스 기준 (병합 시리즈 최종 값과 동일).
   useEffect(() => {
     if (chartType === 'price') {
-      const recent = priceCache?.recent;
-      if (!recent) {
+      const last = lastArchivePoint(priceCache?.archive);
+      if (!last) {
         setCrosshair({ date: null, values: null });
         return;
       }
-      const idx = recent.dates.length - 1;
-      if (idx < 0) {
-        setCrosshair({ date: null, values: null });
-        return;
-      }
-      const date = recent.dates[idx];
+      const date = last.series.dates[last.idx];
       if (!date) return;
       const values: CrosshairValues = {
-        close: recent.close[idx] ?? undefined,
-        ma: recent.ma_value[idx] ?? undefined,
-        upper: recent.upper_band[idx] ?? undefined,
-        lower: recent.lower_band[idx] ?? undefined,
+        close: last.series.close[last.idx] ?? undefined,
+        ma: last.series.ma_value[last.idx] ?? undefined,
+        upper: last.series.upper_band[last.idx] ?? undefined,
+        lower: last.series.lower_band[last.idx] ?? undefined,
       };
       setCrosshair({ date, values });
     } else {
-      const recent = equityCache.recent;
-      if (!recent) {
+      const last = lastArchivePoint(equityCache.archive);
+      if (!last) {
         setCrosshair({ date: null, values: null });
         return;
       }
-      const idx = recent.dates.length - 1;
-      if (idx < 0) {
-        setCrosshair({ date: null, values: null });
-        return;
-      }
-      const date = recent.dates[idx];
+      const date = last.series.dates[last.idx];
       if (!date) return;
       const values: CrosshairValues = {
-        model: recent.model_equity[idx] ?? undefined,
-        actual: recent.actual_equity[idx] ?? undefined,
+        model: last.series.model_equity[last.idx] ?? undefined,
+        actual: last.series.actual_equity[last.idx] ?? undefined,
       };
       setCrosshair({ date, values });
     }
-  }, [chartType, assetId, priceCache?.recent, equityCache.recent]);
+  }, [chartType, assetId, priceCache?.archive, equityCache.archive]);
 
   const handleCrosshair = useCallback(
     (date: string, values: CrosshairValues) => {
@@ -230,12 +239,11 @@ export const ChartScreen: React.FC = () => {
   const loadEarlierData = useCallback(async () => {
     if (chartType === 'price') {
       const meta = priceCache?.meta;
-      const recent = priceCache?.recent;
       const archiveMap = priceCache?.archive;
-      if (!meta || !recent || !archiveMap) return;
-      const yearToLoad = computeYearToLoad(meta, recent, archiveMap, 'price');
+      if (!meta || !archiveMap) return;
+      const yearToLoad = computeYearToLoad(meta, archiveMap, 'price');
       if (yearToLoad === null) {
-        if (recent.dates.length === 0) {
+        if (Object.keys(archiveMap).length === 0) {
           setLastError('차트 데이터가 비어있습니다.');
         }
         return;
@@ -243,16 +251,10 @@ export const ChartScreen: React.FC = () => {
       await loadPriceArchive(assetId, yearToLoad);
     } else {
       const meta = equityCache.meta;
-      const recent = equityCache.recent;
-      if (!meta || !recent) return;
-      const yearToLoad = computeYearToLoad(
-        meta,
-        recent,
-        equityCache.archive,
-        'equity',
-      );
+      if (!meta) return;
+      const yearToLoad = computeYearToLoad(meta, equityCache.archive, 'equity');
       if (yearToLoad === null) {
-        if (recent.dates.length === 0) {
+        if (Object.keys(equityCache.archive).length === 0) {
           setLastError('차트 데이터가 비어있습니다.');
         }
         return;
@@ -286,22 +288,37 @@ export const ChartScreen: React.FC = () => {
     setLastError(null);
   }, [setLastError]);
 
+  // PTR: 컨트롤 영역에서 화면을 당겨 차트 데이터(meta + archive) 강제 갱신.
+  // 차트 영역(WebView) 은 PTR 외부에 두어 핀치/스와이프 제스처와 충돌하지 않게 한다.
+  const onPullRefresh = useCallback(() => {
+    if (chartType === 'price') {
+      refreshChart(assetId);
+    } else {
+      refreshChart('equity');
+    }
+  }, [chartType, assetId, refreshChart]);
+
   return (
     <View style={styles.container}>
-      <View style={styles.controls}>
-        <ChartTypeToggle value={chartType} onChange={setChartType} />
-        {chartType === 'price' ? (
-          <View style={styles.assetRow}>
-            <AssetSelector value={assetId} onChange={setAssetId} />
-          </View>
-        ) : null}
-      </View>
+      <PullToRefreshScrollView
+        refreshing={chartType === 'price' ? isPriceLoading : isEquityLoading}
+        onRefresh={onPullRefresh}
+      >
+        <View style={styles.controls}>
+          <ChartTypeToggle value={chartType} onChange={setChartType} />
+          {chartType === 'price' ? (
+            <View style={styles.assetRow}>
+              <AssetSelector value={assetId} onChange={setAssetId} />
+            </View>
+          ) : null}
+        </View>
 
-      <ChartValueHeader
-        type={chartType}
-        date={crosshair.date}
-        values={crosshair.values}
-      />
+        <ChartValueHeader
+          type={chartType}
+          date={crosshair.date}
+          values={crosshair.values}
+        />
+      </PullToRefreshScrollView>
 
       <View style={styles.chartArea}>
         <ChartWebView

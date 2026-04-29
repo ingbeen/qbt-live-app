@@ -67,11 +67,12 @@ export interface PendingOrder {
 // ============================================================
 
 // 주가 차트 메타 — ma_window 필수 (이동평균 기간)
+// recent_months 는 서버 폐지 진행 중이라 옵셔널로 유지하되 앱은 사용하지 않는다.
 export interface PriceChartMeta {
   first_date: string;
   last_date: string;
   ma_window: number;
-  recent_months: number;
+  recent_months?: number;
   archive_years: number[];
 }
 
@@ -83,12 +84,12 @@ export interface PriceChartMeta {
 export interface EquityChartMeta {
   first_date: string;
   last_date: string;
-  recent_months: number;
+  recent_months?: number;
   archive_years: number[];
 }
 
 // ============================================================
-// /charts/prices/{asset_id}/(recent|archive/{YYYY})
+// /charts/prices/{asset_id}/archive/{YYYY}
 // ============================================================
 
 export interface PriceChartSeries {
@@ -104,7 +105,7 @@ export interface PriceChartSeries {
 }
 
 // ============================================================
-// /charts/equity/(recent|archive/{YYYY})
+// /charts/equity/archive/{YYYY}
 // ============================================================
 
 export interface EquityChartSeries {

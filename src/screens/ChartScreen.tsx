@@ -96,6 +96,11 @@ interface CrosshairState {
   values: CrosshairValues | null;
 }
 
+// 차트 화면은 다른 탭과 달리 WebView 리마운트 비용이 크고 Android 측 lifecycle
+// 이슈가 있어 Outer/Content key 리마운트 패턴 대신 명시적 state 리셋을 사용한다.
+// PTR 시 store 캐시를 비우고 chartType/assetId/initialZoomKey/crosshair 만 초기값으로
+// 되돌리면 Effect 1 이 refreshChart 를 자동 호출하고 Effect 2 가 새 데이터를 inject
+// 하면서 initialZoomKey null → 'price-sso' 전환으로 마지막 1년 줌이 다시 적용된다.
 export const ChartScreen: React.FC = () => {
   const [chartType, setChartType] = useState<ChartType>('price');
   const [assetId, setAssetId] = useState<AssetId>('sso');
@@ -295,15 +300,16 @@ export const ChartScreen: React.FC = () => {
     setLastError(null);
   }, [setLastError]);
 
-  // PTR: 컨트롤 영역에서 화면을 당겨 차트 데이터(meta + years) 강제 갱신.
-  // 차트 영역(WebView) 은 PTR 외부에 두어 핀치/스와이프 제스처와 충돌하지 않게 한다.
+  // PTR: 차트 캐시 비움 + 로컬 state 를 첫 진입 기본값으로 리셋.
+  // WebView 는 그대로 두고, Effect 1 이 refreshChart('sso') 자동 호출 → Effect 2 가
+  // 새 데이터 inject + initialZoomKey 가 null 로 리셋되어 마지막 1년 줌 재적용.
   const onPullRefresh = useCallback(() => {
-    if (chartType === 'price') {
-      refreshChart(assetId);
-    } else {
-      refreshChart('equity');
-    }
-  }, [chartType, assetId, refreshChart]);
+    useStore.getState().clearChartCache();
+    setChartType('price');
+    setAssetId('sso');
+    setCrosshair({ date: null, values: null });
+    initialZoomKey.current = null;
+  }, []);
 
   return (
     <View style={styles.container}>

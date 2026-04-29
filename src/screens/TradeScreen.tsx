@@ -19,7 +19,11 @@ import { ErrorState } from '../components/ErrorState';
 
 type Mode = 'fill' | 'adjust';
 
-export const TradeScreen: React.FC = () => {
+interface ContentProps {
+  onPullRefresh: () => void;
+}
+
+const TradeScreenContent: React.FC<ContentProps> = ({ onPullRefresh }) => {
   const portfolio = useStore(s => s.portfolio);
   const signals = useStore(s => s.signals);
   const pendingOrders = useStore(s => s.pendingOrders);
@@ -49,11 +53,6 @@ export const TradeScreen: React.FC = () => {
     if (needsHomeData) refreshHome();
   }, [needsHomeData, refreshHome]);
 
-  const onRefresh = useCallback(() => {
-    refreshHome();
-    refreshTrade();
-  }, [refreshHome, refreshTrade]);
-
   // portfolio 가 null 이고 로딩도 끝난 상태 = 로드 실패. 무한 스피너 방지.
   if (portfolio === null && !isLoadingHome && lastError) {
     return <ErrorState message={lastError} onRetry={refreshHome} />;
@@ -71,7 +70,7 @@ export const TradeScreen: React.FC = () => {
     <View style={styles.root}>
       <PullToRefreshScrollView
         refreshing={isLoadingTrade}
-        onRefresh={onRefresh}
+        onRefresh={onPullRefresh}
         contentContainerStyle={styles.content}
       >
         <View style={styles.segment}>
@@ -131,6 +130,18 @@ export const TradeScreen: React.FC = () => {
       <Toast message={lastToast} onClose={hideToast} />
     </View>
   );
+};
+
+// Outer: PTR 시 portfolio/inbox/history 캐시를 비우고 Content 를 리마운트하여
+// mode='fill' 기본값 + FillForm/AdjustForm 의 모든 입력값을 첫 진입처럼 리셋.
+export const TradeScreen: React.FC = () => {
+  const [refreshKey, setRefreshKey] = useState(0);
+  const onPullRefresh = useCallback(() => {
+    useStore.getState().clearHomeCache();
+    useStore.getState().clearTradeCache();
+    setRefreshKey(k => k + 1);
+  }, []);
+  return <TradeScreenContent key={refreshKey} onPullRefresh={onPullRefresh} />;
 };
 
 const styles = StyleSheet.create({

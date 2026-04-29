@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -29,7 +29,11 @@ const Row: React.FC<RowProps> = ({ label, value, badge }) => (
   </View>
 );
 
-export const SettingsScreen: React.FC = () => {
+interface ContentProps {
+  onPullRefresh: () => void;
+}
+
+const SettingsScreenContent: React.FC<ContentProps> = ({ onPullRefresh }) => {
   const user = useStore(s => s.user);
   const portfolio = useStore(s => s.portfolio);
   const fcmRegistered = useStore(s => s.fcmRegistered);
@@ -37,9 +41,11 @@ export const SettingsScreen: React.FC = () => {
   const isLoadingHome = useStore(s => s.loading.home === true);
   const [signingOut, setSigningOut] = useState(false);
 
-  const onRefresh = useCallback(() => {
-    refreshHome();
-  }, [refreshHome]);
+  // mount 시 portfolio 캐시가 비어있으면 즉시 재로드 (PTR 직후 RTDB 배지가 "오류"
+  // 로 잠시 표시되는 것을 최소화). 다른 탭에서 이미 로드되어 있으면 skip.
+  useEffect(() => {
+    if (portfolio === null) refreshHome();
+  }, [portfolio, refreshHome]);
 
   // portfolio 가 로드된 상태면 RTDB 연결 정상. lastError 는 체결 저장 실패 등 다른 경로에서도
   // 세팅되므로 연결 상태 판정에서 제외.
@@ -69,7 +75,7 @@ export const SettingsScreen: React.FC = () => {
   return (
     <PullToRefreshScrollView
       refreshing={isLoadingHome}
-      onRefresh={onRefresh}
+      onRefresh={onPullRefresh}
       contentContainerStyle={styles.content}
     >
       <View style={styles.card}>
@@ -97,6 +103,19 @@ export const SettingsScreen: React.FC = () => {
         )}
       </Pressable>
     </PullToRefreshScrollView>
+  );
+};
+
+// Outer: PTR 시 home 캐시를 비우고 Content 를 리마운트하여 signingOut 등 모든
+// 로컬 state 를 첫 진입처럼 리셋.
+export const SettingsScreen: React.FC = () => {
+  const [refreshKey, setRefreshKey] = useState(0);
+  const onPullRefresh = useCallback(() => {
+    useStore.getState().clearHomeCache();
+    setRefreshKey(k => k + 1);
+  }, []);
+  return (
+    <SettingsScreenContent key={refreshKey} onPullRefresh={onPullRefresh} />
   );
 };
 

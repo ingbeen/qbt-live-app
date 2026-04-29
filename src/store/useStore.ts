@@ -108,6 +108,11 @@ interface Store {
   setDeviceId: (deviceId: string | null) => void;
   setFcmRegistered: (registered: boolean) => void;
   clearAll: () => void;
+  // 도메인별 캐시 비움 (PTR 에서 화면 첫 진입처럼 리셋하기 위해 호출).
+  // 세션/네트워크/FCM 상태는 유지.
+  clearHomeCache: () => void;
+  clearChartCache: () => void;
+  clearTradeCache: () => void;
 
   // 액션: UI 알림
   showToast: (message: string) => void;
@@ -204,6 +209,41 @@ export const useStore = create<Store>((set, get) => {
         equityChart: emptyEquityCache(),
         loading: {},
         lastToast: null,
+      }),
+    // 도메인별 캐시 비움. PTR 시 화면 첫 진입처럼 리셋하기 위해 사용.
+    // 세션/네트워크/FCM/lastToast 는 유지 (PTR 은 일시적 동작이므로 토스트도 보존).
+    clearHomeCache: () =>
+      set({
+        portfolio: null,
+        signals: null,
+        pendingOrders: null,
+        inboxFills: null,
+        inboxBalanceAdjusts: null,
+        inboxFillDismiss: null,
+        inboxModelSync: null,
+        lastError: null,
+      }),
+    // 차트 관련 loading 키는 모두 `chart_` prefix 로 식별 (loadingKeys.ts 참고).
+    // 비-차트 loading 키(home/trade) 는 보존하여 다른 탭의 PTR 인디케이터에 영향 주지 않음.
+    clearChartCache: () =>
+      set(state => {
+        const nextLoading: Partial<Record<string, boolean>> = {};
+        for (const [k, v] of Object.entries(state.loading)) {
+          if (!k.startsWith('chart_')) nextLoading[k] = v;
+        }
+        return {
+          priceCharts: {},
+          equityChart: emptyEquityCache(),
+          loading: nextLoading,
+          lastError: null,
+        };
+      }),
+    clearTradeCache: () =>
+      set({
+        historyFills: null,
+        historyBalanceAdjusts: null,
+        historySignals: null,
+        lastError: null,
       }),
 
     showToast: message => set({ lastToast: message }),

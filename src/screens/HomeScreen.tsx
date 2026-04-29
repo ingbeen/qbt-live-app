@@ -13,7 +13,11 @@ import { SyncDialog } from '../components/SyncDialog';
 import { Toast } from '../components/Toast';
 import { ErrorState } from '../components/ErrorState';
 
-export const HomeScreen: React.FC = () => {
+interface ContentProps {
+  onPullRefresh: () => void;
+}
+
+const HomeScreenContent: React.FC<ContentProps> = ({ onPullRefresh }) => {
   const portfolio = useStore(s => s.portfolio);
   const signals = useStore(s => s.signals);
   const pendingOrders = useStore(s => s.pendingOrders);
@@ -34,13 +38,13 @@ export const HomeScreen: React.FC = () => {
     refreshHome();
   }, [refreshHome]);
 
-  const onRefresh = useCallback(() => {
-    refreshHome();
-  }, [refreshHome]);
-
   const onSyncPress = useCallback(() => {
     setDialogVisible(true);
   }, []);
+
+  const onRetry = useCallback(() => {
+    refreshHome();
+  }, [refreshHome]);
 
   const onSyncCancel = useCallback(() => {
     setDialogVisible(false);
@@ -63,7 +67,7 @@ export const HomeScreen: React.FC = () => {
     return (
       <ErrorState
         message={lastError ?? '데이터가 없습니다.'}
-        onRetry={onRefresh}
+        onRetry={onRetry}
       />
     );
   }
@@ -72,7 +76,7 @@ export const HomeScreen: React.FC = () => {
     <View style={styles.root}>
       <PullToRefreshScrollView
         refreshing={isLoadingHome}
-        onRefresh={onRefresh}
+        onRefresh={onPullRefresh}
         contentContainerStyle={styles.content}
       >
         {lastError ? <Text style={styles.errorBanner}>{lastError}</Text> : null}
@@ -119,6 +123,17 @@ export const HomeScreen: React.FC = () => {
       <Toast message={lastToast} onClose={hideToast} />
     </View>
   );
+};
+
+// Outer: PTR 시 도메인 캐시를 비우고 Content 를 리마운트하여 모든 로컬 state 를
+// 첫 진입처럼 리셋한다. (브라우저 새로고침 동작과 동등)
+export const HomeScreen: React.FC = () => {
+  const [refreshKey, setRefreshKey] = useState(0);
+  const onPullRefresh = useCallback(() => {
+    useStore.getState().clearHomeCache();
+    setRefreshKey(k => k + 1);
+  }, []);
+  return <HomeScreenContent key={refreshKey} onPullRefresh={onPullRefresh} />;
 };
 
 const styles = StyleSheet.create({

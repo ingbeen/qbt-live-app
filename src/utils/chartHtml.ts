@@ -67,7 +67,10 @@ export const generateChartHtml = (): string => `<!DOCTYPE html>
           // 막으면 좌측 제스처가 원천 차단되어 load_earlier 트리거가 이어지지 않으므로 false 유지.
           rightOffset: 0,
           fixLeftEdge: false,
-          fixRightEdge: true
+          fixRightEdge: true,
+          // 핀치 줌아웃이 현재 로드된 데이터 길이까지 도달하도록 barSpacing 하한을 라이브러리
+          // 기본값(약 0.5px) 보다 충분히 작게 푼다. 줌인/스와이프 동작에는 영향 없음.
+          minBarSpacing: 0.001
         },
         rightPriceScale: { borderColor: '${CHART_COLORS.border}', autoScale: true },
         crosshair: { mode: 1 },

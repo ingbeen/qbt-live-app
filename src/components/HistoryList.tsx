@@ -11,8 +11,8 @@ import { pressedOpacity } from '../utils/pressable';
 import type {
   AssetId,
   BalanceAdjustHistory,
-  Direction,
   FillHistory,
+  SignalState,
 } from '../types/rtdb';
 import type { SignalHistoryEntry } from '../services/rtdb';
 import {
@@ -48,7 +48,9 @@ type HistoryEvent =
       date: string;
       sortKey: string;
       asset_id: AssetId;
-      signal: SignalHistoryEntry['signal'];
+      signal: Omit<SignalHistoryEntry['signal'], 'state'> & {
+        state: SignalState;
+      };
     };
 
 const fillsToEvents = (fills: FillHistory[]): HistoryEvent[] =>
@@ -68,15 +70,19 @@ const adjustsToEvents = (adjusts: BalanceAdjustHistory[]): HistoryEvent[] =>
   }));
 
 const signalsToEvents = (signals: SignalHistoryEntry[]): HistoryEvent[] =>
-  signals
-    .filter(s => s.signal.state !== 'none')
-    .map(s => ({
-      kind: 'signal',
-      date: s.date,
-      sortKey: s.date,
-      asset_id: s.asset_id,
-      signal: s.signal,
-    }));
+  signals.flatMap(s => {
+    const { state } = s.signal;
+    if (state === 'none') return [];
+    return [
+      {
+        kind: 'signal' as const,
+        date: s.date,
+        sortKey: s.date,
+        asset_id: s.asset_id,
+        signal: { ...s.signal, state },
+      },
+    ];
+  });
 
 const buildHistoryTimeline = (
   fills: FillHistory[] | null,
@@ -118,9 +124,7 @@ const renderAdjustContent = (a: BalanceAdjustHistory): string => {
 };
 
 const renderSignalContent = (e: HistoryEvent & { kind: 'signal' }): string =>
-  `${toUpperTicker(e.asset_id)} ${directionLabel(
-    e.signal.state as Direction,
-  )} 시그널`;
+  `${toUpperTicker(e.asset_id)} ${directionLabel(e.signal.state)} 시그널`;
 
 const fillBarColor = (f: FillHistory): string =>
   f.direction === 'buy' ? COLORS.green : COLORS.red;

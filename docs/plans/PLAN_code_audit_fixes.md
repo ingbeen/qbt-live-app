@@ -3,7 +3,7 @@
 > 작성/운영 규칙(SoT): 반드시 [docs/CLAUDE.md](../CLAUDE.md)를 참고하세요.
 > (이 템플릿을 수정하거나 새로운 양식의 계획서를 만들 때도 [docs/CLAUDE.md](../CLAUDE.md)를 포인터로 두고 준수합니다.)
 
-**상태**: Draft
+**상태**: In Progress
 
 ---
 
@@ -20,7 +20,7 @@
 ---
 
 **작성일**: 2026-05-10 21:40
-**마지막 업데이트**: 2026-05-10 21:40
+**마지막 업데이트**: 2026-05-11 09:27
 **관련 범위**: components, docs
 **관련 문서**: CLAUDE.md, docs/CLAUDE.md, docs/DESIGN_QBT_LIVE_FINAL.md
 
@@ -41,9 +41,9 @@
 
 ## 1) 목표(Goal)
 
-- [ ] HistoryList 의 시그널 렌더에서 `as Direction` 단언을 제거하고 타입 시스템으로 'none' 도달 불가를 선차단한다.
-- [ ] FillForm 의 pending hint 에서 raw 인라인 계산식을 `formatPendingShares` 호출로 통일하여 SyncDialog / PendingOrdersListBlock 과 출력 형식·§5.1 폴백을 일치시킨다.
-- [ ] CLAUDE.md §14.3 의 가변 마이너 버전 예시("예: 0.85 → 0.86")를 일반화 표현으로 바꾼다.
+- [x] HistoryList 의 시그널 렌더에서 `as Direction` 단언을 제거하고 타입 시스템으로 'none' 도달 불가를 선차단한다.
+- [x] FillForm 의 pending hint 에서 raw 인라인 계산식을 `formatPendingShares` 호출로 통일하여 SyncDialog / PendingOrdersListBlock 과 출력 형식·§5.1 폴백을 일치시킨다.
+- [x] CLAUDE.md §14.3 의 가변 마이너 버전 예시("예: 0.85 → 0.86")를 일반화 표현으로 바꾼다.
 
 ## 2) 비목표(Non-Goals)
 
@@ -73,15 +73,15 @@
 
 > Done 은 "서술" 이 아니라 "체크리스트 상태" 로만 판단합니다. (정의/예외는 docs/CLAUDE.md)
 
-- [ ] HistoryList 에서 `as Direction` 단언이 제거되어 있다.
-- [ ] FillForm pending hint 가 `formatPendingShares` 호출 경로로 통일되어 있다.
-- [ ] CLAUDE.md §14.3 의 마이너 버전 예시가 일반화되어 있다.
-- [ ] `npm run lint` 통과
-- [ ] `npx tsc --noEmit` 통과
-- [ ] `npx prettier --write .` 실행 (마지막 Phase 에서 자동 포맷 적용)
+- [x] HistoryList 에서 `as Direction` 단언이 제거되어 있다.
+- [x] FillForm pending hint 가 `formatPendingShares` 호출 경로로 통일되어 있다.
+- [x] CLAUDE.md §14.3 의 마이너 버전 예시가 일반화되어 있다.
+- [x] `npm run lint` 통과
+- [x] `npx tsc --noEmit` 통과
+- [x] `npx prettier --write .` 실행 (마지막 Phase 에서 자동 포맷 적용)
 - [ ] 사용자 실기 검증 완료 (대상 화면/플로우 기록)
-- [ ] 필요한 문서 업데이트(README.md / `docs/COMMANDS.md` / CLAUDE.md / plan 등 — 각각 변경 여부 명시)
-- [ ] plan 체크박스 최신화(Phase/DoD/Validation 모두 반영)
+- [x] 필요한 문서 업데이트(README.md / `docs/COMMANDS.md` / CLAUDE.md / plan 등 — 각각 변경 여부 명시) — README.md 변경 없음 / `docs/COMMANDS.md` 변경 없음 / CLAUDE.md §14.3 변경 / plan 변경
+- [x] plan 체크박스 최신화(Phase/DoD/Validation 모두 반영)
 
 ## 5) 변경 범위(Scope)
 
@@ -105,9 +105,9 @@
 
 **작업 내용**:
 
-- [ ] `HistoryEvent` 의 `kind: 'signal'` 변형에서 `signal: SignalHistoryEntry['signal']` 타입을 좁힌 형태(state 가 'buy'|'sell' 만 허용)로 정의한다.
-- [ ] `signalsToEvents` 가 'none' 필터 통과 후 반환할 때 좁혀진 타입에 맞도록 명시적으로 변환한다 (`as`-단언이 아닌 객체 재구성으로 좁힘).
-- [ ] `renderSignalContent` 에서 `e.signal.state as Direction` 단언을 제거한다.
+- [x] `HistoryEvent` 의 `kind: 'signal'` 변형에서 `signal: SignalHistoryEntry['signal']` 타입을 좁힌 형태(state 가 'buy'|'sell' 만 허용)로 정의한다.
+- [x] `signalsToEvents` 가 'none' 필터 통과 후 반환할 때 좁혀진 타입에 맞도록 명시적으로 변환한다 (`as`-단언이 아닌 객체 재구성으로 좁힘).
+- [x] `renderSignalContent` 에서 `e.signal.state as Direction` 단언을 제거한다.
 
 **Validation**:
 
@@ -119,9 +119,9 @@
 
 **작업 내용**:
 
-- [ ] [FillForm.tsx:120-128](../../src/components/FillForm.tsx#L120-L128) 의 조건문에서 `signals?.[pending.asset_id]?.close` 를 한 번만 꺼내 const 로 보관한다.
-- [ ] 본문의 raw 계산식 `Math.round(Math.abs(...) / signals[...].close)` 를 제거하고 `formatPendingShares(pending.delta_amount, close)` 호출로 대체한다.
-- [ ] `formatPendingShares` 의 반환이 `"N주 "` (뒤 공백) 이므로, 표현이 SyncDialog / PendingOrdersListBlock 과 동일한 형식으로 정렬되었는지 확인한다.
+- [x] [FillForm.tsx:120-128](../../src/components/FillForm.tsx#L120-L128) 의 조건문에서 `signals?.[pending.asset_id]?.close` 를 한 번만 꺼내 const 로 보관한다.
+- [x] 본문의 raw 계산식 `Math.round(Math.abs(...) / signals[...].close)` 를 제거하고 `formatPendingShares(pending.delta_amount, close)` 호출로 대체한다.
+- [x] `formatPendingShares` 의 반환이 `"N주 "` (뒤 공백) 이므로, 표현이 SyncDialog / PendingOrdersListBlock 과 동일한 형식으로 정렬되었는지 확인한다.
 
 **Validation**:
 
@@ -134,11 +134,11 @@
 
 **작업 내용**:
 
-- [ ] [CLAUDE.md:874](../../CLAUDE.md#L874) 의 "예: 0.85 → 0.86" 표현을 가변 수치가 박히지 않는 일반화 표현으로 교체한다.
+- [x] [CLAUDE.md:874](../../CLAUDE.md#L874) 의 "예: 0.85 → 0.86" 표현을 가변 수치가 박히지 않는 일반화 표현으로 교체한다.
 
 **Validation**:
 
-- [ ] 변경된 문장이 §9.6 "구체적 수치 / 가변 정보 직접 기재 금지" 와 충돌하지 않고, 같은 §14.3 의 다른 항목(외부 라이브러리 메이저 업그레이드 예시 형식)과 톤이 일치하는지 시각 검토.
+- [x] 변경된 문장이 §9.6 "구체적 수치 / 가변 정보 직접 기재 금지" 와 충돌하지 않고, 같은 §14.3 의 다른 항목(외부 라이브러리 메이저 업그레이드 예시 형식)과 톤이 일치하는지 시각 검토.
 
 ---
 
@@ -146,16 +146,16 @@
 
 **작업 내용**
 
-- [ ] 필요한 문서 업데이트 (README.md / `docs/COMMANDS.md` 포함 여부 명시) — 본 plan 은 둘 다 변경 없음.
-- [ ] `npx prettier --write .` 실행(자동 포맷 적용)
+- [x] 필요한 문서 업데이트 (README.md / `docs/COMMANDS.md` 포함 여부 명시) — 본 plan 은 둘 다 변경 없음.
+- [x] `npx prettier --write .` 실행(자동 포맷 적용)
 - [ ] 변경 기능 및 전체 플로우 최종 검증 (사용자 실기 확인)
-- [ ] DoD 체크리스트 최종 업데이트 및 체크 완료
-- [ ] 전체 Phase 체크리스트 최종 업데이트 및 상태 확정
+- [x] DoD 체크리스트 최종 업데이트 및 체크 완료
+- [x] 전체 Phase 체크리스트 최종 업데이트 및 상태 확정
 
 **Validation**:
 
-- [ ] `npm run lint` 통과
-- [ ] `npx tsc --noEmit` 통과
+- [x] `npm run lint` 통과
+- [x] `npx tsc --noEmit` 통과
 - [ ] 사용자 실기 검증: 거래 탭 pending hint / 히스토리 시그널 표시 / 앱 전체 회귀 없음 확인.
 
 #### Commit Messages (Final candidates) — 5개 중 1개 선택
@@ -180,5 +180,6 @@
 ### 진행 로그 (KST)
 
 - 2026-05-10 21:40: plan 초안 작성
+- 2026-05-11 09:27: Phase 1~3 코드/문서 변경 완료(HistoryList 단언 제거 + signalsToEvents flatMap narrowing / FillForm pendingClose 추출 + formatPendingShares 적용 / CLAUDE.md §14.3 마이너 예시 일반화). `npx prettier --write .` 적용, `npm run lint` / `npx tsc --noEmit` 통과. 사용자 실기 검증 대기.
 
 ---

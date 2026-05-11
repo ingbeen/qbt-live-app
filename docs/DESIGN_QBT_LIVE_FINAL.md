@@ -477,17 +477,17 @@ drift 스칼라 요약 (`drift_pct` / `model_equity` / `actual_equity`) 은 `/la
 }
 ```
 
-| 필드           | 타입                 | 설명                                                                                  |
-| -------------- | -------------------- | ------------------------------------------------------------------------------------- |
-| `dates`        | list[str]            | 해당 연도 거래일 (ISO 8601)                                                           |
-| `close`        | list[number]         | 종가 (**USD**, `ROUND_PRICE = 6` 자리)                                                |
-| `ma_value`     | list[number \| null] | MA (**USD**). 워밍업 구간은 null                                                      |
-| `upper_band`   | list[number \| null] | `ma_value × (1 + buy_buffer_zone_pct)` (**USD**)                                      |
-| `lower_band`   | list[number \| null] | `ma_value × (1 - sell_buffer_zone_pct)` (**USD**)                                     |
-| `buy_signals`  | list[str]            | 해당 연도 내 매수 신호 발생일 (ISO 8601). GCS 정본 `history/signals.jsonl` 에서 파생  |
-| `sell_signals` | list[str]            | 해당 연도 내 매도 신호 발생일 (ISO 8601)                                              |
+| 필드           | 타입                 | 설명                                                                                       |
+| -------------- | -------------------- | ------------------------------------------------------------------------------------------ |
+| `dates`        | list[str]            | 해당 연도 거래일 (ISO 8601)                                                                |
+| `close`        | list[number]         | 종가 (**USD**, `ROUND_PRICE = 6` 자리)                                                     |
+| `ma_value`     | list[number \| null] | MA (**USD**). 워밍업 구간은 null                                                           |
+| `upper_band`   | list[number \| null] | `ma_value × (1 + buy_buffer_zone_pct)` (**USD**)                                           |
+| `lower_band`   | list[number \| null] | `ma_value × (1 - sell_buffer_zone_pct)` (**USD**)                                          |
+| `buy_signals`  | list[str]            | 해당 연도 내 매수 신호 발생일 (ISO 8601). GCS 정본 `history/signals.jsonl` 에서 파생       |
+| `sell_signals` | list[str]            | 해당 연도 내 매도 신호 발생일 (ISO 8601)                                                   |
 | `user_buys`    | list[str]            | 해당 연도 내 사용자 매수 체결일 (ISO 8601). GCS 정본 `history/user_trades.jsonl` 에서 파생 |
-| `user_sells`   | list[str]            | 해당 연도 내 사용자 매도 체결일 (ISO 8601)                                            |
+| `user_sells`   | list[str]            | 해당 연도 내 사용자 매도 체결일 (ISO 8601)                                                 |
 
 ##### 8.2.5.3 중요 사항 (빈 배열 / null 처리)
 
@@ -923,7 +923,7 @@ GitHub Actions cron 으로 실행되는 daily runner 가 RTDB `/balance_adjust/i
 
 | 경로                            | 쓰기 주체                                          | 읽기 주체                |
 | ------------------------------- | -------------------------------------------------- | ------------------------ | --------------------------------------- | -------------- |
-| GCS 정본 버킷                    | daily runner (ephemeral)                           | daily runner             |
+| GCS 정본 버킷                   | daily runner (ephemeral)                           | daily runner             |
 | `/latest/*`, `/charts/*`        | daily runner (Admin SDK)                           | 앱                       |
 | `/history/{fills                | balance_adjusts                                    | signals}/\*`             | daily runner (Admin SDK, GCS 정본 미러) | 앱 (이력 조회) |
 | `/fills/*`, `/balance_adjust/*` | 앱 (레코드 본문) / daily runner (`processed` 필드) | daily runner (Admin SDK) |

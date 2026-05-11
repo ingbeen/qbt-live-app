@@ -19,6 +19,7 @@ import type {
 } from '../types/rtdb';
 import {
   directionLabel,
+  formatPendingShares,
   formatShares,
   kstNow,
   toUpperTicker,
@@ -77,6 +78,7 @@ export const FillForm: React.FC<Props> = ({
 
   const pending = assetId ? pendingOrders?.[assetId] : undefined;
   const showSkipButton = !!pending;
+  const pendingClose = pending ? signals?.[pending.asset_id]?.close : undefined;
 
   const onSubmit = useCallback(async () => {
     setAttempted(true);
@@ -117,16 +119,12 @@ export const FillForm: React.FC<Props> = ({
     <View style={styles.wrap}>
       {lastError ? <Text style={styles.errorBanner}>{lastError}</Text> : null}
 
-      {pending &&
-      signals?.[pending.asset_id] &&
-      signals[pending.asset_id].close > 0 ? (
+      {pending && pendingClose != null && pendingClose > 0 ? (
         <View style={styles.pendingHint}>
           <Text style={styles.pendingText}>
             {SYMBOLS.BOLT} {toUpperTicker(pending.asset_id)}{' '}
-            {Math.round(
-              Math.abs(pending.delta_amount) / signals[pending.asset_id].close,
-            )}
-            주 {directionLabel(pending.delta_amount)} pending
+            {formatPendingShares(pending.delta_amount, pendingClose)}
+            {directionLabel(pending.delta_amount)} pending
           </Text>
         </View>
       ) : null}

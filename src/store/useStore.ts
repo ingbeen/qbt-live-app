@@ -378,7 +378,16 @@ export const useStore = create<Store>((set, get) => {
         if (target === 'equity') {
           const meta = await readEquityChartMeta();
           if (!meta) {
-            set({ equityChart: { meta: null, years: {} }, lastError: null });
+            if (__DEV__) {
+              throw new Error(
+                '[store] 내부 불변조건 위반: equityChart meta=null',
+              );
+            }
+            console.error('[store] 내부 불변조건 위반: equityChart meta=null');
+            set({
+              equityChart: emptyEquityCache(),
+              lastError: '차트 데이터를 불러올 수 없습니다.',
+            });
             return;
           }
           const initialYears = computeInitialYears(
@@ -399,12 +408,20 @@ export const useStore = create<Store>((set, get) => {
           const assetId = target;
           const meta = await readPriceChartMeta(assetId);
           if (!meta) {
+            if (__DEV__) {
+              throw new Error(
+                `[store] 내부 불변조건 위반: priceChart meta=null (assetId=${assetId})`,
+              );
+            }
+            console.error(
+              `[store] 내부 불변조건 위반: priceChart meta=null (assetId=${assetId})`,
+            );
             set({
               priceCharts: {
                 ...get().priceCharts,
                 [assetId]: { meta: null, years: {} },
               },
-              lastError: null,
+              lastError: '차트 데이터를 불러올 수 없습니다.',
             });
             return;
           }
@@ -430,6 +447,10 @@ export const useStore = create<Store>((set, get) => {
           });
         }
       } catch (e) {
+        // 내부 불변조건 위반은 흡수하지 않고 재던져 개발 빌드에서 즉시 표면화 (§5.1).
+        if (e instanceof Error && e.message.includes('내부 불변조건 위반')) {
+          throw e;
+        }
         console.error('[store] refreshChart failed:', e);
         set({ lastError: toUserMessage(e) });
       } finally {

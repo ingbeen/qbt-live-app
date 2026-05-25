@@ -22,7 +22,7 @@ export const validateIsoDateNotFuture = (value: string): string | null => {
 
 export const validateFill = (
   p: Partial<FillPayload>,
-  portfolio: Portfolio | null,
+  portfolio: Portfolio,
 ): ValidationResult => {
   const fieldErrors: Record<string, string> = {};
 
@@ -49,12 +49,7 @@ export const validateFill = (
     if (dateError) fieldErrors.trade_date = dateError;
   }
 
-  if (
-    p.direction === 'sell' &&
-    p.asset_id &&
-    p.actual_shares != null &&
-    portfolio
-  ) {
+  if (p.direction === 'sell' && p.asset_id && p.actual_shares != null) {
     const owned = portfolio.assets[p.asset_id].actual_shares;
     if (p.actual_shares > owned) {
       fieldErrors.actual_shares = `매도 수량이 보유 주수(${owned}주)를 초과합니다`;
@@ -69,7 +64,7 @@ export const validateFill = (
 
 export const validateBalanceAdjust = (
   p: Partial<BalanceAdjustPayload>,
-  portfolio: Portfolio | null,
+  portfolio: Portfolio,
 ): ValidationResult => {
   const fieldErrors: Record<string, string> = {};
 
@@ -116,7 +111,6 @@ export const validateBalanceAdjust = (
 
   if (
     p.asset_id &&
-    portfolio &&
     (p.new_avg_price != null || p.new_entry_date != null) &&
     p.new_shares == null
   ) {

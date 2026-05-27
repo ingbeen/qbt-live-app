@@ -59,6 +59,14 @@ export const computeInitialYears = (
     Number.isNaN(lastMonth) ||
     Number.isNaN(lastDay)
   ) {
+    if (__DEV__) {
+      throw new Error(
+        `[chartYears] 내부 불변조건 위반: lastDate 파싱 실패 (lastDate=${lastDate})`,
+      );
+    }
+    console.error(
+      `[chartYears] 내부 불변조건 위반: lastDate 파싱 실패 (lastDate=${lastDate})`,
+    );
     return [];
   }
   const target = new Date(lastYear, lastMonth - 1 - monthsBack, lastDay);

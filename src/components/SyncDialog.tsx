@@ -40,7 +40,7 @@ export const SyncDialog: React.FC<Props> = ({
           <Text style={styles.title}>Model 동기화</Text>
           <Text style={styles.body}>Model을 실제 기준으로 동기화합니다.</Text>
 
-          {pendings.length > 0 && (
+          {pendings.length > 0 && signals !== null && (
             <View style={styles.pendingBox}>
               <Text style={styles.pendingTitle}>
                 {SYMBOLS.WARN} 체결 예정 주문이 있습니다:
@@ -48,7 +48,7 @@ export const SyncDialog: React.FC<Props> = ({
               {pendings.map(p => {
                 const sharesText = formatPendingShares(
                   p.delta_amount,
-                  signals?.[p.asset_id]?.close,
+                  signals[p.asset_id].close,
                 );
                 return (
                   <Text key={p.asset_id} style={styles.pendingLine}>

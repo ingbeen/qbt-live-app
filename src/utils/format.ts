@@ -132,26 +132,11 @@ export const listPendingOrders = (
   });
 
 // pending 주문의 delta_amount 를 주가로 나눠 정수 주식수 문자열로 포맷.
-// 호출 시점에는 signals[asset_id].close 가 항상 양수여야 하지만, 외부 데이터 신뢰도 차원에서
-// CLAUDE.md §3.1 방식 1 (__DEV__ throw + 안전 폴백) 으로 처리. 반환 끝에 공백 1 칸 포함.
+// 호출처가 양수 close 를 invariant 로 보장한다 (signals[asset_id].close). 반환 끝에 공백 1 칸 포함.
 export const formatPendingShares = (
   deltaAmount: number,
-  close: number | undefined,
-): string => {
-  if (close == null || close <= 0) {
-    if (__DEV__) {
-      throw new Error(
-        `[format] 내부 불변조건 위반: formatPendingShares close=${close} (양수 종가 기대)`,
-      );
-    }
-    console.error(
-      '[format] 내부 불변조건 위반: formatPendingShares close=',
-      close,
-    );
-    return '';
-  }
-  return `${Math.round(Math.abs(deltaAmount) / close)}주 `;
-};
+  close: number,
+): string => `${Math.round(Math.abs(deltaAmount) / close)}주 `;
 
 // ─── 부호 포함 정수 (달러 없음, 괄호) ───
 

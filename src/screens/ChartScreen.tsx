@@ -18,6 +18,8 @@ import { PullToRefreshScrollView } from '../components/PullToRefreshScrollView';
 import { chartLoadingKey } from '../utils/loadingKeys';
 import { computeNextYear } from '../utils/chartYears';
 
+const EMPTY_CHART_MESSAGE = '차트 데이터가 비어있습니다.';
+
 type YearsMapLike = Partial<Record<number, { dates: string[] }>>;
 
 // 가장 오래된 연도 슬라이스의 첫 날짜를 반환. 좌측 끝 더 받을 게 없는지 판단할 때 사용.
@@ -256,7 +258,7 @@ export const ChartScreen: React.FC = () => {
       const yearToLoad = computeYearToLoad(meta, yearsMap, 'price');
       if (yearToLoad === null) {
         if (Object.keys(yearsMap).length === 0) {
-          setLastError('차트 데이터가 비어있습니다.');
+          setLastError(EMPTY_CHART_MESSAGE);
         }
         return;
       }
@@ -267,7 +269,7 @@ export const ChartScreen: React.FC = () => {
       const yearToLoad = computeYearToLoad(meta, equityCache.years, 'equity');
       if (yearToLoad === null) {
         if (Object.keys(equityCache.years).length === 0) {
-          setLastError('차트 데이터가 비어있습니다.');
+          setLastError(EMPTY_CHART_MESSAGE);
         }
         return;
       }

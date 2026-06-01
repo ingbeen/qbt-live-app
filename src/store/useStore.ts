@@ -153,7 +153,7 @@ const toUserMessage = (e: unknown): string => {
 };
 
 export const useStore = create<Store>((set, get) => {
-  // loading 플래그 토글 헬퍼. 기존 `set({ loading: { ...get().loading, key: bool } })` 반복 제거용.
+  // loading 플래그 토글 헬퍼. spread 반복을 함수로 추상화.
   const setLoading = (key: string, value: boolean) =>
     set(state => ({ loading: { ...state.loading, [key]: value } }));
 
